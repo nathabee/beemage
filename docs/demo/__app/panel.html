@@ -18,6 +18,10 @@
           Contour
         </button>
 
+        <button id="tabColors" class="tab" role="tab" aria-selected="false" type="button">
+          Colors
+        </button>
+
         <button id="tabSettings" class="tab" role="tab" aria-selected="false" type="button">
           Settings
         </button>
@@ -81,6 +85,75 @@
           </div>
         </details>
       </section>
+
+      <!-- =========================
+     COLORS VIEW
+     ========================= -->
+      <section id="viewColors" class="view" role="tabpanel" aria-labelledby="tabColors" hidden>
+        <p class="muted">
+          Pick a palette color, click inside a region to preview its outline, then apply the fill.
+        </p>
+
+        <details class="searchBox" id="colorsBox" role="group" open>
+          <summary>Region fill</summary>
+
+          <div class="colorsLayout">
+            <!-- Left: interactive canvas -->
+            <div class="colorsCanvasCard">
+              <div class="row" style="justify-content:space-between;">
+                <div class="muted">Click inside a region</div>
+                <span id="colorsStatus" class="status">Idle</span>
+              </div>
+
+              <canvas id="colorsCanvas" class="canvas" width="640" height="360"
+                aria-label="Color fill preview"></canvas>
+
+              <div class="row" style="margin-top:10px;">
+                <button id="btnColorsApply" type="button" disabled>Apply fill</button>
+                <button id="btnColorsCancel" type="button" disabled>Cancel preview</button>
+                <button id="btnColorsReset" type="button">Reset (reload output)</button>
+              </div>
+            </div>
+
+            <!-- Right: palette + controls -->
+            <div class="colorsSide">
+              <div class="colorGroup">
+                <div class="colorGroupTitle">Palette</div>
+                <div id="palette" class="palette" role="list" aria-label="Color palette"></div>
+                <div class="muted" style="font-size:12px; margin-top:8px;">
+                  Selected color is highlighted.
+                </div>
+              </div>
+
+              <div class="colorGroup">
+                <div class="colorGroupTitle">Edge / noise controls</div>
+
+                <label class="fieldInline">
+                  <span>Edges are dark</span>
+                  <input id="edgesDark" type="checkbox" checked />
+                </label>
+
+                <label class="fieldInline">
+                  <span>Edge threshold</span>
+                  <input id="edgeMaskThreshold" type="number" inputmode="numeric" min="0" max="255" step="1"
+                    value="80" />
+                </label>
+
+                <label class="fieldInline">
+                  <span>Gap close (px)</span>
+                  <input id="edgeDilate" type="number" inputmode="numeric" min="0" max="6" step="1" value="2" />
+                </label>
+
+                <label class="fieldInline">
+                  <span>Max region (px)</span>
+                  <input id="maxRegionPx" type="number" inputmode="numeric" min="1000" step="1000" value="200000" />
+                </label>
+              </div>
+            </div>
+          </div>
+        </details>
+      </section>
+
 
       <!-- =========================
            SETTINGS VIEW
@@ -165,8 +238,8 @@
               Version: <strong id="settingsVersion">—</strong>
             </div>
 
-            <a id="settingsGitHubLink" class="subtle" href="https://github.com/nathabee/beecontour/issues" target="_blank"
-              rel="noreferrer">GitHub</a>
+            <a id="settingsGitHubLink" class="subtle" href="https://github.com/nathabee/beecontour/issues"
+              target="_blank" rel="noreferrer">GitHub</a>
           </div>
         </details>
       </section>
