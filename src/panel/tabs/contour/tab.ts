@@ -1,22 +1,25 @@
 // src/panel/tabs/contour/tab.ts
 import type { Dom } from "../../app/dom";
 import type { Bus } from "../../app/bus";
+import { withBusy } from "../../app/state";
 
 export function createContourTab(dom: Dom, _bus: Bus) {
   let loadedImageName: string | null = null;
   let hasImage = false;
 
-  function setBusy(busy: boolean, status?: string) {
-    dom.btnProcessEl.disabled = busy || !hasImage;
-    dom.btnDownloadEl.disabled = busy || !hasImage;
-    dom.fileInputEl.disabled = busy;
-
-    dom.contourSpinnerEl.classList.toggle("is-hidden", !busy);
-    if (status) dom.contourStatusEl.textContent = status;
-  }
-
   function setStatus(text: string) {
     dom.contourStatusEl.textContent = text;
+  }
+
+  function setContourBusyVisual(busy: boolean, status?: string) {
+    dom.contourSpinnerEl.classList.toggle("is-hidden", !busy);
+    if (status) setStatus(status);
+  }
+
+  function updateEnabled() {
+    // Do not touch "busy" here; global busy state.ts will disable during operations.
+    dom.btnProcessEl.disabled = !hasImage;
+    dom.btnDownloadEl.disabled = !hasImage;
   }
 
   function clearCanvases() {
@@ -32,43 +35,44 @@ export function createContourTab(dom: Dom, _bus: Bus) {
       return;
     }
 
-    setBusy(true, "Loading image…");
+    await withBusy(dom, async () => {
+      setContourBusyVisual(true, "Loading image…");
 
-    loadedImageName = file.name || "image";
-    const url = URL.createObjectURL(file);
+      loadedImageName = file.name || "image";
+      const url = URL.createObjectURL(file);
 
-    try {
-      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const im = new Image();
-        im.onload = () => resolve(im);
-        im.onerror = () => reject(new Error("Failed to load image"));
-        im.src = url;
-      });
+      try {
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const im = new Image();
+          im.onload = () => resolve(im);
+          im.onerror = () => reject(new Error("Failed to load image"));
+          im.src = url;
+        });
 
-      // Fit image into srcCanvas while preserving aspect ratio
-      const canvas = dom.srcCanvasEl;
-      const ctx = canvas.getContext("2d")!;
-      clearCanvases();
+        // Fit image into srcCanvas while preserving aspect ratio
+        const canvas = dom.srcCanvasEl;
+        const ctx = canvas.getContext("2d")!;
+        clearCanvases();
 
-      const maxW = canvas.width;
-      const maxH = canvas.height;
+        const maxW = canvas.width;
+        const maxH = canvas.height;
 
-      const scale = Math.min(maxW / img.width, maxH / img.height);
-      const w = Math.max(1, Math.floor(img.width * scale));
-      const h = Math.max(1, Math.floor(img.height * scale));
-      const x = Math.floor((maxW - w) / 2);
-      const y = Math.floor((maxH - h) / 2);
+        const scale = Math.min(maxW / img.width, maxH / img.height);
+        const w = Math.max(1, Math.floor(img.width * scale));
+        const h = Math.max(1, Math.floor(img.height * scale));
+        const x = Math.floor((maxW - w) / 2);
+        const y = Math.floor((maxH - h) / 2);
 
-      ctx.drawImage(img, x, y, w, h);
+        ctx.drawImage(img, x, y, w, h);
 
-      hasImage = true;
-      dom.btnProcessEl.disabled = false;
-      dom.btnDownloadEl.disabled = false;
-      setStatus(`Loaded: ${loadedImageName}`);
-    } finally {
-      URL.revokeObjectURL(url);
-      setBusy(false);
-    }
+        hasImage = true;
+        updateEnabled();
+        setStatus(`Loaded: ${loadedImageName}`);
+      } finally {
+        URL.revokeObjectURL(url);
+        setContourBusyVisual(false);
+      }
+    });
   }
 
   function getNumber(el: HTMLInputElement, fallback: number) {
@@ -80,92 +84,99 @@ export function createContourTab(dom: Dom, _bus: Bus) {
    * Simple contour-ish extraction (pure JS): Sobel edges + threshold.
    * This is intentionally minimal. We will replace/upgrade with OpenCV.js later.
    */
-  function process() {
+  async function process() {
     if (!hasImage) return;
 
-    setBusy(true, "Processing…");
+    await withBusy(dom, async () => {
+      setContourBusyVisual(true, "Processing…");
 
-    // Allow UI to repaint spinner before heavy work
-    setTimeout(() => {
-      try {
-        const src = dom.srcCanvasEl;
-        const out = dom.outCanvasEl;
+      // Allow UI to repaint spinner before heavy work
+      await new Promise<void>((resolve) => {
+        setTimeout(() => {
+          try {
+            const src = dom.srcCanvasEl;
+            const out = dom.outCanvasEl;
 
-        const sctx = src.getContext("2d")!;
-        const octx = out.getContext("2d")!;
+            const sctx = src.getContext("2d")!;
+            const octx = out.getContext("2d")!;
 
-        const img = sctx.getImageData(0, 0, src.width, src.height);
-        const { data, width, height } = img;
+            const img = sctx.getImageData(0, 0, src.width, src.height);
+            const { data, width, height } = img;
 
-        // grayscale
-        const gray = new Uint8ClampedArray(width * height);
-        for (let i = 0, p = 0; i < data.length; i += 4, p++) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          gray[p] = (0.299 * r + 0.587 * g + 0.114 * b) | 0;
-        }
+            // grayscale
+            const gray = new Uint8ClampedArray(width * height);
+            for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+              const r = data[i];
+              const g = data[i + 1];
+              const b = data[i + 2];
+              gray[p] = (0.299 * r + 0.587 * g + 0.114 * b) | 0;
+            }
 
-        // Sobel
-        const gxKernel = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
-        const gyKernel = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+            // Sobel
+            const gxKernel = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+            const gyKernel = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
 
-        const mag = new Uint8ClampedArray(width * height);
-        const threshold = Math.max(1, Math.min(255, getNumber(dom.edgeThresholdEl, 70)));
-        const whiteBg = dom.invertOutputEl.checked;
+            const mag = new Uint8ClampedArray(width * height);
+            const threshold = Math.max(1, Math.min(255, getNumber(dom.edgeThresholdEl, 70)));
+            const whiteBg = dom.invertOutputEl.checked;
 
-        for (let y = 1; y < height - 1; y++) {
-          for (let x = 1; x < width - 1; x++) {
-            let gx = 0;
-            let gy = 0;
+            for (let y = 1; y < height - 1; y++) {
+              for (let x = 1; x < width - 1; x++) {
+                let gx = 0;
+                let gy = 0;
 
-            let k = 0;
-            for (let j = -1; j <= 1; j++) {
-              for (let i = -1; i <= 1; i++) {
-                const v = gray[(y + j) * width + (x + i)];
-                gx += v * gxKernel[k];
-                gy += v * gyKernel[k];
-                k++;
+                let k = 0;
+                for (let j = -1; j <= 1; j++) {
+                  for (let i = -1; i <= 1; i++) {
+                    const v = gray[(y + j) * width + (x + i)];
+                    gx += v * gxKernel[k];
+                    gy += v * gyKernel[k];
+                    k++;
+                  }
+                }
+
+                const m = Math.min(255, Math.sqrt(gx * gx + gy * gy) | 0);
+                mag[y * width + x] = m >= threshold ? 255 : 0;
               }
             }
 
-            const m = Math.min(255, Math.sqrt(gx * gx + gy * gy) | 0);
-            mag[y * width + x] = m >= threshold ? 255 : 0;
+            // Write output
+            const outImg = octx.createImageData(width, height);
+            const outData = outImg.data;
+
+            for (let p = 0, i = 0; p < mag.length; p++, i += 4) {
+              const v = mag[p]; // 0 or 255
+              if (whiteBg) {
+                // black edges on white background
+                const isEdge = v === 255;
+                outData[i] = isEdge ? 0 : 255;
+                outData[i + 1] = isEdge ? 0 : 255;
+                outData[i + 2] = isEdge ? 0 : 255;
+                outData[i + 3] = 255;
+              } else {
+                // white edges on black background
+                outData[i] = v;
+                outData[i + 1] = v;
+                outData[i + 2] = v;
+                outData[i + 3] = 255;
+              }
+            }
+
+            // Ensure out canvas matches src dims
+            out.width = src.width;
+            out.height = src.height;
+            octx.putImageData(outImg, 0, 0);
+
+            setStatus("Done. You can download the PNG.");
+          } finally {
+            resolve();
           }
-        }
+        }, 0);
+      });
 
-        // Write output
-        const outImg = octx.createImageData(width, height);
-        const outData = outImg.data;
-
-        for (let p = 0, i = 0; p < mag.length; p++, i += 4) {
-          const v = mag[p]; // 0 or 255
-          if (whiteBg) {
-            // black edges on white background
-            const isEdge = v === 255;
-            outData[i] = isEdge ? 0 : 255;
-            outData[i + 1] = isEdge ? 0 : 255;
-            outData[i + 2] = isEdge ? 0 : 255;
-            outData[i + 3] = 255;
-          } else {
-            // white edges on black background
-            outData[i] = v;
-            outData[i + 1] = v;
-            outData[i + 2] = v;
-            outData[i + 3] = 255;
-          }
-        }
-
-        // Ensure out canvas matches src dims
-        out.width = src.width;
-        out.height = src.height;
-        octx.putImageData(outImg, 0, 0);
-
-        setStatus("Done. You can download the PNG.");
-      } finally {
-        setBusy(false);
-      }
-    }, 0);
+      setContourBusyVisual(false);
+      updateEnabled();
+    });
   }
 
   function downloadPng() {
@@ -224,13 +235,12 @@ export function createContourTab(dom: Dom, _bus: Bus) {
   function bind() {
     bindDragDrop();
 
-    dom.btnProcessEl.addEventListener("click", () => process());
+    dom.btnProcessEl.addEventListener("click", () => void process());
     dom.btnDownloadEl.addEventListener("click", () => downloadPng());
 
     // initial UI (no image)
     hasImage = false;
-    dom.btnProcessEl.disabled = true;
-    dom.btnDownloadEl.disabled = true;
+    updateEnabled();
     setStatus("No image loaded");
     dom.contourSpinnerEl.classList.add("is-hidden");
   }

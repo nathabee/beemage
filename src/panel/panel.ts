@@ -2,10 +2,10 @@
 import { getDom } from "./app/dom";
 import { createBus } from "./app/bus";
 import { createTabs } from "./app/tabs";
-
 import { createPanelCache } from "./app/cache";
 
 import { createContourTab } from "./tabs/contour/tab";
+import { createColorsTab } from "./tabs/colors/tab";
 import { createSettingsTab } from "./tabs/settings/tab";
 import { createLogsTab } from "./tabs/logs/tab";
 
@@ -23,15 +23,18 @@ import { createLogsTab } from "./tabs/logs/tab";
   };
 
   const contourTab = createContourTab(dom, bus);
+  const colorsTab = createColorsTab(dom, bus);
   const settingsTab = createSettingsTab(dom, bus);
   const logsTab = createLogsTab(dom, bus);
 
   contourTab.bind();
+  colorsTab.bind();
   settingsTab.bind();
   logsTab.bind();
 
   const tabs = createTabs(dom, {
     contour: contourTab,
+    colors: colorsTab,
     settings: settingsTab,
     logs: logsTab,
   });

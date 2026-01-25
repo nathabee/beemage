@@ -46,7 +46,21 @@ function applyBusy(dom: Dom, next: boolean): void {
   // Allow toggling visibility even while busy (so you can escape Logs if needed)
   dom.cfgShowDevToolsEl.disabled = false;
 
+  // -----------------------------
+  // Contour tab controls
+  // -----------------------------
+  dom.fileInputEl.disabled = next;
+  dom.btnProcessEl.disabled = next;
+  dom.btnDownloadEl.disabled = next;
+  dom.edgeThresholdEl.disabled = next;
+  dom.invertOutputEl.disabled = next;
+
+  // Drop zone is not a form control; optional CSS overlay uses .is-busy on root.
+ 
+
+  // -----------------------------
   // Settings (dev config)
+  // -----------------------------
   dom.cfgTraceConsoleEl.disabled = next;
   dom.cfgActionLogMaxEl.disabled = next;
   dom.cfgDebugTraceMaxEl.disabled = next;
@@ -56,7 +70,9 @@ function applyBusy(dom: Dom, next: boolean): void {
   // Debug enabled toggle lives in Settings
   dom.logsCbDebugEl.disabled = next;
 
+  // -----------------------------
   // Logs tab controls
+  // -----------------------------
   dom.logsLimitEl.disabled = next;
   dom.btnLogsRefresh.disabled = next;
   dom.logsTrimKeepEl.disabled = next;
@@ -68,4 +84,22 @@ function applyBusy(dom: Dom, next: boolean): void {
   dom.btnDebugRefresh.disabled = next;
   dom.btnDebugExport.disabled = next;
   dom.btnDebugClear.disabled = next;
+
+  // Colors tab (region fill)
+  dom.btnColorsApplyEl.disabled = next;
+  dom.btnColorsCancelEl.disabled = next;
+  dom.btnColorsResetEl.disabled = next;
+
+  dom.edgesDarkEl.disabled = next;
+  dom.edgeMaskThresholdEl.disabled = next;
+  dom.edgeDilateEl.disabled = next;
+  dom.maxRegionPxEl.disabled = next;
+
+  // palette buttons live inside paletteEl
+  for (const el of Array.from(dom.paletteEl.querySelectorAll("button"))) {
+    (el as HTMLButtonElement).disabled = next;
+  }
+  dom.colorsCanvasEl.style.pointerEvents = next ? "none" : "auto";
+
+
 }

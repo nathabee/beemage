@@ -1,51 +1,56 @@
 // src/panel/app/tabs.ts
 import type { Dom } from "./dom";
 
-export type TabId = "contour" | "settings" | "logs";
+type TabKey = "contour" | "colors" | "settings" | "logs";
 
-export type Tab = {
-  id: TabId;
-  mount(): void;
-  unmount(): void;
+type TabApi = {
+  bind(): void;
+  boot?: () => void;
 };
 
-export function createTabs(dom: Dom, tabs: Record<TabId, Tab>) {
-  let active: TabId = "contour";
+type TabsMap = Record<TabKey, TabApi>;
 
-  function setTabUI(next: TabId) {
-    const is = (id: TabId) => next === id;
+export function createTabs(dom: Dom, tabs: TabsMap) {
+  const tabButtons: Record<TabKey, HTMLButtonElement> = {
+    contour: dom.tabContour,
+    colors: dom.tabColors,
+    settings: dom.tabSettings,
+    logs: dom.tabLogs,
+  };
 
-    dom.tabContour.classList.toggle("is-active", is("contour"));
-    dom.tabContour.setAttribute("aria-selected", String(is("contour")));
-    dom.viewContour.hidden = !is("contour");
+  const views: Record<TabKey, HTMLElement> = {
+    contour: dom.viewContour,
+    colors: dom.viewColors,
+    settings: dom.viewSettings,
+    logs: dom.viewLogs,
+  };
 
-    dom.tabSettings.classList.toggle("is-active", is("settings"));
-    dom.tabSettings.setAttribute("aria-selected", String(is("settings")));
-    dom.viewSettings.hidden = !is("settings");
+  function setActive(key: TabKey) {
+    (Object.keys(tabButtons) as TabKey[]).forEach((k) => {
+      const active = k === key;
+      tabButtons[k].classList.toggle("is-active", active);
+      tabButtons[k].setAttribute("aria-selected", active ? "true" : "false");
 
-    dom.tabLogs.classList.toggle("is-active", is("logs"));
-    dom.tabLogs.setAttribute("aria-selected", String(is("logs")));
-    dom.viewLogs.hidden = !is("logs");
-  }
-
-  function switchTo(next: TabId) {
-    if (next === active) return;
-    tabs[active].unmount();
-    active = next;
-    setTabUI(active);
-    tabs[active].mount();
+      // hide/show views
+      views[k].hidden = !active;
+      views[k].classList.toggle("is-active", active);
+    });
   }
 
   function bind() {
-    dom.tabContour.addEventListener("click", () => switchTo("contour"));
-    dom.tabSettings.addEventListener("click", () => switchTo("settings"));
-    dom.tabLogs.addEventListener("click", () => switchTo("logs"));
+    tabButtons.contour.addEventListener("click", () => setActive("contour"));
+    tabButtons.colors.addEventListener("click", () => setActive("colors"));
+    tabButtons.settings.addEventListener("click", () => setActive("settings"));
+    tabButtons.logs.addEventListener("click", () => setActive("logs"));
   }
 
   function boot() {
-    setTabUI(active);
-    tabs[active].mount();
+    // Default tab
+    setActive("contour");
+
+    // If any tab needs a boot hook, run it
+    (Object.keys(tabs) as TabKey[]).forEach((k) => tabs[k].boot?.());
   }
 
-  return { bind, boot, switchTo };
+  return { bind, boot };
 }

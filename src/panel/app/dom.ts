@@ -14,10 +14,12 @@ export function getDom() {
   // Tabs + views
   // -----------------------------
   const tabContour = must(document.getElementById("tabContour") as HTMLButtonElement | null, "tabContour");
+  const tabColors = must(document.getElementById("tabColors") as HTMLButtonElement | null, "tabColors");
   const tabSettings = must(document.getElementById("tabSettings") as HTMLButtonElement | null, "tabSettings");
   const tabLogs = must(document.getElementById("tabLogs") as HTMLButtonElement | null, "tabLogs");
 
   const viewContour = must(document.getElementById("viewContour") as HTMLElement | null, "viewContour");
+  const viewColors = must(document.getElementById("viewColors") as HTMLElement | null, "viewColors");
   const viewSettings = must(document.getElementById("viewSettings") as HTMLElement | null, "viewSettings");
   const viewLogs = must(document.getElementById("viewLogs") as HTMLElement | null, "viewLogs");
 
@@ -37,6 +39,36 @@ export function getDom() {
 
   const edgeThresholdEl = must(document.getElementById("edgeThreshold") as HTMLInputElement | null, "edgeThreshold");
   const invertOutputEl = must(document.getElementById("invertOutput") as HTMLInputElement | null, "invertOutput");
+
+  // -----------------------------
+  // Colors tab
+  // -----------------------------
+  
+  const colorsCanvasEl = must(document.getElementById("colorsCanvas") as HTMLCanvasElement | null, "colorsCanvas");
+
+  const paletteEl = must(document.getElementById("palette") as HTMLDivElement | null, "palette");
+
+  const btnColorsApplyEl = must(
+    document.getElementById("btnColorsApply") as HTMLButtonElement | null,
+    "btnColorsApply"
+  );
+  const btnColorsCancelEl = must(
+    document.getElementById("btnColorsCancel") as HTMLButtonElement | null,
+    "btnColorsCancel"
+  );
+  const btnColorsResetEl = must(
+    document.getElementById("btnColorsReset") as HTMLButtonElement | null,
+    "btnColorsReset"
+  );
+
+  const edgesDarkEl = must(document.getElementById("edgesDark") as HTMLInputElement | null, "edgesDark");
+  const edgeMaskThresholdEl = must(
+    document.getElementById("edgeMaskThreshold") as HTMLInputElement | null,
+    "edgeMaskThreshold"
+  );
+  const edgeDilateEl = must(document.getElementById("edgeDilate") as HTMLInputElement | null, "edgeDilate");
+  const maxRegionPxEl = must(document.getElementById("maxRegionPx") as HTMLInputElement | null, "maxRegionPx");
+  const colorsStatusEl = must(document.getElementById("colorsStatus") as HTMLSpanElement | null, "colorsStatus");
 
   // -----------------------------
   // Settings
@@ -117,9 +149,11 @@ export function getDom() {
 
     // Tabs + views
     tabContour,
+    tabColors,
     tabSettings,
     tabLogs,
     viewContour,
+    viewColors,
     viewSettings,
     viewLogs,
 
@@ -134,6 +168,18 @@ export function getDom() {
     outCanvasEl,
     edgeThresholdEl,
     invertOutputEl,
+
+    // Colors 
+    colorsCanvasEl,
+    paletteEl,
+    btnColorsApplyEl,
+    btnColorsCancelEl,
+    btnColorsResetEl,
+    edgesDarkEl,
+    edgeMaskThresholdEl,
+    edgeDilateEl,
+    maxRegionPxEl,
+    colorsStatusEl,
 
     // Settings
     cfgShowDevToolsEl,
