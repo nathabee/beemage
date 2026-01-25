@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="__app/panel.css" />
+  <title>Chrome Extension Template — Manifest V3</title>
+</head>
+
+<body>
+  <div id="appRoot">
+    <div class="wrap">
+      <h1>Chrome Extension Template — Manifest V3</h1>
+
+      <div class="tabs" role="tablist" aria-label="Panel tabs">
+        <button id="tabSettings" class="tab is-active" role="tab" aria-selected="true" type="button">
+          Settings
+        </button>
+
+        <button id="tabLogs" class="tab" role="tab" aria-selected="false" type="button">
+          Logs
+        </button>
+      </div>
+
+      <!-- =========================
+           SETTINGS VIEW
+           ========================= -->
+      <section id="viewSettings" class="view is-active" role="tabpanel" aria-labelledby="tabSettings">
+        <p class="muted">
+          Configure developer options and view project info.
+        </p>
+
+        <!-- GENERAL -->
+        <details class="searchBox" id="settingsGeneralBox" role="group" open>
+          <summary>General</summary>
+
+          <div class="row">
+            <label class="confirm" style="margin-right: auto;">
+              <input id="cfgShowDevTools" type="checkbox" />
+              Show developer tools (Logs, debug options)
+            </label>
+
+            <span id="settingsGeneralStatus" class="muted"></span>
+          </div>
+        </details>
+
+        <!-- DEVELOPER -->
+        <details id="devConfigDetails" class="searchBox" role="group" open>
+          <summary>Developer</summary>
+
+          <div class="devConfigGrid">
+            <!-- Column 1 -->
+            <div class="devGroup">
+              <div class="devGroupTitle">Console</div>
+
+              <label class="devRow">
+                <input id="cfgTraceConsole" type="checkbox" />
+                <span>Console trace (developer)</span>
+              </label>
+
+
+            </div>
+
+            <!-- Column 2 -->
+            <div class="devGroup">
+              <div class="devGroupTitle">Storage limits</div>
+
+              <label class="devRowSplit">
+                <span>Action log max stored entries</span>
+                <input id="cfgActionLogMax" type="number" min="100" step="100" value="5000" />
+              </label>
+
+              <label class="devRowSplit">
+                <span>Debug trace max stored entries</span>
+                <input id="cfgDebugTraceMax" type="number" min="100" step="100" value="2000" />
+              </label>
+
+              <label class="devRowSplit">
+                <span>Max failure entries per run</span>
+                <input id="cfgFailureLogsPerRun" type="number" min="0" step="10" value="50" />
+              </label>
+            </div>
+
+            <!-- Column 3 -->
+            <div class="devGroup">
+              <div class="devGroupTitle">Debug</div>
+
+              <label class="confirm">
+                <input id="logsCbDebug" type="checkbox" />
+                Debug enabled (OFF wipes all debug traces)
+              </label>
+
+              <div class="devActionsRow">
+                <button id="btnCfgResetDefaults" type="button">Reset defaults</button>
+                <span id="cfgStatus" class="muted"></span>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- ABOUT -->
+        <details class="searchBox" id="settingsAboutBox" role="group" open>
+          <summary>About</summary>
+
+          <div class="row">
+            <div style="flex:1; min-width: 180px;">
+              Version: <strong id="settingsVersion">—</strong>
+            </div>
+
+            <a id="settingsGitHubLink" class="subtle" href="https://github.com/nathabee/extension-generic/issues" target="_blank"
+              rel="noreferrer">GitHub</a>
+          </div>
+        </details>
+      </section>
+
+      <!-- =========================
+           LOGS VIEW
+           ========================= -->
+      <section id="viewLogs" class="view" role="tabpanel" aria-labelledby="tabLogs" hidden>
+
+        <!-- AUDIT -->
+        <h3>Audit log</h3>
+
+        <div class="row">
+          <label class="fieldInline">
+            <span>Show</span>
+            <input id="logsLimit" type="number" inputmode="numeric" min="10" step="10" value="200" />
+          </label>
+
+          <button id="btnLogsRefresh" type="button">Refresh</button>
+          <span id="logsStatus" class="status">Idle</span>
+        </div>
+
+        <div class="row">
+          <label class="fieldInline">
+            <span>Trim keep last</span>
+            <input id="logsTrimKeep" type="number" inputmode="numeric" min="0" step="100" value="2000" />
+          </label>
+
+          <button id="btnLogsTrim" type="button">Trim</button>
+          <button id="btnLogsExport" type="button">Export JSON</button>
+          <button id="btnLogsClear" type="button" class="danger">Clear</button>
+        </div>
+
+        <pre id="logsOut" class="report" aria-live="polite"></pre>
+
+        <!-- DEBUG TRACE -->
+        <h3>Debug trace</h3>
+
+        <div class="row">
+          <label class="fieldInline">
+            <span>Show</span>
+            <input id="debugLimit" type="number" inputmode="numeric" min="10" step="10" value="200" />
+          </label>
+
+          <button id="btnDebugRefresh" type="button">Refresh debug</button>
+          <button id="btnDebugExport" type="button">Export debug JSON</button>
+          <button id="btnDebugClear" type="button" class="danger">Clear debug</button>
+          <span id="debugStatus" class="status">Idle</span>
+        </div>
+
+        <pre id="debugOut" class="report" aria-live="polite"></pre>
+      </section>
+
+    </div>
+  </div>
+
+  </body>
+
+</html>
