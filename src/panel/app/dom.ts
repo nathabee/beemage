@@ -1,5 +1,4 @@
 // src/panel/app/dom.ts
-
 export type Dom = ReturnType<typeof getDom>;
 
 export function getDom() {
@@ -14,11 +13,30 @@ export function getDom() {
   // -----------------------------
   // Tabs + views
   // -----------------------------
+  const tabContour = must(document.getElementById("tabContour") as HTMLButtonElement | null, "tabContour");
   const tabSettings = must(document.getElementById("tabSettings") as HTMLButtonElement | null, "tabSettings");
   const tabLogs = must(document.getElementById("tabLogs") as HTMLButtonElement | null, "tabLogs");
 
+  const viewContour = must(document.getElementById("viewContour") as HTMLElement | null, "viewContour");
   const viewSettings = must(document.getElementById("viewSettings") as HTMLElement | null, "viewSettings");
   const viewLogs = must(document.getElementById("viewLogs") as HTMLElement | null, "viewLogs");
+
+  // -----------------------------
+  // Contour tab
+  // -----------------------------
+  const dropZoneEl = must(document.getElementById("dropZone") as HTMLDivElement | null, "dropZone");
+  const fileInputEl = must(document.getElementById("fileInput") as HTMLInputElement | null, "fileInput");
+  const btnProcessEl = must(document.getElementById("btnProcess") as HTMLButtonElement | null, "btnProcess");
+  const btnDownloadEl = must(document.getElementById("btnDownload") as HTMLButtonElement | null, "btnDownload");
+
+  const contourStatusEl = must(document.getElementById("contourStatus") as HTMLSpanElement | null, "contourStatus");
+  const contourSpinnerEl = must(document.getElementById("contourSpinner") as HTMLSpanElement | null, "contourSpinner");
+
+  const srcCanvasEl = must(document.getElementById("srcCanvas") as HTMLCanvasElement | null, "srcCanvas");
+  const outCanvasEl = must(document.getElementById("outCanvas") as HTMLCanvasElement | null, "outCanvas");
+
+  const edgeThresholdEl = must(document.getElementById("edgeThreshold") as HTMLInputElement | null, "edgeThreshold");
+  const invertOutputEl = must(document.getElementById("invertOutput") as HTMLInputElement | null, "invertOutput");
 
   // -----------------------------
   // Settings
@@ -32,7 +50,6 @@ export function getDom() {
     "settingsGeneralStatus"
   );
 
-  // Developer config section
   const devConfigDetailsEl = must(
     document.getElementById("devConfigDetails") as HTMLDetailsElement | null,
     "devConfigDetails"
@@ -99,10 +116,24 @@ export function getDom() {
     rootEl,
 
     // Tabs + views
+    tabContour,
     tabSettings,
     tabLogs,
+    viewContour,
     viewSettings,
     viewLogs,
+
+    // Contour
+    dropZoneEl,
+    fileInputEl,
+    btnProcessEl,
+    btnDownloadEl,
+    contourStatusEl,
+    contourSpinnerEl,
+    srcCanvasEl,
+    outCanvasEl,
+    edgeThresholdEl,
+    invertOutputEl,
 
     // Settings
     cfgShowDevToolsEl,

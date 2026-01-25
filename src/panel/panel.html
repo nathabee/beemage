@@ -14,7 +14,11 @@
       <h1>BeeContour — Extract the main outline</h1>
 
       <div class="tabs" role="tablist" aria-label="Panel tabs">
-        <button id="tabSettings" class="tab is-active" role="tab" aria-selected="true" type="button">
+        <button id="tabContour" class="tab is-active" role="tab" aria-selected="true" type="button">
+          Contour
+        </button>
+
+        <button id="tabSettings" class="tab" role="tab" aria-selected="false" type="button">
           Settings
         </button>
 
@@ -24,9 +28,64 @@
       </div>
 
       <!-- =========================
+           CONTOUR VIEW
+           ========================= -->
+      <section id="viewContour" class="view is-active" role="tabpanel" aria-labelledby="tabContour">
+        <p class="muted">
+          Drop an image, preview it, run contour extraction, and download the result.
+        </p>
+
+        <div id="dropZone" class="dropZone" role="group" aria-label="Image drop zone">
+          <div class="dropZoneInner">
+            <div class="dropTitle">Drag & drop an image here</div>
+            <div class="dropHint muted">or</div>
+            <div class="row" style="justify-content:center;">
+              <input id="fileInput" type="file" accept="image/*" />
+            </div>
+          </div>
+        </div>
+
+        <div class="row" style="align-items:center;">
+          <button id="btnProcess" type="button" disabled>Process</button>
+          <button id="btnDownload" type="button" disabled>Download PNG</button>
+
+          <span id="contourSpinner" class="spinner is-hidden" aria-hidden="true"></span>
+          <span id="contourStatus" class="status">No image loaded</span>
+        </div>
+
+        <div class="grid2">
+          <div class="card">
+            <div class="cardTitle">Input</div>
+            <canvas id="srcCanvas" class="canvas" width="640" height="360" aria-label="Input preview"></canvas>
+          </div>
+
+          <div class="card">
+            <div class="cardTitle">Output</div>
+            <canvas id="outCanvas" class="canvas" width="640" height="360" aria-label="Contour output"></canvas>
+          </div>
+        </div>
+
+        <details class="searchBox" id="contourOptionsBox" role="group" open>
+          <summary>Options</summary>
+
+          <div class="row">
+            <label class="fieldInline">
+              <span>Edge threshold</span>
+              <input id="edgeThreshold" type="number" inputmode="numeric" min="1" max="255" step="1" value="70" />
+            </label>
+
+            <label class="confirm" style="margin-left:auto;">
+              <input id="invertOutput" type="checkbox" checked />
+              White background
+            </label>
+          </div>
+        </details>
+      </section>
+
+      <!-- =========================
            SETTINGS VIEW
            ========================= -->
-      <section id="viewSettings" class="view is-active" role="tabpanel" aria-labelledby="tabSettings">
+      <section id="viewSettings" class="view" role="tabpanel" aria-labelledby="tabSettings" hidden>
         <p class="muted">
           Configure developer options and view project info.
         </p>
@@ -58,8 +117,6 @@
                 <input id="cfgTraceConsole" type="checkbox" />
                 <span>Console trace (developer)</span>
               </label>
-
-
             </div>
 
             <!-- Column 2 -->

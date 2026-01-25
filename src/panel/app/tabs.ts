@@ -1,7 +1,7 @@
 // src/panel/app/tabs.ts
 import type { Dom } from "./dom";
 
-export type TabId = "settings" | "logs";
+export type TabId = "contour" | "settings" | "logs";
 
 export type Tab = {
   id: TabId;
@@ -10,10 +10,14 @@ export type Tab = {
 };
 
 export function createTabs(dom: Dom, tabs: Record<TabId, Tab>) {
-  let active: TabId = "settings";
+  let active: TabId = "contour";
 
   function setTabUI(next: TabId) {
     const is = (id: TabId) => next === id;
+
+    dom.tabContour.classList.toggle("is-active", is("contour"));
+    dom.tabContour.setAttribute("aria-selected", String(is("contour")));
+    dom.viewContour.hidden = !is("contour");
 
     dom.tabSettings.classList.toggle("is-active", is("settings"));
     dom.tabSettings.setAttribute("aria-selected", String(is("settings")));
@@ -33,6 +37,7 @@ export function createTabs(dom: Dom, tabs: Record<TabId, Tab>) {
   }
 
   function bind() {
+    dom.tabContour.addEventListener("click", () => switchTo("contour"));
     dom.tabSettings.addEventListener("click", () => switchTo("settings"));
     dom.tabLogs.addEventListener("click", () => switchTo("logs"));
   }

@@ -1,6 +1,7 @@
 // src/panel/app/bus.ts
-
 import { runtimeOnMessageAdd, runtimeOnMessageRemove } from "../platform/runtime";
+
+export type Bus = ReturnType<typeof createBus>;
 
 type Handler = (msg: unknown) => void;
 
