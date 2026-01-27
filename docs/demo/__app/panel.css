@@ -415,6 +415,18 @@ button.danger:hover {
   .grid2 { grid-template-columns: 1fr; }
 }
 
+.grid4 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+  .grid4 { grid-template-columns: 1fr; }
+}
+
+
 .card {
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 12px;
@@ -542,4 +554,55 @@ input[type="color"] {
   outline: none;
   box-shadow: 0 0 0 3px rgba(122, 162, 255, 0.35);
   border-color: rgba(122, 162, 255, 0.55);
+}
+
+
+
+.qBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 62px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.06);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.qBadge--ok {
+  border-color: rgba(80, 200, 120, 0.35);
+  background: rgba(80, 200, 120, 0.12);
+  color: rgba(200, 255, 220, 0.92);
+}
+
+.qBadge--warn {
+  border-color: rgba(255, 190, 80, 0.35);
+  background: rgba(255, 190, 80, 0.12);
+  color: rgba(255, 235, 200, 0.92);
+}
+
+.qBadge--bad {
+  border-color: rgba(255, 107, 107, 0.35);
+  background: rgba(255, 107, 107, 0.12);
+  color: rgba(255, 210, 210, 0.92);
+}
+
+.qBadge--off { opacity: 0.8; }
+
+.qBar {
+  flex: 1;
+  min-width: 160px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  overflow: hidden;
+}
+
+.qBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: rgba(122, 162, 255, 0.55);
 }
