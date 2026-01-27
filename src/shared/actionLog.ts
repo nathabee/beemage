@@ -5,9 +5,13 @@ import { storageGet, storageSet, storageRemove } from "./platform/storage";
 export type ActionLogKind = "run" | "info" | "error";
 
 export type ActionLogScope =
-  | "logs"
-  | "settings"
   | "background"
+  | "panel"
+  | "contour"
+  | "colors"
+  | "settings"
+  | "logs"
+  | "demo"
   | "ui"
   | "api";
 
@@ -25,7 +29,7 @@ export type ActionLogEntry = {
 
   meta?: Record<string, unknown>;
 };
-
+ 
 // Template-safe storage key. This will be replaced by change-name.sh.
 const STORAGE_KEY = "beecontour.actionLog";
 

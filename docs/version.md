@@ -25,6 +25,34 @@ Conventions:
 
 ---
 
+#### **v0.0.4 — Epic: Full contour pipeline (clean → vectorize) + diagnostics**
+
+* Expanded **Contour workflow** from simple edge output to a **multi-stage pipeline**:
+
+  * edge detection (process was done in v0.0.2 already)
+  * morphological cleaning (radius, min area, threshold)
+  * quality metrics (components, junctions, thickness)
+* Added **interactive cleaning controls** with live preview and repeatable passes
+* Introduced **vectorization to SVG**:
+
+  * boundary tracing
+  * simplification (RDP)
+  * optional smoothing
+  * SVG preview and **SVG download**
+* Added **complexity guards** to prevent memory and performance failures during vectorization
+* Significantly expanded **parameter surface** for experimentation and tuning
+* Introduced a **structured logging system**:
+
+  * console-only diagnostics for development
+  * scoped debug traces (opt-in, persisted)
+  * consistent logging across panel and background
+* Fixed **Settings tab lifecycle** (mounting, refresh, version display)
+* Improved demo ↔ extension parity and internal robustness
+
+---
+ 
+---
+
 #### **v0.0.3 — Epic: Colors workflow + documentation**
 
 * Added **Colors** tab with region-based fill workflow (palette selection, click-to-preview outline, apply fill, reset/reload)

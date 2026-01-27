@@ -23,12 +23,14 @@ export function getDom() {
   const viewSettings = must(document.getElementById("viewSettings") as HTMLElement | null, "viewSettings");
   const viewLogs = must(document.getElementById("viewLogs") as HTMLElement | null, "viewLogs");
 
+
   // -----------------------------
   // Contour tab
   // -----------------------------
   const dropZoneEl = must(document.getElementById("dropZone") as HTMLDivElement | null, "dropZone");
   const fileInputEl = must(document.getElementById("fileInput") as HTMLInputElement | null, "fileInput");
   const btnProcessEl = must(document.getElementById("btnProcess") as HTMLButtonElement | null, "btnProcess");
+  const btnCleanEl = must(document.getElementById("btnClean") as HTMLButtonElement | null, "btnClean");
   const btnDownloadEl = must(document.getElementById("btnDownload") as HTMLButtonElement | null, "btnDownload");
 
   const contourStatusEl = must(document.getElementById("contourStatus") as HTMLSpanElement | null, "contourStatus");
@@ -36,14 +38,40 @@ export function getDom() {
 
   const srcCanvasEl = must(document.getElementById("srcCanvas") as HTMLCanvasElement | null, "srcCanvas");
   const outCanvasEl = must(document.getElementById("outCanvas") as HTMLCanvasElement | null, "outCanvas");
+  const clean1CanvasEl = must(document.getElementById("clean1Canvas") as HTMLCanvasElement | null, "clean1Canvas");
+  const clean2CanvasEl = must(document.getElementById("clean2Canvas") as HTMLCanvasElement | null, "clean2Canvas");
 
   const edgeThresholdEl = must(document.getElementById("edgeThreshold") as HTMLInputElement | null, "edgeThreshold");
   const invertOutputEl = must(document.getElementById("invertOutput") as HTMLInputElement | null, "invertOutput");
 
+  const cleanMinAreaEl = must(document.getElementById("cleanMinArea") as HTMLInputElement | null, "cleanMinArea");
+  const cleanRadiusEl = must(document.getElementById("cleanRadius") as HTMLInputElement | null, "cleanRadius");
+  const cleanBinaryThresholdEl = must(
+    document.getElementById("cleanBinaryThreshold") as HTMLInputElement | null,
+    "cleanBinaryThreshold"
+  );
+
+  const cleanQualityBadgeEl = must(document.getElementById("cleanQualityBadge") as HTMLSpanElement | null, "cleanQualityBadge");
+  const cleanQualityFillEl = must(document.getElementById("cleanQualityFill") as HTMLDivElement | null, "cleanQualityFill");
+  const cleanQualityTextEl = must(document.getElementById("cleanQualityText") as HTMLSpanElement | null, "cleanQualityText");
+
+  const contourScaleEl = must(document.getElementById("contourScale") as HTMLInputElement | null, "contourScale");
+
+
+  const btnVectorizeEl = must(document.getElementById("btnVectorize") as HTMLButtonElement | null, "btnVectorize");
+  const btnDownloadSvgEl = must(document.getElementById("btnDownloadSvg") as HTMLButtonElement | null, "btnDownloadSvg");
+
+  const svgPreviewImgEl = must(document.getElementById("svgPreviewImg") as HTMLImageElement | null, "svgPreviewImg");
+  const svgPreviewTextEl = must(document.getElementById("svgPreviewText") as HTMLPreElement | null, "svgPreviewText");
+  const pathSmoothItersEl = must(
+    document.getElementById("pathSmoothIters") as HTMLInputElement | null,
+    "pathSmoothIters"
+  );
+
   // -----------------------------
   // Colors tab
   // -----------------------------
-  
+
   const colorsCanvasEl = must(document.getElementById("colorsCanvas") as HTMLCanvasElement | null, "colorsCanvas");
 
   const paletteEl = must(document.getElementById("palette") as HTMLDivElement | null, "palette");
@@ -161,13 +189,30 @@ export function getDom() {
     dropZoneEl,
     fileInputEl,
     btnProcessEl,
+    btnCleanEl,
     btnDownloadEl,
     contourStatusEl,
     contourSpinnerEl,
     srcCanvasEl,
     outCanvasEl,
+    clean1CanvasEl,
+    clean2CanvasEl,
     edgeThresholdEl,
     invertOutputEl,
+
+    cleanMinAreaEl,
+    cleanRadiusEl,
+    cleanBinaryThresholdEl,
+    cleanQualityBadgeEl,
+    cleanQualityFillEl,
+    cleanQualityTextEl,
+    btnVectorizeEl,
+    btnDownloadSvgEl,
+    svgPreviewImgEl,
+    svgPreviewTextEl,
+
+    contourScaleEl,
+    pathSmoothItersEl,
 
     // Colors 
     colorsCanvasEl,

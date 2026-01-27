@@ -5,6 +5,8 @@ import { storageGet, storageSet, storageRemove } from "./platform/storage";
 export type DebugTraceScope =
   | "background"
   | "panel"
+  | "contour"
+  | "colors"
   | "settings"
   | "logs"
   | "demo"

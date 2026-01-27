@@ -1,4 +1,12 @@
 // src/panel/app/state.ts
+/*
+Why radius should NOT live in state
+state is for derived artifacts and workflow flags (hasImage/hasOutput). Parameters belong to:
+DOM inputs (current approach), or later
+a ContourSettings object you persist.
+If you store radius in state, you’ll create two sources of truth (DOM + state), and they will drift.
+*/
+
 import type { Dom } from "./dom";
 
 let busyCount = 0;
@@ -51,12 +59,20 @@ function applyBusy(dom: Dom, next: boolean): void {
   // -----------------------------
   dom.fileInputEl.disabled = next;
   dom.btnProcessEl.disabled = next;
+  dom.btnCleanEl.disabled = next;
   dom.btnDownloadEl.disabled = next;
   dom.edgeThresholdEl.disabled = next;
   dom.invertOutputEl.disabled = next;
+  dom.cleanMinAreaEl.disabled = next;
+  dom.cleanRadiusEl.disabled = next;
+  dom.cleanBinaryThresholdEl.disabled = next;
+  dom.btnVectorizeEl.disabled = next;
+  dom.btnDownloadSvgEl.disabled = next;
+  dom.contourScaleEl.disabled = next;
+
+  
 
   // Drop zone is not a form control; optional CSS overlay uses .is-busy on root.
- 
 
   // -----------------------------
   // Settings (dev config)
@@ -100,6 +116,6 @@ function applyBusy(dom: Dom, next: boolean): void {
     (el as HTMLButtonElement).disabled = next;
   }
   dom.colorsCanvasEl.style.pointerEvents = next ? "none" : "auto";
-
-
 }
+
+

@@ -1,13 +1,13 @@
 # Logging, Tracing, and History
 
-This document defines the **logging and tracing architecture** used by  
+This document defines the **logging and tracing architecture** used by
 **BeeContour — Extract the main outline**.
 
 It is intended as:
 
-- a reference for contributors
-- a sanity check during code reviews
-- a rule set to prevent logging misuse
+* a reference for contributors
+* a sanity check during code reviews
+* a rule set to prevent logging misuse
 
 ---
 
@@ -15,25 +15,25 @@ It is intended as:
 
 The project uses **three distinct logging channels**.
 
-Each channel has a **single responsibility** and must **never be mixed** with another.
+Each channel has a **single responsibility** and must **never be mixed** with another, except where explicitly stated.
 
 ---
 
 ## Logging & Tracing Architecture
 
-| Type                     | Audience           | Persistence | Controlled by        | Functions / Location                              | What it is for                                                                 | What it must NOT be used for                         |
-|--------------------------|--------------------|-------------|----------------------|---------------------------------------------------|---------------------------------------------------------------------------------|------------------------------------------------------|
-| **Console Log / Trace**  | Developer          | ❌ No       | `traceConsole` flag  | `logTrace()`<br>`logInfo()`<br>`logWarn()`<br>`logError()`<br>**File:** `src/background/util/log.ts` | Execution flow, parameters, dev diagnostics                                                | User history, auditing, persisted debugging          |
-| **Debug Trace**          | Developer (deep)   | ✅ Yes      | Debug trace toggle   | `debugTrace.append()`<br>`debugTrace.isEnabled()`<br>**File:** `src/shared/debugTrace.ts`          | HTTP inspection, payload structure, first-item previews, exportable diagnostics | User-visible actions, business events                |
-| **Action / Audit Log**   | User               | ✅ Yes      | Feature logic        | `actionLog.append()`<br>`actionLog.list()`<br>`actionLog.clear()`<br>**File:** `src/shared/actionLog.ts` | What the extension did, completed actions, visible errors                              | Console debugging, internal dev notes                |
+| Type                    | Audience  | Persistence | Controlled by       | Functions / Location                                                                                                   | What it is for                                                                                                                | What it must NOT be used for            |
+| ----------------------- | --------- | ----------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| **Console Log / Trace** | Developer | ❌ No<br>❌ No<br>❌ No<br>❌ No<br>✅ Yes<br><br><br>        | `traceConsole` flag | `logTrace()`<br>`logInfo()`<br>`logWarn()`<br>`logError()`<br>`traceScope()`<br>**File:** `src/background/util/log.ts` | Development-time flow, parameters, diagnostics. `traceScope` can optionally mirror diagnostics into Debug Trace when enabled. | User history, auditing, business events |
+| **Debug Trace**         | Developer | ✅ Yes       | Debug trace toggle  | `debugTrace.append()`<br>`debugTrace.isEnabled()`<br>**File:** `src/shared/debugTrace.ts`                              | Deep inspection, exportable diagnostics, structured traces                                                                    | User-visible actions, business events   |
+| **Action / Audit Log**  | User      | ✅ Yes       | Feature logic       | `actionLog.append()`<br>`actionLog.list()`<br>`actionLog.clear()`<br>**File:** `src/shared/actionLog.ts`               | What the extension did, completed actions, visible errors                                                                     | Console debugging, internal dev notes   |
 
 ---
 
 ## One-sentence rule for each
 
-- **Console logging (`log*`)** → *“Help me while coding.”*
-- **Debug trace (`debugTrace`)** → *“Let me inspect what really happened.”*
-- **Action log (`actionLog`)** → *“Tell the user what the extension did.”*
+* **Console logging (`log*`, `traceScope`)** → *“Help me while coding; optionally persist diagnostics if Debug is enabled.”*
+* **Debug trace (`debugTrace`)** → *“Let me inspect what really happened.”*
+* **Action log (`actionLog`)** → *“Tell the user what the extension did.”*
 
 ---
 
@@ -41,25 +41,30 @@ Each channel has a **single responsibility** and must **never be mixed** with an
 
 ### API layer
 
-- Example: `createProjectApi`
-- No logging
-- No Chrome API calls
-- Returns structured results only
+* Example: `loadImageApi`
+* No logging
+* No Chrome API calls
+* Returns structured results only
+
+---
 
 ### Executor layer
 
-- Orchestrates execution phases
-- Sends progress and completion signals
-- Uses:
-  - `logTrace`, `logWarn`, `logError` (console)
-  - `actionLog.append` (for completed actions)
+* Orchestrates execution phases
+* Sends progress and completion signals
+* Uses:
+
+  * `logTrace`, `logWarn`, `logError`, `traceScope` (developer diagnostics)
+  * `actionLog.append` (completed actions only)
+
+---
 
 ### Index / entry layer
 
-- Calls executors
-- No HTTP details
-- No API parsing
-- No business logic logging
+* Calls executors
+* No HTTP details
+* No API parsing
+* No business logic logging
 
 ---
 
@@ -67,69 +72,57 @@ Each channel has a **single responsibility** and must **never be mixed** with an
 
 ### 1) Console diagnostics (developer-facing, volatile)
 
-- Purpose: development-time diagnostics
-- Visibility: DevTools console only
-- Controlled by: `traceConsole` flag
-- Persistence: none (lost on reload)
+* Purpose: development-time diagnostics
+* Visibility: DevTools console only
+* Controlled by: `traceConsole` flag
+* Persistence: none (lost on reload)
+
+Used for:
+
+* execution flow
+* temporary debugging
+* development noise
 
 ---
 
 ### 2) Debug trace (developer-facing, persisted)
 
-- Purpose: deep inspection and exportable diagnostics
-- Visibility: Logs tab → Debug trace
-- Controlled by: debug trace toggle
-- Persistence: `chrome.storage` (JSON)
+* Purpose: deep inspection and exportable diagnostics
+* Visibility: Logs tab → **Debug trace**
+* Controlled by: Debug enabled toggle
+* Persistence: `chrome.storage` (JSON)
 
-Use this for:
+Used for:
 
-- HTTP calls and endpoints
-- payload and response structure
-- previewing fetched data
+* diagnostics that may be exported
+* summaries of internal state
+* payload / structure previews
+* diagnostics emitted via `traceScope`
 
-**Never use this for user-visible actions.**
+Notes:
 
-Example:
+* `debugTrace.append()` is a **no-op when Debug is disabled**
+* Turning Debug OFF wipes all stored debug traces
 
-```ts
-await debugTrace.append([
-  {
-    scope: "background",
-    kind: "debug",
-    message: "HTTP POST /example/endpoint",
-    meta: { /* payload preview */ }
-  }
-]);
-````
+Direct calls to `debugTrace.append()` are allowed, but should be **rare** and reserved for explicit, high-value diagnostic boundaries.
 
 ---
 
 ### 3) Action / audit log (user-facing, persisted)
 
 * Purpose: user-visible history
-* Visibility: Logs tab (actions)
+* Visibility: Logs tab → **Audit log**
 * Controlled by: feature logic
 * Persistence: `chrome.storage`
 
-Use this for:
+Used for:
 
-* create / delete / move actions
 * completed operations
-* user-visible errors
+* user-visible success / failure
+* irreversible actions
 
 This is **not debugging**.
 It is **history**.
-
-Example:
-
-```ts
-actionLog.append({
-  kind: "info",
-  scope: "projects",
-  message: "Created project",
-  ok: true
-});
-```
 
 ---
 
@@ -139,18 +132,46 @@ actionLog.append({
 
 **File:** `src/background/util/log.ts`
 
-| Function     | Behavior               |
-| ------------ | ---------------------- |
-| `logTrace()` | Logged only if enabled |
-| `logInfo()`  | Logged only if enabled |
-| `logWarn()`  | Always logged          |
-| `logError()` | Always logged          |
+| Function     | Behavior                                 |
+| ------------ | ---------------------------------------- |
+| `logTrace()` | Logged only if `traceConsole` is enabled |
+| `logInfo()`  | Logged only if `traceConsole` is enabled |
+| `logWarn()`  | Always logged                            |
+| `logError()` | Always logged                            |
 
-**These functions never write to storage.**
+These functions **never write to storage**.
 
 Mental model:
 
 > `log*` = console only
+
+---
+
+### A.1) Trace bridge helper (`traceScope`)
+
+**File:** `src/background/util/log.ts`
+
+`traceScope(message, meta?)` is a **convenience helper** that combines:
+
+* console trace behavior (same as `logTrace`)
+* optional persistence into **Debug Trace** when Debug is enabled
+
+Behavior:
+
+* Console output → only if `traceConsole` is enabled
+* Debug trace storage → only if Debug enabled is ON
+* No persistence when Debug is OFF
+
+Rules:
+
+* Use `traceScope` for diagnostics you may want to export
+* Keep `meta` small (counts, flags, summaries)
+* Never pass large buffers or raw image data
+* Never use for user-visible actions
+
+Mental model:
+
+> `traceScope` = trace now, persist only if requested
 
 ---
 
@@ -181,6 +202,7 @@ Mental model:
 * ❌ Do not use `debugTrace` for user actions
 * ❌ Do not use console logging for business logic
 * ❌ Do not introduce new ad-hoc logging helpers
+  *(exception: the canonical `traceScope` helper)*
 
 ---
 
@@ -200,43 +222,40 @@ They are ambiguous and must not be used.
 
 ## Correct usage example
 
-### Example: Create action
-
 ```ts
-logTrace("CREATE start", { name });
+traceScope("PROCESS start", { width, height });
 
-const result = await executeCreate(...);
+const result = await processImage(...);
 
 if (result.ok) {
   actionLog.append({
     kind: "info",
-    scope: "projects",
-    message: `Created "${result.title}"`,
+    scope: "contour",
+    message: "Image processed successfully",
     ok: true
   });
 } else {
   actionLog.append({
     kind: "error",
-    scope: "projects",
-    message: "Create failed",
+    scope: "contour",
+    message: "Image processing failed",
     ok: false,
     error: result.error
   });
 }
 ```
 
-Console ≠ debug trace ≠ audit log.
+Console ≠ Debug trace ≠ Audit log.
 
 ---
 
 ## Bottom line
 
-The architecture is simple and intentional.
+The architecture is simple and intentional:
 
-* **Console logs** are for developers
-* **Debug trace** is for deep inspection
-* **Action log** is for users
+* **Console logs** are for developers while coding
+* **Debug trace** is for exportable diagnostics
+* **Action log** is for user-visible history
+* **`traceScope`** bridges console trace and debug trace *only when explicitly enabled*
 
 If these rules are followed, logging stays readable, useful, and maintainable.
-
- 

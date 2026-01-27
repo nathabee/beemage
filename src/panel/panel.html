@@ -32,8 +32,8 @@
       </div>
 
       <!-- =========================
-           CONTOUR VIEW
-           ========================= -->
+     CONTOUR VIEW
+     ========================= -->
       <section id="viewContour" class="view is-active" role="tabpanel" aria-labelledby="tabContour">
         <p class="muted">
           Drop an image, preview it, run contour extraction, and download the result.
@@ -51,13 +51,16 @@
 
         <div class="row" style="align-items:center;">
           <button id="btnProcess" type="button" disabled>Process</button>
+          <button id="btnClean" type="button" disabled>Clean &amp; Smooth</button>
           <button id="btnDownload" type="button" disabled>Download PNG</button>
+          <button id="btnVectorize" type="button" disabled>Vectorize (SVG)</button>
+          <button id="btnDownloadSvg" type="button" disabled>Download SVG</button>
 
           <span id="contourSpinner" class="spinner is-hidden" aria-hidden="true"></span>
           <span id="contourStatus" class="status">No image loaded</span>
         </div>
 
-        <div class="grid2">
+        <div class="grid4">
           <div class="card">
             <div class="cardTitle">Input</div>
             <canvas id="srcCanvas" class="canvas" width="640" height="360" aria-label="Input preview"></canvas>
@@ -67,10 +70,43 @@
             <div class="cardTitle">Output</div>
             <canvas id="outCanvas" class="canvas" width="640" height="360" aria-label="Contour output"></canvas>
           </div>
+
+          <div class="card">
+            <div class="cardTitle">Clean 1 (Repaired)</div>
+            <canvas id="clean1Canvas" class="canvas" width="640" height="360" aria-label="Clean stage 1"></canvas>
+          </div>
+
+          <div class="card">
+            <div class="cardTitle">Clean 2 (Smoothed)</div>
+            <canvas id="clean2Canvas" class="canvas" width="640" height="360" aria-label="Clean stage 2"></canvas>
+          </div>
         </div>
+
+        <details class="searchBox" id="svgBox" role="group">
+          <summary>SVG Preview</summary>
+
+          <div class="row" style="align-items:flex-start;">
+            <div class="card" style="flex:1; min-width: 280px;">
+              <div class="cardTitle">Rendered</div>
+              <img id="svgPreviewImg" alt="SVG preview"
+                style="width:100%; height:auto; border-radius:10px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.03);" />
+            </div>
+
+            <div class="card" style="flex:1; min-width: 280px;">
+              <div class="cardTitle">SVG Markup</div>
+              <pre id="svgPreviewText" class="report" aria-label="SVG markup preview"></pre>
+            </div>
+          </div>
+        </details>
+
 
         <details class="searchBox" id="contourOptionsBox" role="group" open>
           <summary>Options</summary>
+
+          <label class="fieldInline">
+            <span>Processing scale</span>
+            <input id="contourScale" type="number" inputmode="numeric" min="25" max="100" step="5" value="100" />
+          </label>
 
           <div class="row">
             <label class="fieldInline">
@@ -83,8 +119,53 @@
               White background
             </label>
           </div>
+
+
+
+
+
+          <div class="row" style="margin-top:10px;">
+            <label class="fieldInline"
+              title="Remove very small isolated fragments (connected components smaller than this size, in pixels).">
+              <span>Min fragment size</span>
+              <input id="cleanMinArea" type="number" inputmode="numeric" min="0" max="500" step="1" value="12" />
+            </label>
+
+            <label class="fieldInline"
+              title="Strength of gap repair. Higher values close larger breaks but may thicken strokes.">
+              <span>Repair strength</span>
+              <input id="cleanRadius" type="number" inputmode="numeric" min="1" max="3" step="1" value="1" />
+            </label>
+
+            <label class="fieldInline" title="Threshold used to binarize the contour before cleaning.">
+              <span>Binary threshold</span>
+              <input id="cleanBinaryThreshold" type="number" inputmode="numeric" min="1" max="254" step="1"
+                value="128" />
+            </label>
+
+            <label class="fieldInline" title="Number of Chaikin smoothing iterations applied to SVG paths.
+0 = disabled. Higher values produce smoother curves but increase point count.">
+              <span>Path smoothing</span>
+              <input id="pathSmoothIters" type="number" inputmode="numeric" min="0" max="4" step="1" value="2" />
+            </label>
+
+
+          </div>
+
+          <div class="row" style="align-items:center; margin-top:10px;">
+            <span class="muted" style="min-width:90px;">Quality</span>
+            <span id="cleanQualityBadge" class="qBadge qBadge--off">—</span>
+
+            <div class="qBar" aria-label="Clean quality">
+              <div id="cleanQualityFill" class="qBarFill" style="width:0%;"></div>
+            </div>
+
+            <span id="cleanQualityText" class="status"></span>
+          </div>
+
         </details>
       </section>
+
 
       <!-- =========================
      COLORS VIEW
@@ -245,7 +326,7 @@
       </section>
 
       <!-- =========================
-           LOGS VIEW
+           LOGS VIEW 
            ========================= -->
       <section id="viewLogs" class="view" role="tabpanel" aria-labelledby="tabLogs" hidden>
 

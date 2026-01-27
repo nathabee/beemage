@@ -1,10 +1,10 @@
-// src/background/util/log.ts
+// src/panel/app/log.ts
 
 
 import { createLogger } from "../../shared/logger";
-import { getDevConfigSnapshot } from "./devConfig";
+import { getDevConfigSnapshot } from "../../shared/devConfigStore";
 
 export const { logTrace, logWarn, logError, traceScope } = createLogger({
-  scope: "background",
+  scope: "panel",
   traceOn: () => !!getDevConfigSnapshot().traceConsole,
 });

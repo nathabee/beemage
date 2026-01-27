@@ -8,6 +8,7 @@ import type { createBus } from "../../app/bus";
 import { clampInt } from "../../app/format";
 import { getBusy } from "../../app/state";
 import { storageGet, storageSet } from "../../../shared/platform/storage";
+import { APP_VERSION } from "../../../shared/version";
 
 import {
   ensureDevConfigLoaded,
@@ -21,20 +22,32 @@ import {
 import { createSettingsModel, type SettingsDevConfig } from "./model";
 import { createSettingsView } from "./view";
 
+// Console diagnostics only (no debug trace append from settings)
+import { logTrace, logWarn, logError } from "../../app/log";
+
+
+
 type Bus = ReturnType<typeof createBus>;
- 
+
 const SHOW_DEV_TOOLS_KEY = "template.settings.showDevTools"; // boolean in storage
+
+ 
+
 
 function getManifestVersion(): string {
   try {
     const rt: any = (globalThis as any)?.chrome?.runtime;
     const m = rt?.getManifest?.();
     const v = typeof m?.version === "string" ? m.version : "";
+    logTrace("Settings: getManifestVersion manifest found version is ", { v });
     if (v) return v;
   } catch {
     // ignore
   }
-  return "";
+
+  // Demo (no chrome.runtime.getManifest) and any other fallback
+  logTrace("Settings: getManifestVersion fallback", { APP_VERSION });
+  return APP_VERSION || "";
 }
 
 function toSettingsDevConfig(s: StoredDevConfig): SettingsDevConfig {
@@ -72,6 +85,9 @@ async function setDebugEnabled(enabled: boolean): Promise<{ ok: boolean; error?:
 export function createSettingsTab(dom: Dom, bus: Bus) {
   const model = createSettingsModel();
   const view = createSettingsView(dom);
+ 
+
+
 
   async function loadShowDevToolsPref(): Promise<boolean> {
     const res = await storageGet([SHOW_DEV_TOOLS_KEY]).catch(() => ({} as any));
@@ -95,12 +111,7 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
     const showDevTools = await loadShowDevToolsPref();
     applyDevToolsVisibility(showDevTools);
 
-    void debugTrace.append({
-      scope: "settings",
-      kind: "debug",
-      message: "boot:applyDevToolsVisibility",
-      meta: { showDevTools },
-    });
+    logTrace("Settings: boot applyDevToolsVisibility", { showDevTools });
   }
 
   async function loadAll() {
@@ -116,9 +127,17 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
     model.setDev(toSettingsDevConfig(devSnap));
     view.setDevConfig(model.dev);
 
-    // Debug enabled state
+    // Debug enabled state (isEnabled() is async)
     const dbgAny = debugTrace as any;
-    const enabled = typeof dbgAny.isEnabled === "function" ? !!dbgAny.isEnabled() : !!dbgAny.enabled;
+    let enabled = false;
+    try {
+      if (typeof dbgAny.isEnabled === "function") enabled = !!(await dbgAny.isEnabled());
+      else enabled = !!dbgAny.enabled;
+    } catch (e) {
+      logWarn("Settings: failed to read debug enabled state", {
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
 
     model.setDebugEnabled(enabled);
     view.setDebugEnabledChecked(enabled);
@@ -128,6 +147,8 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
 
     view.setGeneralStatus("");
     view.setDevStatus("");
+
+    logTrace("Settings: loaded", { showDevTools, enabled, dev: model.dev });
   }
 
   async function onToggleShowDevTools() {
@@ -144,12 +165,7 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
       meta: { showDevTools: checked },
     });
 
-    void debugTrace.append({
-      scope: "settings",
-      kind: "debug",
-      message: "ui:toggle showDevTools",
-      meta: { showDevTools: checked },
-    });
+    logTrace("Settings: ui toggle showDevTools", { showDevTools: checked });
 
     view.setGeneralStatus(checked ? "Developer tools enabled." : "Developer tools disabled.");
     setTimeout(() => view.setGeneralStatus(""), 1200);
@@ -160,7 +176,17 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
 
     view.setDevStatus("Saving…");
 
-    await setDevConfig(next);
+    try {
+      await setDevConfig(next);
+    } catch (e) {
+      logError("Settings: failed to save dev config", {
+        error: e instanceof Error ? e.message : String(e),
+        next,
+      });
+      view.setDevStatus("Save failed.");
+      setTimeout(() => view.setDevStatus(""), 1200);
+      return;
+    }
 
     model.setDev(toSettingsDevConfig(next));
     view.setDevConfig(model.dev);
@@ -173,12 +199,7 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
       meta: next,
     });
 
-    void debugTrace.append({
-      scope: "settings",
-      kind: "debug",
-      message: "devConfig:updated",
-      meta: next,
-    });
+    logTrace("Settings: devConfig updated", next);
 
     view.setDevStatus("Saved.");
     setTimeout(() => view.setDevStatus(""), 1200);
@@ -187,13 +208,22 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
   async function onResetDevDefaults() {
     view.setDevStatus("Resetting…");
 
-    // 1) Reset stored dev config
-    await resetDevConfigDefaults();
-    await ensureDevConfigLoaded().catch(() => null);
+    try {
+      // 1) Reset stored dev config
+      await resetDevConfigDefaults();
+      await ensureDevConfigLoaded().catch(() => null);
 
-    const snap = getDevConfigSnapshot();
-    model.setDev(toSettingsDevConfig(snap));
-    view.setDevConfig(model.dev);
+      const snap = getDevConfigSnapshot();
+      model.setDev(toSettingsDevConfig(snap));
+      view.setDevConfig(model.dev);
+    } catch (e) {
+      logError("Settings: failed to reset dev config defaults", {
+        error: e instanceof Error ? e.message : String(e),
+      });
+      view.setDevStatus("Reset failed.");
+      setTimeout(() => view.setDevStatus(""), 1200);
+      return;
+    }
 
     // 2) Reset debugTrace enabled (separate store!)
     const dbgRes = await setDebugEnabled(false);
@@ -201,6 +231,8 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
       model.setDebugEnabled(false);
       view.setDebugEnabledChecked(false);
     } else {
+      logWarn("Settings: failed to reset debug enabled state", { error: dbgRes.error || "unknown error" });
+
       void actionLog.append({
         kind: "error",
         scope: "settings",
@@ -218,6 +250,8 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
       meta: { ...DEV_CONFIG_DEFAULTS, debugEnabled: false },
     });
 
+    logTrace("Settings: reset defaults", { ...DEV_CONFIG_DEFAULTS, debugEnabled: false });
+
     view.setDevStatus("Reset.");
     setTimeout(() => view.setDevStatus(""), 1200);
   }
@@ -232,6 +266,11 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
       dom.logsCbDebugEl.checked = !checked;
       view.setDevStatus(`Save failed: ${res.error || "unknown error"}`);
 
+      logError("Settings: failed to change debug enabled state", {
+        error: res.error || "unknown error",
+        enabled: checked,
+      });
+
       void actionLog.append({
         kind: "error",
         scope: "settings",
@@ -240,6 +279,7 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
         error: res.error || "unknown error",
         meta: { enabled: checked },
       });
+
       return;
     }
 
@@ -253,12 +293,7 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
       meta: { enabled: checked },
     });
 
-    void debugTrace.append({
-      scope: "settings",
-      kind: "debug",
-      message: "debugTrace:enabledChanged",
-      meta: { enabled: checked },
-    });
+    logTrace("Settings: debug enabled changed", { enabled: checked });
 
     view.setDevStatus("Saved.");
     setTimeout(() => view.setDevStatus(""), 1200);
@@ -267,7 +302,6 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
   const off = bus.on(() => {
     // template has no background events
   });
-
 
   function bind() {
     dom.cfgShowDevToolsEl.addEventListener("change", () => {
@@ -300,25 +334,32 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
       void onResetDevDefaults();
     });
 
-    // Debug enabled toggle (lives in Settings in the minimal template)
+    // Debug enabled toggle
     dom.logsCbDebugEl.addEventListener("change", () => {
       if (getBusy()) return;
       void onToggleDebugEnabled();
     });
 
-    // Apply Logs visibility at startup (even if Settings tab isn’t mounted yet)
-    void initDevToolsVisibility().catch(() => null);
+    // Apply Logs visibility at startup
+    void initDevToolsVisibility().catch((e) => {
+      logWarn("Settings: initDevToolsVisibility failed", { error: e instanceof Error ? e.message : String(e) });
+    });
   }
 
   return {
     id: "settings" as const,
     refresh() {
-      void loadAll().catch(() => null);
+      void loadAll().catch((e) => {
+        logError("Settings: refresh failed", { error: e instanceof Error ? e.message : String(e) });
+      });
     },
-    mount() {
-      void loadAll().catch(() => null);
+    mount() { 
+
+      void loadAll().catch((e) => {
+        logError("Settings: mount failed", { error: e instanceof Error ? e.message : String(e) });
+      });
     },
-    unmount() { },
+    unmount() {},
     bind,
     dispose() {
       off();
