@@ -57,13 +57,18 @@ echo
 echo "== 3) Publish demo to GitHub Pages (docs/demo) =="
 DEMO_DIST="demo/dist"
 DOCS_DEMO="docs/demo"
+DOCS="docs"
 [[ -d "$DEMO_DIST" ]] || die "Missing $DEMO_DIST (demo build failed?)"
 
 rm -rf "$DOCS_DEMO"
 mkdir -p "$DOCS_DEMO"
 cp -a "$DEMO_DIST"/. "$DOCS_DEMO"/
+# assets must be in /docs not in /docs/demo
+cp -a "${DOCS_DEMO}/assets" "$DOCS"
 echo "Copied demo build to $DOCS_DEMO"
 
+
+exit
 # 4) Commit + push docs demo (only if changed)
 echo
 echo "== 4) Commit + push docs demo =="
