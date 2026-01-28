@@ -80,7 +80,7 @@ rsync -a --delete --checksum \
 echo "Demo published to $DOCS_DEMO (diff-aware)"
 
 
-exit
+
 # 4) Commit + push docs demo (only if changed)
 echo
 echo "== 4) Commit + push docs demo =="
