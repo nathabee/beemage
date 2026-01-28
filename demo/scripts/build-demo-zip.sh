@@ -17,7 +17,7 @@ ver="$(tr -d ' \t\r\n' < VERSION)"
 [[ -d "$DEMO_DIR/dist/assets" ]] || { echo "Missing demo/dist/assets/"; exit 1; }
 
 # 2b) Copy OpenCV runtime assets into demo dist (optional, but required for OpenCV engine)
-OPENCV_SRC="${ROOT_DIR}/assets/opencv"
+OPENCV_SRC="${DEMO_DIR}/public/assets/opencv"
 OPENCV_DST="${DEMO_DIR}/dist/assets/opencv"
 
 if [[ -d "$OPENCV_SRC" ]]; then
@@ -56,7 +56,6 @@ rm -f "$ZIP_PATH"
   cd "$DEMO_DIR/dist"
   zip -qr "../../${ZIP_PATH}" . \
     -x "*.map" \
-    -x "assets/opencv/.keep" \
     -x "assets/opencv/get-opencv.sh"
 )
 

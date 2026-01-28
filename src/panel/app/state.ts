@@ -21,7 +21,8 @@ export function setBusy(dom: Dom, next: boolean): void {
     beginBusy(dom);
     return;
   }
-  busyCount = 0;
+  busyCount = 0; 
+
   applyBusy(dom, false);
 }
  
@@ -100,14 +101,6 @@ function applyBusy(dom: Dom, next: boolean): void {
   dom.btnDownloadSvgEl.disabled = next;
   dom.contourScaleEl.disabled = next;
 
-  
-
-  // Drop zone is not a form control; optional CSS overlay uses .is-busy on root.
-// -----------------------------
-  // Segmentation tab controls
-  // -----------------------------
-  dom.btnSegLoadCv.disabled = next;
-  
   // -----------------------------
   // Settings (dev config)
   // -----------------------------
@@ -119,6 +112,10 @@ function applyBusy(dom: Dom, next: boolean): void {
 
   // Debug enabled toggle lives in Settings
   dom.logsCbDebugEl.disabled = next;
+
+  // Settings (engine probe) 
+  dom.cfgUseOpenCvEl.disabled = next;
+
 
   // -----------------------------
   // Logs tab controls
@@ -135,7 +132,9 @@ function applyBusy(dom: Dom, next: boolean): void {
   dom.btnDebugExport.disabled = next;
   dom.btnDebugClear.disabled = next;
 
+  // -----------------------------
   // Colors tab (region fill)
+  // -----------------------------
   dom.btnColorsApplyEl.disabled = next;
   dom.btnColorsCancelEl.disabled = next;
   dom.btnColorsResetEl.disabled = next;
@@ -151,5 +150,6 @@ function applyBusy(dom: Dom, next: boolean): void {
   }
   dom.colorsCanvasEl.style.pointerEvents = next ? "none" : "auto";
 }
+
 
 

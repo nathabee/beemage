@@ -61,6 +61,10 @@ export function createSettingsView(dom: Dom) {
     dom.btnCfgResetDefaults.disabled = disabled;
 
     dom.logsCbDebugEl.disabled = disabled;
+    dom.cfgUseOpenCvEl.disabled = disabled;
+
+
+    // Engine probe lives in Settings 
   }
 
   return {

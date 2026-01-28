@@ -71,12 +71,8 @@ export function getDom() {
   );
 
   // -----------------------------
-  // Segmentation tab (probe)
-  // -----------------------------
-  const btnSegLoadCv = must(document.getElementById("btnSegLoadCv") as HTMLButtonElement | null, "btnSegLoadCv");
-  const segSpinner = must(document.getElementById("segSpinner") as HTMLSpanElement | null, "segSpinner");
-  const segStatus = must(document.getElementById("segStatus") as HTMLSpanElement | null, "segStatus");
-  const segCvReport = must(document.getElementById("segCvReport") as HTMLPreElement | null, "segCvReport");
+  // Segmentation tab 
+  // ----------------------------- 
 
 
   // -----------------------------
@@ -151,6 +147,32 @@ export function getDom() {
     "btnCfgResetDefaults"
   );
   const cfgStatusEl = must(document.getElementById("cfgStatus") as HTMLElement | null, "cfgStatus");
+
+   // Engine (OpenCV probe) — now in Settings
+ 
+  const cfgOpenCvSpinner = must(
+    document.getElementById("cfgOpenCvSpinner") as HTMLSpanElement | null,
+    "cfgOpenCvSpinner",
+  );
+  const cfgOpenCvStatus = must(
+    document.getElementById("cfgOpenCvStatus") as HTMLSpanElement | null,
+    "cfgOpenCvStatus",
+  );
+  const cfgOpenCvReport = must(
+    document.getElementById("cfgOpenCvReport") as HTMLPreElement | null,
+    "cfgOpenCvReport",
+  );
+
+  const settingsEngineBoxEl = must(
+  document.getElementById("settingsEngineBox") as HTMLDetailsElement | null,
+  "settingsEngineBox",
+);
+
+const cfgUseOpenCvEl = must(
+  document.getElementById("cfgUseOpenCv") as HTMLInputElement | null,
+  "cfgUseOpenCv",
+);
+
 
   // About
   const settingsVersionEl = must(document.getElementById("settingsVersion") as HTMLElement | null, "settingsVersion");
@@ -229,11 +251,7 @@ export function getDom() {
     contourScaleEl,
     pathSmoothItersEl,
 
-    // Segmentation (probe)
-    btnSegLoadCv,
-    segSpinner,
-    segStatus,
-    segCvReport,
+    // Segmentation  
 
 
     // Colors 
@@ -261,6 +279,14 @@ export function getDom() {
     cfgStatusEl,
     settingsVersionEl,
     settingsGitHubLinkEl,
+
+    // Settings engine (OpenCV probe) 
+    cfgOpenCvSpinner,
+    cfgOpenCvStatus,
+    cfgOpenCvReport,
+    settingsEngineBoxEl,
+    cfgUseOpenCvEl,
+
 
     // Logs (audit)
     logsLimitEl,

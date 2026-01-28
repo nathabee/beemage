@@ -3,7 +3,7 @@
 **BeeContour extracts clean contour outlines from images directly in your browser.**
 It works best with **high-contrast subjects** such as drawings, silhouettes, winter trees, scanned artwork, or simple photos with clear edges.
 
-BeeContour runs **entirely client-side** and is available both as:
+BeeContour runs **entirely client-side** and is available as:
 
 * a **standalone web application**, and
 * a **Chrome Extension (Manifest V3)**.
@@ -45,16 +45,16 @@ BeeContour deliberately avoids “one-click magic” in favor of **understanding
 ---
 ## Native vs OpenCV: a comparative playground
 
-BeeContour supports two implementation paths for image-processing steps:
+BeeContour currently supports two implementation paths for image-processing steps **in the standalone web demo**:
 
-### Native (self-implemented) pipeline
+### Native (self-implemented) pipeline (extension + web)
 
 * Written in TypeScript
 * Small, transparent, and easy to inspect
 * Designed for learning, experimentation, and fine control
 * Makes algorithmic choices explicit
 
-### OpenCV (WebAssembly) pipeline (optional)
+### OpenCV (WebAssembly) pipeline (web demo only)
 
 * Uses OpenCV compiled to WebAssembly
 * Runs entirely in the browser once loaded
@@ -67,21 +67,17 @@ The goal is not benchmarking. The goal is comparison and understanding:
 * Where do results diverge?
 * What trade-offs exist between simplicity, robustness, and complexity?
 
----
+## Optional OpenCV support (web demo only)
 
-## Optional OpenCV support
+OpenCV support is optional and currently available **only in the standalone web demo**.
 
-OpenCV support in BeeContour is optional.
+The Chrome Extension (Manifest V3) does **not** include OpenCV at the moment because MV3 Content Security Policy blocks `unsafe-eval`, and the OpenCV build used here relies on it.
 
 * BeeContour works fully without OpenCV
-* When enabled, OpenCV:
-  * is loaded locally as part of the app/extension assets (no CDN)
+* When enabled in the demo, OpenCV:
+  * is bundled locally with the demo (no CDN)
   * runs client-side via WebAssembly
   * increases bundle size and memory usage compared to native mode
-
-OpenCV is integrated to compare approaches, not to hide complexity.
-
- 
 
 Details on enabling and packaging OpenCV are documented in:
 

@@ -81,10 +81,13 @@ else
 fi
 
 
-
-# 5–6) Optional: Publish GitHub release + upload artifacts
 echo
-echo "== 5–6) GitHub Release (optional) =="
+echo "== 5) Publish GitHub release + upload extension zip =="
+./scripts/publish-release-zip.sh
+
+# 6) Optional: Publish GitHub release + upload artifacts
+echo
+echo "== 6) GitHub Release (optional) =="
 
 echo "OpenCV assets can make release artifacts large."
 echo "Recommendation: publish releases only for milestones / major versions, or when you have users."
@@ -101,18 +104,17 @@ fi
 
 case "${release_choice,,}" in
   y|yes)
-    echo
-    echo "== 5) Publish GitHub release + upload extension zip =="
-    ./scripts/publish-release-zip.sh
 
     echo
     echo "== 6) Upload demo zip to same release =="
     ./demo/scripts/publish-demo-zip.sh
 
-    echo
-    echo "Release published for $tag"
     ;;
   *)
-    echo "Skipping GitHub Release upload (default)."
+    echo "Skipping GitHub Release demo upload (default)."
     ;;
 esac
+
+
+echo
+echo "Release published for $tag"

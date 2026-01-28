@@ -36,23 +36,7 @@ function copyDir(srcDir, dstDir, opts = {}) {
   }
 }
 
-function warnIfMissingOpenCvAssets() {
-  const opencvDir = path.join(root, "assets", "opencv");
-  if (!fs.existsSync(opencvDir)) {
-    console.warn("[build] Note: assets/opencv/ not found (OpenCV not shipped). Segmentation OpenCV loader will 404.");
-    return;
-  }
-
-  const files = fs.readdirSync(opencvDir);
-  const hasJs = files.some((f) => f.toLowerCase().endsWith(".js"));
-  const hasWasm = files.some((f) => f.toLowerCase().endsWith(".wasm"));
-
-  if (!hasJs || !hasWasm) {
-    console.warn(
-      "[build] Note: assets/opencv/ exists but seems incomplete. Expected opencv.js + *.wasm. Loader will likely fail."
-    );
-  }
-}
+ 
 
 function copyStatic({ isDev }) {
   // manifest
@@ -68,13 +52,12 @@ function copyStatic({ isDev }) {
     // For Chrome Web Store uploads: exclude icon.svg (not needed at runtime)
     const excludeFileNames = isDev
       ? new Set()
-      : new Set(["icon.svg", ".keep", "get-opencv.sh"]);
+      : new Set(["icon.svg"]);
 
     copyDir(assetsSrc, path.join(distDir, "assets"), { excludeFileNames });
 
   }
-
-  warnIfMissingOpenCvAssets();
+ 
 }
 
 function watchIfExists(fileOrDir, opts, cb) {

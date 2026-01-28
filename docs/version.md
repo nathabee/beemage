@@ -25,27 +25,69 @@ Conventions:
 
 ---
 
+ 
 
-#### **v0.0.6 — Epic (planned): OpenCV engine integration & per-step pipeline control**
+## v0.0.7 — Epic (planned): Engine strategy + per-step pipeline control (demo-only OpenCV)
 
-* Introduce **OpenCV as an optional processing engine**, loaded on demand
-* Separate **engine availability** (runtime) from **engine selection** (user preference)
-* Define pipeline steps with **dual implementations** where applicable:
+### Still to do  
 
-  * native JS implementation
-  * OpenCV implementation (optional per step)
-* Support **per-step engine selection**:
+* Introduce a **segmentation pipeline definition** with multiple steps (Process 1…10) and a stable step API.
+* Add **engine strategy model**:
 
-  * `native`
-  * `opencv`
-  * `auto` (prefer OpenCV when available, otherwise native)
-* Add **global default engine strategy** with optional per-step overrides
-* Enable **incremental migration** of pipeline steps to OpenCV without rewriting the full pipeline
-* Centralize OpenCV loading and readiness checks (single shared loader)
-* Explicit failure behavior when OpenCV is selected but not available (no silent fallback)
+  * global default: `native | auto | opencv`
+  * per-step overrides: `inherit | native | auto | opencv`
+* Persist engine strategy in storage (demo + extension; OpenCV mode forced-off in extension).
+* Implement a **step dispatcher**:
 
-> Goal: selective acceleration and gradual OpenCV adoption while preserving correctness and debuggability.
+  * resolve effective engine per step (override → default → availability)
+  * explicit failure path when `opencv` is forced but unavailable (no silent fallback)
+* Add Settings UI for strategy:
 
+  * show **OpenCV availability** (runtime)
+  * show **OpenCV mode preference** (demo-only)
+  * show global + per-step controls (can start minimal)
+* Add Logs/debug trace messages for:
+
+  * engine resolution decisions
+  * step timings and failures
+* Keep OpenCV loading strictly **demo-only** (CSP: not supported in extension).
+
+---
+
+## v0.0.6 — Demo-only OpenCV toggle + segmentation placeholder + cleanup
+
+### What’s done
+
+* **Engine moved out of Segmentation**:
+
+  * Segmentation tab is now a placeholder (no injection/probe logic there).
+  * Engine/OpenCV controls live in **Settings**.
+* **Demo-only OpenCV support (CSP-safe)**
+
+  * OpenCV loading is possible only in the **demo build** via the demo seam (`engineAdapter` mock/loader).
+  * Extension build does **not** allow injection/loading (CSP concern).
+* **OpenCV runtime state plumbing**
+
+  * Introduced a shared `isOpenCvInjected()` availability check used by Settings.
+  * UI can show “Native mode / OpenCV mode enabled / OpenCV loaded”.
+* **Settings engine UI behavior**
+
+  * Engine section can be hidden when OpenCV loading is not supported (extension build).
+  * OpenCV “mode” is persisted in storage (demo), and enabling it triggers a one-time load.
+* **Removed old probe button path**
+
+  * Deprecated `btnCfgProbeOpenCv` in favor of the OpenCV mode toggle (and removed DOM references accordingly).
+* **Global error hook cleanup**
+
+  * Global error hooks should not live in `tabs.ts`. Move them to panel boot (or a dedicated `app/errors.ts`) so this is not “demo-related” and not tied to OpenCV.
+
+### Constraint documented
+
+* OpenCV will **not** be supported in the extension build due to CSP/packaging constraints; injection stays demo-only.
+
+---
+
+ 
 ---
 
 #### **v0.0.5 — OpenCV bootstrap**

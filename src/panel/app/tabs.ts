@@ -1,5 +1,6 @@
 // src/panel/app/tabs.ts
 import type { Dom } from "./dom";
+import { getDevConfigSnapshot } from "../../shared/devConfigStore";
 
 type TabKey = "segmentation" | "contour" | "colors" | "settings" | "logs";
 
@@ -40,26 +41,44 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
   let active: TabKey = "contour";
   const mounted = new Set<TabKey>();
 
+  function shouldInstallGlobalErrorHooks(): boolean {
+    // Dev config is already loaded by Settings, but we may boot before that.
+    // Snapshot returns defaults if not loaded yet (based on your store behavior).
+    const snap = getDevConfigSnapshot();
+    return !!snap?.traceConsole;
+  }
 
-  function installGlobalErrorHooksOnce() {
+  function installGlobalErrorHooksOnce(): void {
     const g: any = globalThis as any;
     if (g.__bctGlobalErrorHooksInstalled) return;
     g.__bctGlobalErrorHooksInstalled = true;
 
     window.addEventListener("error", (ev) => {
-      console.error("[panel] window error", ev);
+      const e = ev as ErrorEvent;
+      console.error("[panel] window error", {
+        message: e.message,
+        filename: e.filename,
+        lineno: e.lineno,
+        colno: e.colno,
+        error: e.error ? String(e.error) : null,
+        stack: (e.error as any)?.stack ? String((e.error as any).stack) : null,
+      });
     });
-
 
     window.addEventListener("unhandledrejection", (ev) => {
-      console.error("[panel] unhandledrejection", ev);
+      console.error("[panel] unhandledrejection", {
+        reason: ev.reason ? String(ev.reason) : null,
+        stack: (ev.reason as any)?.stack ? String((ev.reason as any).stack) : null,
+      });
     });
 
-    console.log("[panel] global error hooks installed");
+    console.log("[panel] global error hooks installed (traceConsole enabled)");
   }
 
-
-  installGlobalErrorHooksOnce();
+  // Install only when traceConsole is enabled.
+  if (shouldInstallGlobalErrorHooks()) {
+    installGlobalErrorHooksOnce();
+  }
 
   function setActiveView(key: TabKey) {
     (Object.keys(tabButtons) as TabKey[]).forEach((k) => {
@@ -121,9 +140,6 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
       e.preventDefault?.();
       activate("logs");
     });
-
-
-
   }
 
   function boot() {

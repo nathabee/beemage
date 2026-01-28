@@ -1,7 +1,7 @@
 {
   "name": "beecontour",
   "private": true,
-  "version": "0.0.5",
+  "version": "0.0.6",
   "type": "module",
   "scripts": {
     "clean": "rm -rf ./build ./dist",
@@ -12,7 +12,6 @@
     "build:dev": "npm run clean && npm run typecheck && node scripts/build.mjs --dev"
   },
   "devDependencies": {
-    "@opencv.js/wasm": "^4.4.0",
     "@types/chrome": "^0.0.280",
     "esbuild": "^0.25.0",
     "typescript": "^5.6.3"

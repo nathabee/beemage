@@ -6,9 +6,11 @@ import * as debugTrace from "../../../shared/debugTrace";
 import type { Dom } from "../../app/dom";
 import type { createBus } from "../../app/bus";
 import { clampInt } from "../../app/format";
-import { getBusy } from "../../app/state";
 import { storageGet, storageSet } from "../../../shared/platform/storage";
 import { APP_VERSION } from "../../../shared/version";
+import { getBusy, withBusy } from "../../app/state";
+import { supportsOpenCvLoad, attemptLoadOpenCv } from "../../platform/engineAdapter";
+import { isOpenCvInjected } from "../../app/engine/engineAvailability";
 
 import {
   ensureDevConfigLoaded,
@@ -31,7 +33,8 @@ type Bus = ReturnType<typeof createBus>;
 
 const SHOW_DEV_TOOLS_KEY = "template.settings.showDevTools"; // boolean in storage
 
- 
+const USE_OPENCV_KEY = "beecontour.settings.engine.useOpenCv"; // boolean
+
 
 
 function getManifestVersion(): string {
@@ -85,7 +88,90 @@ async function setDebugEnabled(enabled: boolean): Promise<{ ok: boolean; error?:
 export function createSettingsTab(dom: Dom, bus: Bus) {
   const model = createSettingsModel();
   const view = createSettingsView(dom);
- 
+
+  function setEngineBoxVisible(visible: boolean) {
+    dom.settingsEngineBoxEl.classList.toggle("is-hidden", !visible);
+  }
+
+  async function loadUseOpenCvPref(): Promise<boolean> {
+    const res = await storageGet([USE_OPENCV_KEY]).catch(() => ({} as any));
+    return (res as any)?.[USE_OPENCV_KEY] === true;
+  }
+
+  async function saveUseOpenCvPref(v: boolean) {
+    await storageSet({ [USE_OPENCV_KEY]: !!v }).catch(() => null);
+  }
+
+  function applyUseOpenCvUi(checked: boolean) {
+    dom.cfgUseOpenCvEl.checked = checked;
+    dom.cfgUseOpenCvEl.closest(".switch")?.classList.toggle("is-disabled", dom.cfgUseOpenCvEl.disabled);
+  }
+
+
+  function setOpenCvBusy(isBusy: boolean) {
+    dom.cfgOpenCvSpinner.classList.toggle("is-hidden", !isBusy);
+    dom.cfgOpenCvSpinner.setAttribute("aria-hidden", isBusy ? "false" : "true");
+  }
+
+  function setOpenCvStatus(text: string) {
+    dom.cfgOpenCvStatus.textContent = text || "";
+  }
+
+  function setOpenCvReport(text: string) {
+    dom.cfgOpenCvReport.textContent = text || "";
+  }
+
+  async function onToggleUseOpenCv() {
+    if (getBusy()) return;
+
+    // Demo-only feature: if not supported, keep hidden anyway.
+    if (!supportsOpenCvLoad()) {
+      applyUseOpenCvUi(false);
+      return;
+    }
+
+    const want = !!dom.cfgUseOpenCvEl.checked;
+
+    // OFF = native mode, no loading needed.
+    if (!want) {
+      await saveUseOpenCvPref(false);
+      setOpenCvBusy(false);
+      setOpenCvStatus(isOpenCvInjected() ? "OpenCV loaded (native mode)" : "Native mode");
+      setOpenCvReport("Native mode. OpenCV is optional and demo-only.");
+      return;
+    }
+
+    // ON = ensure OpenCV is loaded (once)
+    setOpenCvBusy(true);
+    setOpenCvStatus("Loading OpenCV…");
+    setOpenCvReport("Loading OpenCV…");
+
+    try {
+      await withBusy(dom, async () => {
+        await attemptLoadOpenCv();
+      });
+
+      const injected = isOpenCvInjected();
+      if (!injected) throw new Error("OpenCV load returned but runtime is not injected.");
+
+      await saveUseOpenCvPref(true);
+      setOpenCvStatus("OpenCV mode enabled");
+      setOpenCvReport("OpenCV injected and mode enabled. Pipeline steps may opt into OpenCV.");
+    } catch (e: any) {
+      const msg = String(e?.message ?? e);
+
+      // Revert UI on failure
+      await saveUseOpenCvPref(false);
+      applyUseOpenCvUi(false);
+
+      setOpenCvStatus("OpenCV load failed");
+      setOpenCvReport(`ERROR\n\n${msg}`);
+      logError("[settings] OpenCV toggle failed", { msg });
+    } finally {
+      setOpenCvBusy(false);
+    }
+  }
+
 
 
 
@@ -145,10 +231,37 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
     // About
     view.setAbout(getManifestVersion() || "—", dom.settingsGitHubLinkEl?.href || "#");
 
+    // -----------------------------
+    // Engine UI: demo-only (toggle mode)
+    // -----------------------------
+    const engineVisible = supportsOpenCvLoad();
+    setEngineBoxVisible(engineVisible);
+
+    if (engineVisible) {
+      const useOpenCv = await loadUseOpenCvPref();
+      applyUseOpenCvUi(useOpenCv);
+
+      setOpenCvBusy(false);
+
+      const injected = isOpenCvInjected();
+
+      if (useOpenCv) {
+        setOpenCvStatus(injected ? "OpenCV mode enabled" : "OpenCV mode (not loaded yet)");
+        setOpenCvReport(
+          injected
+            ? "OpenCV injected and mode enabled. Pipeline steps may opt into OpenCV."
+            : "OpenCV mode is enabled, but OpenCV is not loaded yet. Toggle OFF then ON to load OpenCV.",
+        );
+      } else {
+        setOpenCvStatus(injected ? "OpenCV loaded (native mode)" : "Native mode");
+        setOpenCvReport("Native mode. OpenCV is optional and demo-only.");
+      }
+    }
+
     view.setGeneralStatus("");
     view.setDevStatus("");
 
-    logTrace("Settings: loaded", { showDevTools, enabled, dev: model.dev });
+    logTrace("Settings: loaded", { showDevTools, enabled, dev: model.dev, opencvInjected: isOpenCvInjected() });
   }
 
   async function onToggleShowDevTools() {
@@ -340,6 +453,11 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
       void onToggleDebugEnabled();
     });
 
+    dom.cfgUseOpenCvEl.addEventListener("change", () => {
+      void onToggleUseOpenCv();
+    });
+
+
     // Apply Logs visibility at startup
     void initDevToolsVisibility().catch((e) => {
       logWarn("Settings: initDevToolsVisibility failed", { error: e instanceof Error ? e.message : String(e) });
@@ -353,13 +471,13 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
         logError("Settings: refresh failed", { error: e instanceof Error ? e.message : String(e) });
       });
     },
-    mount() { 
-
+    mount() {
       void loadAll().catch((e) => {
         logError("Settings: mount failed", { error: e instanceof Error ? e.message : String(e) });
       });
     },
-    unmount() {},
+
+    unmount() { },
     bind,
     dispose() {
       off();

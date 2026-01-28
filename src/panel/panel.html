@@ -175,39 +175,17 @@
            ========================= -->
       <section id="viewSegmentation" class="view" role="tabpanel" aria-labelledby="tabSegmentation" hidden>
         <p class="muted">
-          Test OpenCV availability in this panel context. This tab does not run segmentation yet.
+          Segmentation pipeline placeholder. OpenCV injection and probing lives in Settings.
         </p>
 
-        <details class="searchBox" id="segCvBox" role="group" open>
-          <summary>OpenCV probe</summary>
-
-          <div class="row" style="align-items:center;">
-            <button id="btnSegLoadCv" type="button">Load OpenCV &amp; Probe</button>
-            <span id="segSpinner" class="spinner is-hidden" aria-hidden="true"></span>
-            <span id="segStatus" class="status">Idle</span>
-          </div>
-
-          <div class="row" style="margin-top:10px; align-items:flex-start;">
-            <div class="card" style="flex:1; min-width: 280px;">
-              <div class="cardTitle">Report</div>
-              <pre id="segCvReport" class="report"
-                aria-label="OpenCV probe report">Click “Load OpenCV &amp; Probe”.</pre>
-            </div>
-
-            <div class="card" style="flex:1; min-width: 280px;">
-              <div class="cardTitle">Notes</div>
-              <div class="muted" style="font-size:12px; line-height:1.4;">
-                Expected next steps:
-                <ul style="margin:8px 0 0 18px; padding:0;">
-                  <li>Ensure opencv.js wasm are packaged for demo MV3 panel.</li>
-                  <li>Lazy-load OpenCV only when this tab is used.</li>
-                  <li>Then implement k-means connected components segmentation.</li>
-                </ul>
-              </div>
-            </div>
+        <details class="searchBox" role="group" open>
+          <summary>Status</summary>
+          <div class="muted" style="font-size:12px; line-height:1.4;">
+            Planned: multi-step segmentation pipeline with per-step engine selection (native/opencv/auto).
           </div>
         </details>
       </section>
+
 
 
       <!-- =========================
@@ -353,6 +331,45 @@
           </div>
         </details>
 
+        <!-- ENGINE -->
+        <details class="searchBox" id="settingsEngineBox" role="group" open>
+          <summary>Engine</summary>
+
+          <p class="muted" style="margin-top: 0;">
+            OpenCV is demo-only. The extension build never allows injection.
+          </p>
+
+
+          <div class="row" style="align-items:center;">
+            <label class="switch" title="Demo only. When enabled, loads OpenCV (once) and enables OpenCV mode.">
+              <input id="cfgUseOpenCv" type="checkbox" />
+              <span class="switchTrack" aria-hidden="true"></span>
+              <span class="switchLabel">OpenCV mode</span>
+            </label>
+
+            <span id="cfgOpenCvSpinner" class="spinner is-hidden" aria-hidden="true"></span>
+            <span id="cfgOpenCvStatus" class="status">Idle</span>
+          </div>
+
+
+          <div class="row" style="margin-top:10px; align-items:flex-start;">
+            <div class="card" style="flex:1; min-width: 280px;">
+              <div class="cardTitle">Report</div>
+              <pre id="cfgOpenCvReport" class="report"
+                aria-label="OpenCV mode report">Toggle “OpenCV mode” to load OpenCV.</pre>
+
+            </div>
+
+            <div class="card" style="flex:1; min-width: 280px;">
+              <div class="cardTitle">Notes</div>
+              <div class="muted" style="font-size:12px; line-height:1.4;">
+                This checks runtime availability (“is OpenCV injected?”).
+                Per-step engine selection is configured in the segmentation pipeline later.
+              </div>
+            </div>
+          </div>
+        </details>
+
         <!-- ABOUT -->
         <details class="searchBox" id="settingsAboutBox" role="group" open>
           <summary>About</summary>
@@ -419,12 +436,12 @@
 
     </div>
   </div>
-  
 
- 
-    <script type="module" src="../panel.js"></script>
 
- 
+
+  <script type="module" src="../panel.js"></script>
+
+
 
 
 

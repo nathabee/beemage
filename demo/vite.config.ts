@@ -8,12 +8,15 @@ function tracePlatformResolves(): Plugin {
     name: "app-trace-platform-resolves",
     enforce: "pre",
     async resolveId(source, importer, options) {
-      if (
+      const shouldTrace =
         source.includes("panel/platform/runtime") ||
         source.includes("shared/platform/storage") ||
+        source.includes("panel/platform/engineAdapter") ||
         source.includes("platform/runtime") ||
-        source.includes("platform/storage")
-      ) {
+        source.includes("platform/storage") ||
+        source.includes("platform/engineAdapter");
+
+      if (shouldTrace) {
         const r = await this.resolve(source, importer, { ...options, skipSelf: true });
         console.log("[app-trace] source   :", source);
         console.log("[app-trace] importer :", importer);
@@ -26,8 +29,14 @@ function tracePlatformResolves(): Plugin {
 }
 
 function seamSwapPlugin(): Plugin {
-  const mockRuntime = path.resolve(__dirname, "src/mocks/runtime.ts");
-  const mockStorage = path.resolve(__dirname, "src/mocks/storage.ts");
+  const mockRuntimePath = path.resolve(__dirname, "src/mocks/runtime.ts");
+  const mockStoragePath = path.resolve(__dirname, "src/mocks/storage.ts");
+
+  // demo-only engine adapter (this is the seam)
+  const mockEngineAdapterPath = path.resolve(
+    __dirname,
+    "src/mocks/engine/engineAdapter.ts",
+  );
 
   function clean(id: string) {
     return id.split("?")[0].replace(/\\/g, "/");
@@ -45,8 +54,11 @@ function seamSwapPlugin(): Plugin {
       const id = clean(r.id);
 
       // Swap the real seams for mocks in the demo build/dev server
-      if (id.includes("/src/panel/platform/runtime")) return mockRuntime;
-      if (id.includes("/src/shared/platform/storage")) return mockStorage;
+      if (id.includes("/src/panel/platform/runtime")) return mockRuntimePath;
+      if (id.includes("/src/shared/platform/storage")) return mockStoragePath;
+
+      // Engine seam (extension stub -> demo implementation)
+      if (id.includes("/src/panel/platform/engineAdapter")) return mockEngineAdapterPath;
 
       return null;
     },
@@ -70,29 +82,28 @@ function panelAssetsPlugin(): Plugin {
     // Remove extension bundle script
     html = html.replace(
       /<script\s+type=["']module["']\s+src=["'][^"']*panel\.js["']\s*>\s*<\/script>\s*/gi,
-      ""
+      "",
     );
 
     // Ensure panel.css is referenced relatively so it works no matter where the demo is hosted
-    // (GitHub Pages subpath, /app-demo/, , etc.)
+    // (GitHub Pages subpath, /app-demo/, etc.)
     html = html.replace(/href=["'][^"']*panel\.css["']/gi, 'href="__app/panel.css"');
 
     return html;
   }
 
-function assertHtml(): string {
-  const html = readOrNull(panelHtml);
-  if (!html) throw new Error(`Missing panel HTML at: ${panelHtml}`);
+  function assertHtml(): string {
+    const html = readOrNull(panelHtml);
+    if (!html) throw new Error(`Missing panel HTML at: ${panelHtml}`);
 
-  // Generic template: only require a stable root.
-  // This must match your panel.html ("appRoot" in your latest template).
-  if (!html.includes('id="appRoot"')) {
-    throw new Error(`Wrong panel HTML file (no #appRoot): ${panelHtml}`);
+    // Generic template: only require a stable root.
+    // This must match your panel.html ("appRoot" in your latest template).
+    if (!html.includes('id="appRoot"')) {
+      throw new Error(`Wrong panel HTML file (no #appRoot): ${panelHtml}`);
+    }
+
+    return sanitizePanelHtml(html);
   }
-
-  return sanitizePanelHtml(html);
-}
-
 
   return {
     name: "app-panel-assets",
@@ -142,7 +153,7 @@ export default defineConfig(({ command }) => {
   return {
     root: __dirname,
 
-    // Key change: portable build (works under any folder on GitHub Pages or BeeLab)
+    // Portable build (works under any folder on GitHub Pages or BeeLab)
     base: "./",
 
     plugins: [
