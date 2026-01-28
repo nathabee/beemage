@@ -52,23 +52,32 @@ echo
 echo "== 2) Build demo zip =="
 ./demo/scripts/build-demo-zip.sh
 
-# 3) Copy demo/dist -> docs/demo for GitHub Pages
+# 3) Publish demo/dist -> docs/demo for GitHub Pages (diff-aware)
 echo
 echo "== 3) Publish demo to GitHub Pages (docs/demo) =="
+
 DEMO_DIST="demo/dist"
 DOCS_DEMO="docs/demo"
 DOCS="docs"
+
 [[ -d "$DEMO_DIST" ]] || die "Missing $DEMO_DIST (demo build failed?)"
 
-rm -rf "$DOCS_DEMO"
 mkdir -p "$DOCS_DEMO"
-cp -a "$DEMO_DIST"/. "$DOCS_DEMO"/
-# assets must be in /docs not in /docs/demo
 
-rm -rf "$DOCS/assets/opencv"  "$DOCS/assets"
-mkdir -p "$DOCS/assets" "$DOCS/assets/opencv" 
-cp -a  "${DOCS_DEMO}/assets/opencv" "$DOCS/assets/"
-echo "Copied demo build to $DOCS_DEMO"
+# Sync demo build → docs/demo (only changed files)
+rsync -a --delete --checksum \
+  "$DEMO_DIST"/ \
+  "$DOCS_DEMO"/
+
+# Assets must live in /docs/assets, not /docs/demo/assets
+mkdir -p "$DOCS/assets" "$DOCS/assets/opencv"
+
+# Sync OpenCV assets (diff-aware)
+rsync -a --delete --checksum \
+  "$DOCS_DEMO/assets/opencv"/ \
+  "$DOCS/assets/opencv"/
+
+echo "Demo published to $DOCS_DEMO (diff-aware)"
 
 
 exit
