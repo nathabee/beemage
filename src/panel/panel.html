@@ -18,6 +18,10 @@
           Contour
         </button>
 
+        <button id="tabSegmentation" class="tab" role="tab" aria-selected="false" type="button">
+          Segmentation
+        </button>
+
         <button id="tabColors" class="tab" role="tab" aria-selected="false" type="button">
           Colors
         </button>
@@ -163,6 +167,45 @@
             <span id="cleanQualityText" class="status"></span>
           </div>
 
+        </details>
+      </section>
+
+      <!-- =========================
+           SEGMENTATION VIEW (TEST)
+           ========================= -->
+      <section id="viewSegmentation" class="view" role="tabpanel" aria-labelledby="tabSegmentation" hidden>
+        <p class="muted">
+          Test OpenCV availability in this panel context. This tab does not run segmentation yet.
+        </p>
+
+        <details class="searchBox" id="segCvBox" role="group" open>
+          <summary>OpenCV probe</summary>
+
+          <div class="row" style="align-items:center;">
+            <button id="btnSegLoadCv" type="button">Load OpenCV &amp; Probe</button>
+            <span id="segSpinner" class="spinner is-hidden" aria-hidden="true"></span>
+            <span id="segStatus" class="status">Idle</span>
+          </div>
+
+          <div class="row" style="margin-top:10px; align-items:flex-start;">
+            <div class="card" style="flex:1; min-width: 280px;">
+              <div class="cardTitle">Report</div>
+              <pre id="segCvReport" class="report"
+                aria-label="OpenCV probe report">Click “Load OpenCV &amp; Probe”.</pre>
+            </div>
+
+            <div class="card" style="flex:1; min-width: 280px;">
+              <div class="cardTitle">Notes</div>
+              <div class="muted" style="font-size:12px; line-height:1.4;">
+                Expected next steps:
+                <ul style="margin:8px 0 0 18px; padding:0;">
+                  <li>Ensure opencv.js wasm are packaged for demo MV3 panel.</li>
+                  <li>Lazy-load OpenCV only when this tab is used.</li>
+                  <li>Then implement k-means connected components segmentation.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </details>
       </section>
 
@@ -376,8 +419,15 @@
 
     </div>
   </div>
+  
 
-  <script type="module" src="../panel.js"></script>
+ 
+    <script type="module" src="../panel.js"></script>
+
+ 
+
+
+
 </body>
 
 </html>

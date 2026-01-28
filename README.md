@@ -16,42 +16,91 @@ No uploads. No server processing.
 
 You can use BeeContour immediately in your browser:
 
-👉 **[https://nathabee.github.io/beecontour/demo/](https://nathabee.github.io/beecontour/demo/)**
+👉 **[Try the demo on github page](https://nathabee.github.io/beecontour/demo/)**
 
 The demo runs the same panel UI as the extension, without requiring any installation or browser permissions.
 
 ---
 
-## What BeeContour does
+
+## What BeeContour does 
 
 BeeContour focuses on a single, well-defined task:
 
-> Turning an image into a clean, reusable outline — without uploading it anywhere.
+> Turning an image into a clean, reusable outline — while **making the processing steps visible and understandable**.
+
+BeeContour is designed as a **hands-on image processing playground**.
 
 With BeeContour, you can:
 
 * Load an image directly in the browser
-* Detect and extract the main contour
-* Clean and simplify edges interactively
-* Preview intermediate and final results
-* Export outlines as raster images or SVG paths
-* Experiment visually with parameters to refine the result
+* Extract and repair contours step by step
+* Observe intermediate representations (edges, masks, cleaned results)
+* Adjust parameters and immediately see their effect
+* Export the result as raster images or SVG paths
 
-The workflow is **manual and visual by design**, favoring understanding and control over automation.
+The workflow is **manual, visual, and iterative by design**.
+BeeContour deliberately avoids “one-click magic” in favor of **understanding how parameters influence results**.
+
+---
+## Native vs OpenCV: a comparative playground
+
+BeeContour supports two implementation paths for image-processing steps:
+
+### Native (self-implemented) pipeline
+
+* Written in TypeScript
+* Small, transparent, and easy to inspect
+* Designed for learning, experimentation, and fine control
+* Makes algorithmic choices explicit
+
+### OpenCV (WebAssembly) pipeline (optional)
+
+* Uses OpenCV compiled to WebAssembly
+* Runs entirely in the browser once loaded
+* Serves as a reference implementation for widely used algorithms
+
+The goal is not benchmarking. The goal is comparison and understanding:
+
+* How does the same operation behave in a native implementation vs OpenCV?
+* Which parameters matter most?
+* Where do results diverge?
+* What trade-offs exist between simplicity, robustness, and complexity?
 
 ---
 
-## Typical use cases
+## Optional OpenCV support
+
+OpenCV support in BeeContour is optional.
+
+* BeeContour works fully without OpenCV
+* When enabled, OpenCV:
+  * is loaded locally as part of the app/extension assets (no CDN)
+  * runs client-side via WebAssembly
+  * increases bundle size and memory usage compared to native mode
+
+OpenCV is integrated to compare approaches, not to hide complexity.
+
+ 
+
+Details on enabling and packaging OpenCV are documented in:
+
+👉 `docs/installation.md`
+
+---
+
+## Typical use cases 
 
 BeeContour is useful for:
 
-* Preparing outlines for illustration or graphic design
-* Extracting silhouettes or line art from photos
-* Creating clean bases for coloring or vector work
-* Educational and exploratory image processing
-* Quick experiments without installing heavy software
+* Exploring contour extraction and cleanup techniques
+* Learning classic image-processing concepts visually
+* Comparing algorithmic approaches (native vs OpenCV)
+* Preparing outlines for illustration or vector work
+* Teaching or self-teaching image processing fundamentals
+* Quick experiments without installing heavy desktop software
 
-It is **not** intended to replace professional image editors or batch vectorization tools.
+It is **not** intended to replace professional image editors or automated batch tools.
 
 ---
 
@@ -63,7 +112,8 @@ BeeContour is designed to be transparent and review-friendly.
 * No analytics
 * No advertising
 * No tracking
-* No network requests for image processing
+* No uploads and no server-side image processing
+
 
 Privacy policy: `docs/privacy.html`
 
@@ -88,9 +138,7 @@ All documentation is available on the project homepage and in the `docs/` folder
 
 BeeContour is in active development.
 
-* Core contour extraction is functional
-* Interactive cleanup and vectorization are implemented
-* Architecture is stable but still evolving
+* Versioning status : `docs/version.md`
 
 Feedback, testing, and issue reports are welcome.
 

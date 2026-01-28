@@ -15,6 +15,14 @@ release/
 # -------------------------------------------------
 node_modules/
 
+# OpenCV runtime (large, reproducible)
+assets/opencv/*.js
+assets/opencv/*.wasm
+assets/opencv/*.data
+demo/public/assets/opencv/*.js
+demo/public/assets/opencv/*.wasm
+demo/public/assets/opencv/*.data
+
 # -------------------------------------------------
 # logs
 # -------------------------------------------------
@@ -46,6 +54,7 @@ Thumbs.db
 .env
 .env.*
 
-# dev
+#---------------------------------------------------
+# dev tricks
 *.old
 *.obsolete

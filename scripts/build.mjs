@@ -36,6 +36,24 @@ function copyDir(srcDir, dstDir, opts = {}) {
   }
 }
 
+function warnIfMissingOpenCvAssets() {
+  const opencvDir = path.join(root, "assets", "opencv");
+  if (!fs.existsSync(opencvDir)) {
+    console.warn("[build] Note: assets/opencv/ not found (OpenCV not shipped). Segmentation OpenCV loader will 404.");
+    return;
+  }
+
+  const files = fs.readdirSync(opencvDir);
+  const hasJs = files.some((f) => f.toLowerCase().endsWith(".js"));
+  const hasWasm = files.some((f) => f.toLowerCase().endsWith(".wasm"));
+
+  if (!hasJs || !hasWasm) {
+    console.warn(
+      "[build] Note: assets/opencv/ exists but seems incomplete. Expected opencv.js + *.wasm. Loader will likely fail."
+    );
+  }
+}
+
 function copyStatic({ isDev }) {
   // manifest
   copyFile(path.join(root, "manifest.json"), path.join(distDir, "manifest.json"));
@@ -48,9 +66,15 @@ function copyStatic({ isDev }) {
   const assetsSrc = path.join(root, "assets");
   if (fs.existsSync(assetsSrc)) {
     // For Chrome Web Store uploads: exclude icon.svg (not needed at runtime)
-    const excludeFileNames = isDev ? new Set() : new Set(["icon.svg"]);
+    const excludeFileNames = isDev
+      ? new Set()
+      : new Set(["icon.svg", ".keep", "get-opencv.sh"]);
+
     copyDir(assetsSrc, path.join(distDir, "assets"), { excludeFileNames });
+
   }
+
+  warnIfMissingOpenCvAssets();
 }
 
 function watchIfExists(fileOrDir, opts, cb) {
@@ -67,7 +91,7 @@ function runTypecheckOnce() {
   const r = spawnSync(tscBin, ["-p", "tsconfig.json", "--noEmit"], {
     cwd: root,
     stdio: "inherit",
-    shell: false,
+    shell: false
   });
   if (r.status !== 0) process.exit(r.status ?? 1);
 }
@@ -77,7 +101,7 @@ function runTypecheckWatch() {
   const child = spawn(tscBin, ["-p", "tsconfig.json", "--noEmit", "--watch"], {
     cwd: root,
     stdio: "inherit",
-    shell: false,
+    shell: false
   });
   child.on("exit", (code) => {
     if (code && code !== 0) process.exitCode = code;
@@ -98,7 +122,7 @@ mkdirp(distDir);
 const entryPoints = {
   background: path.join(root, "src/background/index.ts"),
   content: path.join(root, "src/content.ts"),
-  panel: path.join(root, "src/panel/panel.ts"),
+  panel: path.join(root, "src/panel/panel.ts")
 };
 
 const common = {
@@ -108,7 +132,7 @@ const common = {
   sourcemap: isDev, // ✅ maps only in dev/watch
   outdir: distDir,
   platform: "browser",
-  logLevel: "info",
+  logLevel: "info"
 };
 
 async function runOnce() {
@@ -118,7 +142,7 @@ async function runOnce() {
   await build({
     ...common,
     entryPoints,
-    entryNames: "[name]",
+    entryNames: "[name]"
   });
 
   copyStatic({ isDev });
@@ -132,7 +156,7 @@ async function runWatch() {
   const ctx = await context({
     ...common,
     entryPoints,
-    entryNames: "[name]",
+    entryNames: "[name]"
   });
 
   await ctx.watch();

@@ -1,7 +1,7 @@
 // src/panel/app/tabs.ts
 import type { Dom } from "./dom";
 
-type TabKey = "contour" | "colors" | "settings" | "logs";
+type TabKey = "segmentation" | "contour" | "colors" | "settings" | "logs";
 
 type TabApi = {
   bind(): void;
@@ -22,6 +22,7 @@ type TabsMap = Record<TabKey, TabApi>;
 
 export function createTabs(dom: Dom, tabs: TabsMap) {
   const tabButtons: Record<TabKey, HTMLButtonElement> = {
+    segmentation: dom.tabSegmentation,
     contour: dom.tabContour,
     colors: dom.tabColors,
     settings: dom.tabSettings,
@@ -29,6 +30,7 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
   };
 
   const views: Record<TabKey, HTMLElement> = {
+    segmentation: dom.viewSegmentation,
     contour: dom.viewContour,
     colors: dom.viewColors,
     settings: dom.viewSettings,
@@ -37,6 +39,27 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
 
   let active: TabKey = "contour";
   const mounted = new Set<TabKey>();
+
+
+  function installGlobalErrorHooksOnce() {
+    const g: any = globalThis as any;
+    if (g.__bctGlobalErrorHooksInstalled) return;
+    g.__bctGlobalErrorHooksInstalled = true;
+
+    window.addEventListener("error", (ev) => {
+      console.error("[panel] window error", ev);
+    });
+
+
+    window.addEventListener("unhandledrejection", (ev) => {
+      console.error("[panel] unhandledrejection", ev);
+    });
+
+    console.log("[panel] global error hooks installed");
+  }
+
+
+  installGlobalErrorHooksOnce();
 
   function setActiveView(key: TabKey) {
     (Object.keys(tabButtons) as TabKey[]).forEach((k) => {
@@ -79,6 +102,11 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
       activate("contour");
     });
 
+    tabButtons.segmentation.addEventListener("click", (e) => {
+      e.preventDefault?.();
+      activate("segmentation");
+    });
+
     tabButtons.colors.addEventListener("click", (e) => {
       e.preventDefault?.();
       activate("colors");
@@ -93,6 +121,9 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
       e.preventDefault?.();
       activate("logs");
     });
+
+
+
   }
 
   function boot() {

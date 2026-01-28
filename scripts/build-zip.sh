@@ -53,7 +53,10 @@ rm -f "$ZIP_PATH"
   cd dist
   zip -qr "../${ZIP_PATH}" . \
     -x "*.map" \
-    -x "*.svg"
+    -x "*.svg" \
+    -x "assets/opencv/.keep" \
+    -x "assets/opencv/get-opencv.sh"
+
 )
 
 echo "Built: ${ZIP_PATH}"

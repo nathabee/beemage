@@ -25,52 +25,91 @@ Conventions:
 
 ---
 
+
+#### **v0.0.6 — Epic (planned): OpenCV engine integration & per-step pipeline control**
+
+* Introduce **OpenCV as an optional processing engine**, loaded on demand
+* Separate **engine availability** (runtime) from **engine selection** (user preference)
+* Define pipeline steps with **dual implementations** where applicable:
+
+  * native JS implementation
+  * OpenCV implementation (optional per step)
+* Support **per-step engine selection**:
+
+  * `native`
+  * `opencv`
+  * `auto` (prefer OpenCV when available, otherwise native)
+* Add **global default engine strategy** with optional per-step overrides
+* Enable **incremental migration** of pipeline steps to OpenCV without rewriting the full pipeline
+* Centralize OpenCV loading and readiness checks (single shared loader)
+* Explicit failure behavior when OpenCV is selected but not available (no silent fallback)
+
+> Goal: selective acceleration and gradual OpenCV adoption while preserving correctness and debuggability.
+
+---
+
+#### **v0.0.5 — OpenCV bootstrap**
+
+* Added **OpenCV (WASM + JS)** to `assets/opencv`
+* Introduced **Segmentation** tab for OpenCV integration experiments
+* Implemented **safe dynamic loading** of OpenCV with runtime readiness checks
+* Validated OpenCV availability via probe (cv, Mat, build info)
+* Established working pattern:
+
+  * global `Module.locateFile`
+  * single script injection
+  * readiness polling
+  * avoid returning `cv` through async promise resolution
+
+---
+
 #### **v0.0.4 — Epic: Full contour pipeline (clean → vectorize) + diagnostics**
 
-* Expanded **Contour workflow** from simple edge output to a **multi-stage pipeline**:
+* Expanded **Contour workflow** into a multi-stage pipeline:
 
-  * edge detection (process was done in v0.0.2 already)
+  * edge detection
   * morphological cleaning (radius, min area, threshold)
   * quality metrics (components, junctions, thickness)
-* Added **interactive cleaning controls** with live preview and repeatable passes
+* Added **interactive cleaning controls** with repeatable passes
 * Introduced **vectorization to SVG**:
 
   * boundary tracing
   * simplification (RDP)
   * optional smoothing
-  * SVG preview and **SVG download**
-* Added **complexity guards** to prevent memory and performance failures during vectorization
-* Significantly expanded **parameter surface** for experimentation and tuning
+  * SVG preview and download
+* Added **complexity guards** to prevent memory and performance failures
 * Introduced a **structured logging system**:
 
-  * console-only diagnostics for development
-  * scoped debug traces (opt-in, persisted)
+  * console diagnostics
+  * scoped debug traces
   * consistent logging across panel and background
 * Fixed **Settings tab lifecycle** (mounting, refresh, version display)
-* Improved demo ↔ extension parity and internal robustness
+* Improved demo ↔ extension parity and robustness
 
----
- 
 ---
 
 #### **v0.0.3 — Epic: Colors workflow + documentation**
 
-* Added **Colors** tab with region-based fill workflow (palette selection, click-to-preview outline, apply fill, reset/reload)
-* Introduced edge/noise controls for region detection (threshold, dilation, max region guard)
-* Updated documentation to reflect the two-step workflow: **Contour extraction → Coloring**
+* Added **Colors** tab with region-based fill workflow
+* Implemented palette selection, preview, apply/reset
+* Added edge/noise controls for region detection
+* Updated documentation to reflect **Contour → Colors** workflow
 
 ---
 
 #### **v0.0.2 — Epic: Contour extraction prototype**
 
 * Added **Contour** tab with drag & drop / file input
-* Implemented preview + processing pipeline to generate a contour-style output on canvas
-* Added output controls (process, download PNG) and basic processing options (edge threshold, background inversion)
+* Implemented preview + processing pipeline
+* Added output controls (process, PNG download)
+* Introduced basic processing parameters
 
 ---
 
-#### **v0.0.1 — Epic: Project bootstrap from generic template**
+#### **v0.0.1 — Epic: Project bootstrap**
 
-* Initialized BeeContour repository from the extension generic baseline
-* Established panel scaffold (tabs, views, DOM binding pattern) and build setup
-* Set up baseline documentation structure and project naming/assets alignment
+* Initialized BeeContour from extension-generic template
+* Established panel scaffold (tabs, views, DOM binding)
+* Set up build, demo, and documentation structure
+
+---

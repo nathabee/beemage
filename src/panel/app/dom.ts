@@ -17,11 +17,13 @@ export function getDom() {
   const tabColors = must(document.getElementById("tabColors") as HTMLButtonElement | null, "tabColors");
   const tabSettings = must(document.getElementById("tabSettings") as HTMLButtonElement | null, "tabSettings");
   const tabLogs = must(document.getElementById("tabLogs") as HTMLButtonElement | null, "tabLogs");
+  const tabSegmentation = must(document.getElementById("tabSegmentation") as HTMLButtonElement | null, "tabSegmentation");
 
   const viewContour = must(document.getElementById("viewContour") as HTMLElement | null, "viewContour");
   const viewColors = must(document.getElementById("viewColors") as HTMLElement | null, "viewColors");
   const viewSettings = must(document.getElementById("viewSettings") as HTMLElement | null, "viewSettings");
   const viewLogs = must(document.getElementById("viewLogs") as HTMLElement | null, "viewLogs");
+  const viewSegmentation = must(document.getElementById("viewSegmentation") as HTMLElement | null, "viewSegmentation");
 
 
   // -----------------------------
@@ -67,6 +69,15 @@ export function getDom() {
     document.getElementById("pathSmoothIters") as HTMLInputElement | null,
     "pathSmoothIters"
   );
+
+  // -----------------------------
+  // Segmentation tab (probe)
+  // -----------------------------
+  const btnSegLoadCv = must(document.getElementById("btnSegLoadCv") as HTMLButtonElement | null, "btnSegLoadCv");
+  const segSpinner = must(document.getElementById("segSpinner") as HTMLSpanElement | null, "segSpinner");
+  const segStatus = must(document.getElementById("segStatus") as HTMLSpanElement | null, "segStatus");
+  const segCvReport = must(document.getElementById("segCvReport") as HTMLPreElement | null, "segCvReport");
+
 
   // -----------------------------
   // Colors tab
@@ -180,7 +191,11 @@ export function getDom() {
     tabColors,
     tabSettings,
     tabLogs,
+    tabSegmentation,
+
+
     viewContour,
+    viewSegmentation,
     viewColors,
     viewSettings,
     viewLogs,
@@ -213,6 +228,13 @@ export function getDom() {
 
     contourScaleEl,
     pathSmoothItersEl,
+
+    // Segmentation (probe)
+    btnSegLoadCv,
+    segSpinner,
+    segStatus,
+    segCvReport,
+
 
     // Colors 
     colorsCanvasEl,

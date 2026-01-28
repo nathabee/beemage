@@ -8,20 +8,12 @@ If you store radius in state, you’ll create two sources of truth (DOM + state)
 */
 
 import type { Dom } from "./dom";
+import { logTrace, logError } from "./log";
 
 let busyCount = 0;
 
 export function getBusy(): boolean {
   return busyCount > 0;
-}
-
-export async function withBusy<T>(dom: Dom, fn: () => Promise<T>): Promise<T> {
-  beginBusy(dom);
-  try {
-    return await fn();
-  } finally {
-    endBusy(dom);
-  }
 }
 
 export function setBusy(dom: Dom, next: boolean): void {
@@ -32,21 +24,59 @@ export function setBusy(dom: Dom, next: boolean): void {
   busyCount = 0;
   applyBusy(dom, false);
 }
+ 
 
-function beginBusy(dom: Dom): void {
+export async function withBusy<T>(dom: Dom, fn: () => Promise<T>): Promise<T> {
+  const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  logTrace("[state] withBusy: enter", { id, busyCount });
+  beginBusy(dom, id);
+
+  try {
+    logTrace("[state] withBusy: before await fn", { id, busyCount });
+    const res = await fn();
+    logTrace("[state] withBusy: after await fn (resolved)", { id, busyCount });
+    return res;
+  } catch (e: any) {
+    logError("[state] withBusy: fn threw", {
+      id,
+      busyCount,
+      msg: String(e?.message ?? e),
+      stack: String(e?.stack ?? ""),
+    });
+    throw e;
+  } finally {
+    logTrace("[state] withBusy: finally before endBusy", { id, busyCount });
+    endBusy(dom, id);
+    logTrace("[state] withBusy: finally after endBusy", { id, busyCount });
+  }
+}
+
+function beginBusy(dom: Dom, id?: string): void {
   busyCount++;
+  logTrace("[state] beginBusy", { id, busyCount });
   if (busyCount === 1) applyBusy(dom, true);
 }
 
-function endBusy(dom: Dom): void {
+function endBusy(dom: Dom, id?: string): void {
   busyCount--;
+  logTrace("[state] endBusy: dec", { id, busyCount });
+
   if (busyCount <= 0) {
     busyCount = 0;
+    logTrace("[state] endBusy: applying busy=false", { id, busyCount });
     applyBusy(dom, false);
     return;
   }
-  if (busyCount === 0) applyBusy(dom, false);
+
+  // This branch is technically redundant with the <=0 guard,
+  // but kept to preserve your original structure.
+  if (busyCount === 0) {
+    logTrace("[state] endBusy: applying busy=false (redundant branch)", { id, busyCount });
+    applyBusy(dom, false);
+  }
 }
+
 
 function applyBusy(dom: Dom, next: boolean): void {
   dom.rootEl.classList.toggle("is-busy", next);
@@ -73,7 +103,11 @@ function applyBusy(dom: Dom, next: boolean): void {
   
 
   // Drop zone is not a form control; optional CSS overlay uses .is-busy on root.
-
+// -----------------------------
+  // Segmentation tab controls
+  // -----------------------------
+  dom.btnSegLoadCv.disabled = next;
+  
   // -----------------------------
   // Settings (dev config)
   // -----------------------------
