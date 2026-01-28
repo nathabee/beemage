@@ -64,7 +64,9 @@ rm -rf "$DOCS_DEMO"
 mkdir -p "$DOCS_DEMO"
 cp -a "$DEMO_DIST"/. "$DOCS_DEMO"/
 # assets must be in /docs not in /docs/demo
-cp -a "${DOCS_DEMO}/assets" "$DOCS"
+
+mkdir -p "$DOCS/assets"
+cp -a "${DOCS_DEMO}/assets/opencv" "$DOCS/assets/"
 echo "Copied demo build to $DOCS_DEMO"
 
 
