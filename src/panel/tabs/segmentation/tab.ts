@@ -30,8 +30,12 @@ export function createSegmentationTab(dom: Dom, _bus: Bus) {
   // - demo:      /__app/panel.html  => ../assets/... resolves to /assets/...
   //
   // Relative path (no leading "/") also works for GH Pages with base "./".
-  const OPENCV_JS_URL = "../assets/opencv/opencv.js";
-  const OPENCV_WASM_URL = "../assets/opencv/opencv.wasm";
+  // const OPENCV_JS_URL = "../assets/opencv/opencv.js";
+  // const OPENCV_WASM_URL = "../assets/opencv/opencv.wasm";
+  // Resolve relative to the current bundled JS file (works in extension, local dist, GitHub Pages)
+  const OPENCV_JS_URL = new URL("./opencv/opencv.js", import.meta.url).toString();
+  const OPENCV_WASM_URL = new URL("./opencv/opencv.wasm", import.meta.url).toString();
+
 
   function ensureModuleConfig() {
     const g: any = globalThis as any;
