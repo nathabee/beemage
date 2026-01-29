@@ -1,6 +1,7 @@
 import type { Dom } from "../../../app/dom";
 import { withBusy } from "../../../app/state";
 import type { ContourTabState } from "../model";
+import { loadContourTuningParams } from "./tuningParams";
 
 // Use canonical logger + trace bridge
 import { traceScope, logWarn, logError } from "../../../app/log";
@@ -47,8 +48,10 @@ export async function processImage(
             const height = src.height;
             const pixels = width * height;
 
-            const threshold = Math.max(1, Math.min(255, getNumber(dom.edgeThresholdEl, 70)));
-            const whiteBg = dom.invertOutputEl.checked;
+            const tp = await loadContourTuningParams();
+            const threshold = tp.edgeThreshold;
+            const whiteBg = tp.invertOutput;
+
 
             traceScope("Contour process: start", {
               width,
@@ -60,7 +63,7 @@ export async function processImage(
 
             out.width = width;
             out.height = height;
- 
+
 
 
             const octx = out.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D | null;

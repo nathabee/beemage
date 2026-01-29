@@ -1,19 +1,20 @@
 import type { Dom } from "../../../app/dom";
 import { withBusy } from "../../../app/state";
+import { loadContourTuningParams } from "./tuningParams";
 
 import type { ContourTabState } from "../model";
 import { computeMaskQuality } from "../lib/quality";
 import {
-  clampInt,
   dilate,
   erode,
-  removeSmallComponents,
   renderMask,
 } from "../lib/morphology";
 
 // Reuse canonical logger (includes traceScope).
 // NOTE: traceScope will persist only if Debug enabled is ON (via debugTrace.append no-op).
 import { traceScope, logWarn, logError } from "../../../app/log";
+
+import { runMaskOp } from "../../../platform/opsDispatch";
 
 export async function cleanOutput(
   dom: Dom,
@@ -54,16 +55,12 @@ export async function cleanOutput(
             const c1 = dom.clean1CanvasEl;
             const c2 = dom.clean2CanvasEl;
 
-            traceScope("Contour clean: raw inputs", {
-              cleanRadiusVal: dom.cleanRadiusEl.value,
-              cleanMinAreaVal: dom.cleanMinAreaEl.value,
-              cleanBinaryThresholdVal: dom.cleanBinaryThresholdEl.value,
-            });
+            const tp = await loadContourTuningParams();
+            const radius = tp.cleanRadius; 
+            const EDGE_T = tp.cleanBinaryThreshold;
+            const whiteBg = tp.invertOutput;
 
 
-            const radius = clampInt(getNumber(dom.cleanRadiusEl, 1), 1, 3);
-            const minArea = clampInt(getNumber(dom.cleanMinAreaEl, 12), 0, 500);
-            const EDGE_T = clampInt(getNumber(dom.cleanBinaryThresholdEl, 128), 1, 254);
 
             c1.width = out.width;
             c1.height = out.height;
@@ -74,15 +71,13 @@ export async function cleanOutput(
             const height = out.height;
             const pixels = width * height;
 
-            const whiteBg = dom.invertOutputEl.checked; 
 
             traceScope("Contour clean: start", {
               width,
               height,
               pixels,
               whiteBg,
-              EDGE_T,
-              minArea,
+              EDGE_T, 
               radius,
             });
 
@@ -101,7 +96,7 @@ export async function cleanOutput(
               return;
             }
 
- 
+
 
             const outImg = octx.getImageData(0, 0, width, height);
             const data = outImg.data;
@@ -116,10 +111,19 @@ export async function cleanOutput(
               if (v === 1) edgeOn++;
             }
 
-            traceScope("Contour removeSmallComponents: params", { edge, width, height, minArea });
+            traceScope("Contour removeSmallComponents: params", { edge, width, height });
 
 
-            const edgeNoSpeck = removeSmallComponents(edge, width, height, minArea);
+
+
+            const edgeNoSpeck = await runMaskOp("contour.clean.removeSmallComponents", {
+              mask: edge,
+              width,
+              height, 
+            });
+
+
+
 
             traceScope("Contour erode : params", { edgeNoSpeck, width, height, radius });
             const repaired = erode(
@@ -167,7 +171,6 @@ export async function cleanOutput(
               pixels,
               whiteBg,
               EDGE_T,
-              minArea,
               radius,
               edgeOn,
               edgeRatio: Math.round((edgeOn / Math.max(1, pixels)) * 1e6) / 1e6,

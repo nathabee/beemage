@@ -8,7 +8,7 @@ import type { createBus } from "../../app/bus";
 import { clampInt } from "../../app/format";
 import { storageGet, storageSet } from "../../../shared/platform/storage";
 import { APP_VERSION } from "../../../shared/version";
-import { getBusy, withBusy } from "../../app/state";
+import { getBusy, withBusy, setBusy } from "../../app/state";
 import { supportsOpenCvLoad, attemptLoadOpenCv } from "../../platform/engineAdapter";
 import { isOpenCvInjected } from "../../app/engine/engineAvailability";
 import { createTuningModel } from "../../app/tuning/model";
@@ -30,7 +30,7 @@ import { createSettingsView } from "./view";
 
 // Console diagnostics only (no debug trace append from settings)
 import { logTrace, logWarn, logError } from "../../app/log";
-
+ 
 
 
 type Bus = ReturnType<typeof createBus>;
@@ -162,6 +162,7 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
       applyUseOpenCvUi(false);
       return;
     }
+ 
 
     const want = !!dom.cfgUseOpenCvEl.checked;
 
@@ -172,7 +173,7 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
       setOpenCvStatus(isOpenCvInjected() ? "OpenCV loaded (native mode)" : "Native mode");
       setOpenCvReport("Native mode. OpenCV is optional and demo-only.");
       await renderTuning("opencv mode disabled");
-     return;
+      return;
     }
 
     // ON = ensure OpenCV is loaded (once)
@@ -219,15 +220,15 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
   async function saveShowDevToolsPref(v: boolean) {
     await storageSet({ [SHOW_DEV_TOOLS_KEY]: !!v }).catch(() => null);
   }
+ 
+function applyDevToolsVisibility(show: boolean) {
+  model.setShowDevTools(show);
+  view.setShowDevToolsChecked(show);
+  view.setDevToolsVisible(show);
+}
+ 
 
-  function applyDevToolsVisibility(show: boolean) {
-    model.setShowDevTools(show);
-    view.setShowDevToolsChecked(show);
-    view.setDevToolsVisible(show);
 
-    // If Logs are active and are now hidden, force Settings.
-    if (!show) dom.tabSettings.click();
-  }
 
   async function initDevToolsVisibility() {
     const showDevTools = await loadShowDevToolsPref();
@@ -236,7 +237,10 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
     logTrace("Settings: boot applyDevToolsVisibility", { showDevTools });
   }
 
-    async function renderTuning(reason: string) {
+  async function renderTuning(reason: string) {
+ 
+
+
     try {
       const tree = await tuningModel.loadTree("app");
       tuningView.render(tree);
@@ -254,7 +258,7 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
       dom.tuningMountEl.textContent = "Tuning UI failed to load (see console).";
     }
   }
- 
+
 
 
   async function loadAll() {
@@ -303,7 +307,8 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
       const injected = isOpenCvInjected();
 
       if (useOpenCv) {
-        setOpenCvStatus(injected ? "OpenCV mode enabled" : "OpenCV mode (not loaded yet)");
+        // Coherent state: user wants OpenCV, but we do NOT auto-load.
+        setOpenCvStatus(injected ? "OpenCV mode enabled" : "OpenCV mode (not loaded)");
         setOpenCvReport(
           injected
             ? "OpenCV injected and mode enabled. Pipeline steps may opt into OpenCV."
@@ -319,9 +324,14 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
     view.setDevStatus("");
     await renderTuning("loadAll");
 
-
-    logTrace("Settings: loaded", { showDevTools, enabled, dev: model.dev, opencvInjected: isOpenCvInjected() });
+    logTrace("Settings: loaded", {
+      showDevTools,
+      debugTraceEnabled: enabled,
+      dev: model.dev,
+      opencvInjected: isOpenCvInjected(),
+    });
   }
+
 
   async function onToggleShowDevTools() {
     const checked = !!dom.cfgShowDevToolsEl.checked;
@@ -515,6 +525,7 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
     dom.cfgUseOpenCvEl.addEventListener("change", () => {
       void onToggleUseOpenCv();
     });
+
 
 
     // Apply Logs visibility at startup

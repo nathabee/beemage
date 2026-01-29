@@ -45,7 +45,8 @@ BeeContour deliberately avoids “one-click magic” in favor of **understanding
 ---
 ## Native vs OpenCV: a comparative playground
 
-BeeContour currently supports two implementation paths for image-processing steps **in the standalone web demo**:
+BeeContour supports an engine strategy layer in the standalone web demo, allowing selected steps to run either as native TypeScript implementations or OpenCV (WASM) implementations.
+At the moment, OpenCV is experimental and enabled for one step only: contour.clean.removeSmallComponents.
 
 ### Native (self-implemented) pipeline (extension + web)
 
@@ -56,9 +57,9 @@ BeeContour currently supports two implementation paths for image-processing step
 
 ### OpenCV (WebAssembly) pipeline (web demo only)
 
-* Uses OpenCV compiled to WebAssembly
-* Runs entirely in the browser once loaded
-* Serves as a reference implementation for widely used algorithms
+* OpenCV is loaded only in the demo build (no CDN), runs locally in the browser once enabled.
+* OpenCV is not a full alternative pipeline yet; it’s a per-step implementation option.
+* Current coverage: only contour.clean.removeSmallComponents is implemented via OpenCV.
 
 The goal is not benchmarking. The goal is comparison and understanding:
 
@@ -71,7 +72,8 @@ The goal is not benchmarking. The goal is comparison and understanding:
 
 OpenCV support is optional and currently available **only in the standalone web demo**.
 
-The Chrome Extension (Manifest V3) does **not** include OpenCV at the moment because MV3 Content Security Policy blocks `unsafe-eval`, and the OpenCV build used here relies on it.
+The Chrome Extension (Manifest V3) does **not** include OpenCV at the moment because the OpenCV loading/build approach used in the demo is not compatible with **MV3 CSP requirements**.
+For now, OpenCV remains demo-only and the extension always runs in **native mode**.
 
 * BeeContour works fully without OpenCV
 * When enabled in the demo, OpenCV:

@@ -35,14 +35,19 @@ function engineBadgeText(n: TuningNodeVm): string {
   return n.effectiveEngine;
 }
 
-function policyOptions(isRoot: boolean): Array<{ value: EnginePolicy; label: string }> {
+function policyOptions(args: {
+  isRoot: boolean;
+  canImplementOpenCv: boolean;
+}): Array<{ value: EnginePolicy; label: string }> {
   const base: Array<{ value: EnginePolicy; label: string }> = [
     { value: "native", label: "Native" },
     { value: "auto", label: "Auto" },
-    { value: "opencv", label: "OpenCV" },
+    ...(args.canImplementOpenCv ? ([{ value: "opencv", label: "OpenCV" }] as const) : []),
   ];
-  return isRoot ? base : [{ value: "inherit", label: "Inherit" }, ...base];
+
+  return args.isRoot ? base : [{ value: "inherit", label: "Inherit" }, ...base];
 }
+
 
 function isParamOverride(
   n: TuningNodeVm,
@@ -162,20 +167,26 @@ function renderNode(args: {
   sel.style.borderRadius = "10px";
   sel.style.padding = "6px 8px";
 
-  const opts = policyOptions(isRoot);
+  const opts = policyOptions({ isRoot, canImplementOpenCv: node.canImplementOpenCv });
+
   for (const o of opts) {
     const opt = el("option") as HTMLOptionElement;
     opt.value = o.value;
     opt.textContent = o.label;
-
-    // If the component cannot implement OpenCV, disable "OpenCV" choice.
-    if (o.value === "opencv" && !node.canImplementOpenCv) opt.disabled = true;
-
     sel.appendChild(opt);
   }
 
-  // Use effective policy for display (keeps UI consistent with inheritance resolution)
-  sel.value = node.effectivePolicy;
+  // Ensure the selected value exists in the list.
+  // If not (e.g., stored "opencv" but this node can't implement), fall back to "inherit" or "native".
+  const allowedValues = new Set(opts.map((o) => o.value));
+  const desired = node.effectivePolicy;
+
+  if (allowedValues.has(desired)) {
+    sel.value = desired;
+  } else {
+    sel.value = isRoot ? "native" : "inherit";
+  }
+
 
   sel.addEventListener("change", () => {
     void handlers.onSetPolicy(node.id, sel.value as EnginePolicy);

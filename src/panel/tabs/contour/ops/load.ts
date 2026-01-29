@@ -1,7 +1,7 @@
 import type { Dom } from "../../../app/dom";
 import { withBusy } from "../../../app/state";
-import type { ContourTabState } from "../model";
-import { clampInt } from "../lib/morphology";
+import type { ContourTabState } from "../model"; 
+import { loadContourTuningParams } from "./tuningParams";
 
 // Use canonical logger + trace bridge
 import { traceScope, logWarn, logError } from "../../../app/log";
@@ -84,8 +84,9 @@ export async function loadImageFromFile(
       }
 
       clearCanvases();
+      const tp = await loadContourTuningParams();
+      const scalePct = tp.contourScale;
 
-      const scalePct = clampInt(getNumber(dom.contourScaleEl, 100), 10, 100);
       const userScale = scalePct / 100;
 
       let targetW = Math.max(64, Math.floor(img.naturalWidth * userScale));

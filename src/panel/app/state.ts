@@ -91,16 +91,9 @@ function applyBusy(dom: Dom, next: boolean): void {
   dom.fileInputEl.disabled = next;
   dom.btnProcessEl.disabled = next;
   dom.btnCleanEl.disabled = next;
-  dom.btnDownloadEl.disabled = next;
-  dom.edgeThresholdEl.disabled = next;
-  dom.invertOutputEl.disabled = next;
-  dom.cleanMinAreaEl.disabled = next;
-  dom.cleanRadiusEl.disabled = next;
-  dom.cleanBinaryThresholdEl.disabled = next;
+  dom.btnDownloadEl.disabled = next; 
   dom.btnVectorizeEl.disabled = next;
   dom.btnDownloadSvgEl.disabled = next;
-  dom.contourScaleEl.disabled = next;
-
   // -----------------------------
   // Settings (dev config)
   // -----------------------------

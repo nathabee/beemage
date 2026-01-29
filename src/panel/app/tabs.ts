@@ -72,7 +72,7 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
       });
     });
 
-    console.log("[panel] global error hooks installed (traceConsole enabled)");
+    // console.log("[panel] global error hooks installed (traceConsole enabled)");
   }
 
   // Install only when traceConsole is enabled.

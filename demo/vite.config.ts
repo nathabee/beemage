@@ -12,9 +12,12 @@ function tracePlatformResolves(): Plugin {
         source.includes("panel/platform/runtime") ||
         source.includes("shared/platform/storage") ||
         source.includes("panel/platform/engineAdapter") ||
+        source.includes("panel/platform/opsDispatchImpl") ||
         source.includes("platform/runtime") ||
         source.includes("platform/storage") ||
-        source.includes("platform/engineAdapter");
+        source.includes("platform/engineAdapter") ||
+        source.includes("platform/opsDispatchImpl");
+
 
       if (shouldTrace) {
         const r = await this.resolve(source, importer, { ...options, skipSelf: true });
@@ -28,15 +31,18 @@ function tracePlatformResolves(): Plugin {
   };
 }
 
+
 function seamSwapPlugin(): Plugin {
   const mockRuntimePath = path.resolve(__dirname, "src/mocks/runtime.ts");
   const mockStoragePath = path.resolve(__dirname, "src/mocks/storage.ts");
 
   // demo-only engine adapter (this is the seam)
   const mockEngineAdapterPath = path.resolve(
-    __dirname,
-    "src/mocks/engine/engineAdapter.ts",
-  );
+    __dirname,    "src/mocks/engine/engineAdapter.ts"  );
+
+    const mockOpsDispatchImplPath = path.resolve(
+    __dirname,    "src/mocks/engine/opsDispatchImpl.ts"  );
+
 
   function clean(id: string) {
     return id.split("?")[0].replace(/\\/g, "/");
@@ -59,6 +65,8 @@ function seamSwapPlugin(): Plugin {
 
       // Engine seam (extension stub -> demo implementation)
       if (id.includes("/src/panel/platform/engineAdapter")) return mockEngineAdapterPath;
+      // Ops dispatcher impl seam (extension stub -> demo implementation)
+      if (id.includes("/src/panel/platform/opsDispatchImpl")) return mockOpsDispatchImplPath;
 
       return null;
     },

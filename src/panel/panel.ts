@@ -14,8 +14,14 @@ import * as actionLog from "../shared/actionLog";
 import * as debugTrace from "../shared/debugTrace";
 
 
+// import { setBusy } from "./app/state"; //DEBUG PB
+
+
 (function boot() {
   const dom = getDom();
+
+ 
+
 
   const bus = createBus();
   bus.start();
@@ -27,10 +33,9 @@ import * as debugTrace from "../shared/debugTrace";
     cache,
   };
 
-
-  // somewhere in panel boot
+ 
   const tuning = createTuningController({
-    getRuntimeAvailability: () => ({ opencvReady: false }), // replace later
+    getRuntimeAvailability: () => ({ opencvReady: false }),  
 
     debugTraceAppend: (message) =>
       debugTrace.append({

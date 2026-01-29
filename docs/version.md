@@ -26,10 +26,32 @@ Conventions:
 ---
 
  
+#### v0.0.8 — Fix: Demo OpenCV dispatch output correctness + tab freeze hardening
 
-## v0.0.7 — Epic (planned): Engine strategy + per-step pipeline control (demo-only OpenCV)
+* **Fix OpenCV mask output format (demo)**
 
-### Still to do  
+  * Ensure OpenCV ops return a **binary mask** (`0|1`) to match the native pipeline expectations (native `renderMask()` treats `1` as “on”).
+  * Current OpenCV `ocvRemoveSmallComponents()` returns `0|255`, which makes the pipeline interpret everything as “off” → **white/empty result**.
+  * Add a single normalization step before returning: `out[i] = out255 ? 1 : 0`.
+
+* **Add debug probes for OpenCV correctness (demo-only)**
+
+  * Log `sum(mask)` / `countOn` before and after `removeSmallComponents` to confirm you are not zeroing the mask.
+  * Log `nLabels`, `minArea`, and first few `stats.intAt(lbl, CC_STAT_AREA)` values to validate stats indexing.
+
+* **Prevent Settings “hide Logs” navigation loop / freeze**
+
+  * Keep the hardened `applyDevToolsVisibility()` behavior: only click Settings **if Logs is currently active** (avoid mount→loadAll→click loops).
+  * Remove/avoid any unconditional `dom.tabSettings.click()` when toggling dev tools visibility.
+
+* **Clarify demo vs extension behavior**
+
+  * Demo: OpenCV mode allowed via seam + loader.
+  * Extension: OpenCV forced-off / native fallback (CSP-safe), but engine strategy storage remains compatible.
+
+---
+
+#### v0.0.7 — Epic  : Engine strategy + per-step pipeline control (demo-only OpenCV)
 
 * Introduce a **segmentation pipeline definition** with multiple steps (Process 1…10) and a stable step API.
 * Add **engine strategy model**:
@@ -51,12 +73,12 @@ Conventions:
   * engine resolution decisions
   * step timings and failures
 * Keep OpenCV loading strictly **demo-only** (CSP: not supported in extension).
+* in this version the opencv is just possible for the contour.clean.removeSmallComponents
 
 ---
 
-## v0.0.6 — Demo-only OpenCV toggle + segmentation placeholder + cleanup
-
-### What’s done
+#### v0.0.6 — Demo-only OpenCV toggle + segmentation placeholder + cleanup
+ 
 
 * **Engine moved out of Segmentation**:
 
@@ -80,8 +102,7 @@ Conventions:
 * **Global error hook cleanup**
 
   * Global error hooks should not live in `tabs.ts`. Move them to panel boot (or a dedicated `app/errors.ts`) so this is not “demo-related” and not tied to OpenCV.
-
-### Constraint documented
+ 
 
 * OpenCV will **not** be supported in the extension build due to CSP/packaging constraints; injection stays demo-only.
 

@@ -8,6 +8,7 @@ import type { ContourTabState } from "../model";
 import { traceBoundaries } from "../lib/trace";
 import { rdpSimplifyIterative, chaikinSmooth } from "../lib/simplify";
 import { buildSvgFromPolylines } from "../lib/svg";
+import { loadContourTuningParams } from "./tuningParams";
 
 // Use canonical logger + trace bridge
 import { traceScope, logWarn, logError } from "../../../app/log";
@@ -48,7 +49,9 @@ export async function vectorizeToSvg(dom: Dom, state: ContourTabState, ui: Vecto
               const pixels = width * height;
 
               const epsilon = 1.5;
-              const smoothIters = Math.max(0, Math.min(4, (ui.getNumber(dom.pathSmoothItersEl, 2) | 0)));
+              const tp = await loadContourTuningParams();
+              const smoothIters = tp.pathSmoothIters;
+
 
               traceScope("Contour vectorize: start", { width, height, pixels, epsilon, smoothIters });
 

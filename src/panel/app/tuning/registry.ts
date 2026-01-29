@@ -51,7 +51,7 @@ export function createComponentRegistry(): ComponentRegistry {
   const root = n(
     "app",
     "BeeContour",
-    ["native"], // root itself isn't runnable; treat as native-only container
+    ["native", "opencv"],
     "native",
     {},
     [
@@ -61,15 +61,15 @@ export function createComponentRegistry(): ComponentRegistry {
       n(
         "contour",
         "Contour",
-        ["native"],
-        "native",
+        ["native", "opencv"],
+        "auto",
         {},
         [
           n(
             "contour.process",
             "Process",
             ["native"], // later: add "opencv" if you implement it
-            "native",
+            "auto",
             {
               contourScale: { kind: "number", label: "Processing scale", min: 25, max: 100, step: 5, default: 100 },
               edgeThreshold: { kind: "number", label: "Edge threshold", min: 1, max: 255, step: 1, default: 70 },
@@ -80,8 +80,8 @@ export function createComponentRegistry(): ComponentRegistry {
           n(
             "contour.clean",
             "Clean & Smooth",
-            ["native"], // parent clean is a container; you can keep it native-only
-            "native",
+            ["native", "opencv"],  // parent clean is a container; you can keep it native-only
+            "auto",
             {
               cleanMinArea: { kind: "number", label: "Min fragment size", min: 0, max: 500, step: 1, default: 12 },
               cleanRadius: { kind: "number", label: "Repair strength", min: 1, max: 3, step: 1, default: 1 },
@@ -98,36 +98,36 @@ export function createComponentRegistry(): ComponentRegistry {
               n(
                 "contour.clean.threshold",
                 "Threshold",
-                ["native"], // trivial in native; opencv later if you want
-                "inherit",
+                ["native"],
+                "auto",
                 {},
               ),
               n(
                 "contour.clean.removeSmallComponents",
                 "Remove small components",
-                ["native"], // first candidate to add "opencv"
-                "inherit",
+                ["native", "opencv"],
+                "auto",
                 {},
               ),
               n(
                 "contour.clean.repair",
                 "Repair gaps",
                 ["native"],
-                "inherit",
+                "auto",
                 {},
               ),
               n(
                 "contour.clean.smooth",
                 "Smooth mask",
                 ["native"],
-                "inherit",
+                "auto",
                 {},
               ),
               n(
                 "contour.clean.quality",
                 "Quality metrics",
                 ["native"],
-                "inherit",
+                "auto",
                 {},
               ),
             ],
@@ -159,14 +159,14 @@ export function createComponentRegistry(): ComponentRegistry {
         "colors",
         "Colors",
         ["native"],
-        "native",
+        "auto",
         {},
         [
           n(
             "colors.fill",
             "Region fill",
             ["native"],
-            "native",
+            "auto",
             {
               edgesDark: { kind: "boolean", label: "Edges are dark", default: true },
               edgeMaskThreshold: { kind: "number", label: "Edge threshold", min: 0, max: 255, step: 1, default: 80 },
@@ -184,7 +184,7 @@ export function createComponentRegistry(): ComponentRegistry {
         "segmentation",
         "Segmentation",
         ["native"],
-        "native",
+        "auto",
         {},
         [],
         "Placeholder: will become multi-step segmentation pipeline.",
