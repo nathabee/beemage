@@ -70,6 +70,12 @@ export function getDom() {
     "pathSmoothIters"
   );
 
+  // Tuning mount (Contour)
+  const contourTuningMountEl = must(
+    document.getElementById("contourTuningMount") as HTMLDivElement | null,
+    "contourTuningMount",
+  );
+
   // -----------------------------
   // Segmentation tab 
   // ----------------------------- 
@@ -148,8 +154,8 @@ export function getDom() {
   );
   const cfgStatusEl = must(document.getElementById("cfgStatus") as HTMLElement | null, "cfgStatus");
 
-   // Engine (OpenCV probe) — now in Settings
- 
+  // Engine (OpenCV probe) — now in Settings
+
   const cfgOpenCvSpinner = must(
     document.getElementById("cfgOpenCvSpinner") as HTMLSpanElement | null,
     "cfgOpenCvSpinner",
@@ -164,14 +170,20 @@ export function getDom() {
   );
 
   const settingsEngineBoxEl = must(
-  document.getElementById("settingsEngineBox") as HTMLDetailsElement | null,
-  "settingsEngineBox",
-);
+    document.getElementById("settingsEngineBox") as HTMLDetailsElement | null,
+    "settingsEngineBox",
+  );
 
-const cfgUseOpenCvEl = must(
-  document.getElementById("cfgUseOpenCv") as HTMLInputElement | null,
-  "cfgUseOpenCv",
-);
+  const cfgUseOpenCvEl = must(
+    document.getElementById("cfgUseOpenCv") as HTMLInputElement | null,
+    "cfgUseOpenCv",
+  );
+
+  // Tuning mount (Settings)
+  const tuningMountEl = must(
+    document.getElementById("tuningMount") as HTMLDivElement | null,
+    "tuningMount"
+  );
 
 
   // About
@@ -250,6 +262,8 @@ const cfgUseOpenCvEl = must(
 
     contourScaleEl,
     pathSmoothItersEl,
+    // Contour tuning
+    contourTuningMountEl,
 
     // Segmentation  
 
@@ -287,6 +301,9 @@ const cfgUseOpenCvEl = must(
     settingsEngineBoxEl,
     cfgUseOpenCvEl,
 
+
+    // Settings tuning
+    tuningMountEl,
 
     // Logs (audit)
     logsLimitEl,

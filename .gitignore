@@ -22,6 +22,10 @@ assets/opencv/*.data
 demo/public/assets/opencv/*.js
 demo/public/assets/opencv/*.wasm
 demo/public/assets/opencv/*.data
+
+docs/demo/assets/opencv/*.wasm
+docs/demo/assets/opencv/*.js
+
 !docs/assets/opencv/*.wasm
 !docs/assets/opencv/*.js
 

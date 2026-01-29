@@ -11,6 +11,10 @@ import { APP_VERSION } from "../../../shared/version";
 import { getBusy, withBusy } from "../../app/state";
 import { supportsOpenCvLoad, attemptLoadOpenCv } from "../../platform/engineAdapter";
 import { isOpenCvInjected } from "../../app/engine/engineAvailability";
+import { createTuningModel } from "../../app/tuning/model";
+import { createTuningView } from "../../app/tuning/view";
+import type { EnginePolicy, ParamValue } from "../../app/tuning/types";
+
 
 import {
   ensureDevConfigLoaded,
@@ -88,6 +92,35 @@ async function setDebugEnabled(enabled: boolean): Promise<{ ok: boolean; error?:
 export function createSettingsTab(dom: Dom, bus: Bus) {
   const model = createSettingsModel();
   const view = createSettingsView(dom);
+  // Tuning model (component registry + stored overrides)
+  // Important: availability is runtime-dependent; we also respect the UI "OpenCV mode" toggle.
+  const tuningModel = createTuningModel({
+    getRuntimeAvailability: () => ({
+      opencvReady: dom.cfgUseOpenCvEl.checked && isOpenCvInjected(),
+    }),
+  });
+
+  const tuningView = createTuningView(dom.tuningMountEl, {
+    onSetPolicy: async (componentId, policy) => {
+      await tuningModel.setEnginePolicy(componentId, policy as EnginePolicy);
+      await renderTuning("policy change");
+    },
+    onSetParam: async (componentId, key, value) => {
+      await tuningModel.setParam(componentId, key, value as ParamValue);
+      await renderTuning("param change");
+    },
+    onResetNode: async (componentId) => {
+      await tuningModel.resetNode(componentId);
+      await renderTuning("reset node");
+    },
+    onResetParam: async (componentId, key) => {
+      await tuningModel.resetParam(componentId, key);
+      await renderTuning("reset param");
+    },
+  });
+
+
+
 
   function setEngineBoxVisible(visible: boolean) {
     dom.settingsEngineBoxEl.classList.toggle("is-hidden", !visible);
@@ -138,7 +171,8 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
       setOpenCvBusy(false);
       setOpenCvStatus(isOpenCvInjected() ? "OpenCV loaded (native mode)" : "Native mode");
       setOpenCvReport("Native mode. OpenCV is optional and demo-only.");
-      return;
+      await renderTuning("opencv mode disabled");
+     return;
     }
 
     // ON = ensure OpenCV is loaded (once)
@@ -157,6 +191,8 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
       await saveUseOpenCvPref(true);
       setOpenCvStatus("OpenCV mode enabled");
       setOpenCvReport("OpenCV injected and mode enabled. Pipeline steps may opt into OpenCV.");
+      await renderTuning("opencv mode enabled");
+
     } catch (e: any) {
       const msg = String(e?.message ?? e);
 
@@ -199,6 +235,27 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
 
     logTrace("Settings: boot applyDevToolsVisibility", { showDevTools });
   }
+
+    async function renderTuning(reason: string) {
+    try {
+      const tree = await tuningModel.loadTree("app");
+      tuningView.render(tree);
+
+      logTrace("[settings] tuning rendered", {
+        reason,
+        opencvInjected: isOpenCvInjected(),
+        opencvMode: !!dom.cfgUseOpenCvEl.checked,
+      });
+    } catch (e: any) {
+      logError("[settings] tuning render failed", {
+        reason,
+        msg: String(e?.message ?? e),
+      });
+      dom.tuningMountEl.textContent = "Tuning UI failed to load (see console).";
+    }
+  }
+ 
+
 
   async function loadAll() {
     view.setBusy(getBusy());
@@ -260,6 +317,8 @@ export function createSettingsTab(dom: Dom, bus: Bus) {
 
     view.setGeneralStatus("");
     view.setDevStatus("");
+    await renderTuning("loadAll");
+
 
     logTrace("Settings: loaded", { showDevTools, enabled, dev: model.dev, opencvInjected: isOpenCvInjected() });
   }
