@@ -138,20 +138,86 @@
       </section>
 
       <!-- =========================
-           SEGMENTATION VIEW (TEST)
-           ========================= -->
+     SEGMENTATION VIEW
+     ========================= -->
       <section id="viewSegmentation" class="view" role="tabpanel" aria-labelledby="tabSegmentation" hidden>
-        <p class="muted">
-          Segmentation pipeline placeholder. OpenCV injection and probing lives in Settings.
-        </p>
+        <div class="segLayout">
+          <!-- Left: Preset library -->
+          <div class="segPresets">
+            <div class="segHeaderRow">
+              <div class="segTitle">Presets</div>
+              <div class="muted" style="font-size:12px;">Drag a preset onto a step.</div>
+            </div>
 
-        <details class="searchBox" role="group" open>
-          <summary>Status</summary>
-          <div class="muted" style="font-size:12px; line-height:1.4;">
-            Planned: multi-step segmentation pipeline with per-step engine selection (native/opencv/auto).
+            <!-- Filled by view.ts -->
+            <div id="segPresetList" class="segPresetList" aria-label="Segmentation preset library"></div>
           </div>
-        </details>
+
+          <!-- Right: Fixed pipeline -->
+          <div class="segPipeline">
+            <div class="segHeaderRow">
+              <div class="segTitle">Pipeline</div>
+
+              <div class="segHeaderActions">
+                <button id="segRunBtn" class="btn" type="button">Run</button>
+                <span id="segStatus" class="muted" style="font-size:12px;">Idle</span>
+
+                <div id="segRecipeDrop" class="segDropZone segDropZoneHeader" data-seg-drop="recipe"
+                  aria-label="Drop a full recipe preset here" title="Drop a recipe preset here">
+                  <span class="segStepAssigned muted" data-assigned>Drop recipe here</span>
+                </div>
+              </div>
+            </div>
+
+
+            <div class="segSteps" aria-label="Segmentation steps">
+              <div id="segStepResize" class="segDropZone segStep" data-seg-step="segmentation.resize"
+                aria-label="Resize step drop zone">
+                <div class="segStepTitle">1. Resize</div>
+                <div class="segStepAssigned muted" data-assigned>Drop preset…</div>
+              </div>
+
+              <div id="segStepDenoise" class="segDropZone segStep" data-seg-step="segmentation.denoise"
+                aria-label="Denoise step drop zone">
+                <div class="segStepTitle">2. Denoise</div>
+                <div class="segStepAssigned muted" data-assigned>Drop preset…</div>
+              </div>
+
+              <div id="segStepColor" class="segDropZone segStep" data-seg-step="segmentation.color"
+                aria-label="Color step drop zone">
+                <div class="segStepTitle">3. Color / Gray</div>
+                <div class="segStepAssigned muted" data-assigned>Drop preset…</div>
+              </div>
+
+              <div id="segStepThreshold" class="segDropZone segStep" data-seg-step="segmentation.threshold"
+                aria-label="Threshold step drop zone">
+                <div class="segStepTitle">4. Threshold</div>
+                <div class="segStepAssigned muted" data-assigned>Drop preset…</div>
+              </div>
+
+              <div id="segStepMorphology" class="segDropZone segStep" data-seg-step="segmentation.morphology"
+                aria-label="Morphology step drop zone">
+                <div class="segStepTitle">5. Morphology cleanup</div>
+                <div class="segStepAssigned muted" data-assigned>Drop preset…</div>
+              </div>
+            </div>
+
+            <div class="segPreview" style="margin-top:12px;">
+              <div class="muted" style="font-size:12px; margin-bottom:6px;">Mask preview</div>
+              <canvas id="segMaskCanvas" class="segCanvas" aria-label="Segmentation mask preview"></canvas>
+            </div>
+
+
+            <details class="searchBox" role="group" open style="margin-top:12px;">
+              <summary>Status</summary>
+              <div class="muted" style="font-size:12px; line-height:1.4;">
+                Fixed pipeline order. Presets configure each step (algo + params) via tuning store.
+              </div>
+            </details>
+          </div>
+        </div>
       </section>
+
 
 
 

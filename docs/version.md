@@ -26,7 +26,7 @@ Conventions:
 ---
 
  
-#### v0.0.8 — Fix: Demo OpenCV dispatch output correctness + tab freeze hardening
+#### FUTURE — Fix: Demo OpenCV dispatch output correctness + tab freeze hardening
 
 * **Fix OpenCV mask output format (demo)**
 
@@ -48,6 +48,38 @@ Conventions:
 
   * Demo: OpenCV mode allowed via seam + loader.
   * Extension: OpenCV forced-off / native fallback (CSP-safe), but engine strategy storage remains compatible.
+
+
+---
+
+---
+
+#### v0.0.8 — Epic: Segmentation pipeline with drag-and-drop presets per subprocess
+
+* Add a dedicated **Segmentation tab** with a fixed 5-step pipeline:
+
+  * `segmentation.resize` → `segmentation.denoise` → `segmentation.color` → `segmentation.threshold` → `segmentation.morphology`
+* Implement a **preset library** for segmentation:
+
+  * draggable preset cards
+  * per-target filtering via `preset.target` (recipe vs per-step)
+* Add **drag-and-drop drop zones**:
+
+  * pipeline header drop zone for full “recipe” presets (`target: "segmentation"`)
+  * per-step drop zones for step-specific presets (e.g. `target: "segmentation.threshold"`)
+* Wire presets into the existing **tuning system**:
+
+  * dropping a preset calls `tuningController.applyPreset(...)`
+  * preset values are persisted via the tuning store and immediately reflected by the tuning UI
+* Extend the **tuning registry** to include segmentation components so engine/policy resolution works uniformly:
+
+  * register `segmentation` and the 5 step nodes with parameter schemas + defaults
+  * enables consistent `resolveComponent(...)` behavior for segmentation ops
+* Keep OpenCV constraints intact:
+
+  * extension build remains native-only (OpenCV paths stubbed/fallback as needed)
+  * demo build can provide OpenCV implementations via the demo dispatcher wiring
+
 
 ---
 

@@ -57,7 +57,7 @@ import * as debugTrace from "../shared/debugTrace";
 
   const contourTab = createContourTab(dom, bus);
   const colorsTab = createColorsTab(dom, bus);
-  const segmentationTab = createSegmentationTab(dom, bus);
+  const segmentationTab = createSegmentationTab(dom, bus,tuning);
   const settingsTab = createSettingsTab(dom, bus);
   const logsTab = createLogsTab(dom, bus);
 

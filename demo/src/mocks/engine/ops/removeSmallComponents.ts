@@ -1,3 +1,6 @@
+// /demo/src/moks/engine/opts/removeSmallComponents.ts
+
+
 import { removeSmallComponents as nativeRemoveSmallComponents } from "../../../../../src/panel/tabs/contour/lib/morphology";
 import { getCvOrNull } from "./helpers/cv";
 

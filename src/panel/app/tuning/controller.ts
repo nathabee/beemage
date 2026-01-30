@@ -2,6 +2,7 @@
 import { createTuningModel, type TuningModel, type TuningNodeVm, type TuningTreeVm } from "./model";
 import { createTuningView, type TuningView } from "./view";
 import type { ComponentId, EnginePolicy, ParamValue, RuntimeEngineAvailability } from "./types";
+import type { TuningPreset } from "./presets/segmentationPresets";
 
 type Mount = {
   mountEl: HTMLElement;
@@ -10,12 +11,8 @@ type Mount = {
 };
 
 export type TuningControllerDeps = {
-  // Runtime availability should be read from your engine/injection state.
-  // Keep it as a function so it’s always fresh.
   getRuntimeAvailability: () => RuntimeEngineAvailability;
 
-  // Logging channels: debugTrace for persisted dev, actionLog for user-visible.
-  // NOTE: these should already be wrapped to match your entry object types.
   debugTraceAppend: (line: string) => void;
   actionLogAppend: (line: string) => void;
 };
@@ -24,6 +21,10 @@ export type TuningController = {
   mount(args: { mountEl: HTMLElement; scopeRootId: ComponentId }): void;
   unmount(mountEl: HTMLElement): void;
   refresh(): Promise<void>;
+
+  // NEW: apply a preset in one batch (one rerender)
+  applyPreset(preset: TuningPreset): Promise<void>;
+
   dispose(): void;
 };
 
@@ -49,7 +50,6 @@ export function createTuningController(deps: TuningControllerDeps): TuningContro
   let disposed = false;
 
   async function computeAppTree(): Promise<TuningTreeVm> {
-    // One full load; then we can slice subtrees for scoped mounts.
     return await model.loadTree("app");
   }
 
@@ -66,7 +66,6 @@ export function createTuningController(deps: TuningControllerDeps): TuningContro
 
       const scopedRoot = pickSubtreeRootVm(appTree.root, m.scopeRootId);
 
-      // Keep runtime + stored consistent; only swap root + scopeId
       m.view.render({
         ...appTree,
         scopeId: m.scopeRootId,
@@ -111,6 +110,31 @@ export function createTuningController(deps: TuningControllerDeps): TuningContro
     await rerenderAll();
   }
 
+  // NEW
+  async function applyPreset(preset: TuningPreset): Promise<void> {
+    if (disposed) return;
+
+    // Apply policies first, then params (so algo/engine mismatches are less surprising)
+    if (preset.policies) {
+      for (const p of preset.policies) {
+        await model.setEnginePolicy(p.id, p.policy);
+      }
+    }
+
+    if (preset.params) {
+      for (const it of preset.params) {
+        await model.setParam(it.id, it.key, it.value);
+      }
+    }
+
+    deps.actionLogAppend(`[tuning] preset ${preset.id} (${preset.title})`);
+    deps.debugTraceAppend(
+      `[tuning] applyPreset id=${preset.id} title=${preset.title} policies=${preset.policies?.length ?? 0} params=${preset.params?.length ?? 0}`,
+    );
+
+    await rerenderAll();
+  }
+
   function mount(args: { mountEl: HTMLElement; scopeRootId: ComponentId }) {
     if (disposed) return;
 
@@ -148,5 +172,5 @@ export function createTuningController(deps: TuningControllerDeps): TuningContro
     mounts.length = 0;
   }
 
-  return { mount, unmount, refresh, dispose };
+  return { mount, unmount, refresh, applyPreset, dispose };
 }

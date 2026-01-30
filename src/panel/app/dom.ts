@@ -48,14 +48,14 @@ export function getDom() {
   const cleanQualityFillEl = must(document.getElementById("cleanQualityFill") as HTMLDivElement | null, "cleanQualityFill");
   const cleanQualityTextEl = must(document.getElementById("cleanQualityText") as HTMLSpanElement | null, "cleanQualityText");
 
- 
+
 
   const btnVectorizeEl = must(document.getElementById("btnVectorize") as HTMLButtonElement | null, "btnVectorize");
   const btnDownloadSvgEl = must(document.getElementById("btnDownloadSvg") as HTMLButtonElement | null, "btnDownloadSvg");
 
   const svgPreviewImgEl = must(document.getElementById("svgPreviewImg") as HTMLImageElement | null, "svgPreviewImg");
   const svgPreviewTextEl = must(document.getElementById("svgPreviewText") as HTMLPreElement | null, "svgPreviewText");
- 
+
   // Tuning mount (Contour)
   const contourTuningMountEl = must(
     document.getElementById("contourTuningMount") as HTMLDivElement | null,
@@ -64,7 +64,56 @@ export function getDom() {
 
   // -----------------------------
   // Segmentation tab 
-  // ----------------------------- 
+  // -----------------------------  
+  const segPresetListEl = must(
+    document.getElementById("segPresetList") as HTMLDivElement | null,
+    "segPresetList",
+  );
+
+  const segRecipeDropEl = must(
+    document.getElementById("segRecipeDrop") as HTMLDivElement | null,
+    "segRecipeDrop",
+  );
+
+  const segStepResizeEl = must(
+    document.getElementById("segStepResize") as HTMLDivElement | null,
+    "segStepResize",
+  );
+
+  const segStepDenoiseEl = must(
+    document.getElementById("segStepDenoise") as HTMLDivElement | null,
+    "segStepDenoise",
+  );
+
+  const segStepColorEl = must(
+    document.getElementById("segStepColor") as HTMLDivElement | null,
+    "segStepColor",
+  );
+
+  const segStepThresholdEl = must(
+    document.getElementById("segStepThreshold") as HTMLDivElement | null,
+    "segStepThreshold",
+  );
+
+  const segStepMorphologyEl = must(
+    document.getElementById("segStepMorphology") as HTMLDivElement | null,
+    "segStepMorphology",
+  );
+
+  const segRunBtn = must(
+    document.getElementById("segRunBtn") as HTMLButtonElement | null,
+    "segRunBtn",
+  );
+
+  const segStatusEl = must(
+    document.getElementById("segStatus") as HTMLSpanElement | null,
+    "segStatus",
+  );
+
+  const segMaskCanvasEl = must(
+    document.getElementById("segMaskCanvas") as HTMLCanvasElement | null,
+    "segMaskCanvas",
+  );
 
 
   // -----------------------------
@@ -242,7 +291,17 @@ export function getDom() {
     // Contour tuning
     contourTuningMountEl,
 
-    // Segmentation  
+    // Segmentation
+    segPresetListEl,
+    segRecipeDropEl,
+    segStepResizeEl,
+    segStepDenoiseEl,
+    segStepColorEl,
+    segStepThresholdEl,
+    segStepMorphologyEl,
+    segRunBtn,
+    segStatusEl,
+    segMaskCanvasEl,
 
 
     // Colors 

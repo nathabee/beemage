@@ -80,7 +80,7 @@ export function createComponentRegistry(): ComponentRegistry {
           n(
             "contour.clean",
             "Clean & Smooth",
-            ["native", "opencv"],  // parent clean is a container; you can keep it native-only
+            ["native", "opencv"], // parent clean is a container; you can keep it native-only
             "auto",
             {
               cleanMinArea: { kind: "number", label: "Min fragment size", min: 0, max: 500, step: 1, default: 12 },
@@ -95,41 +95,11 @@ export function createComponentRegistry(): ComponentRegistry {
               },
             },
             [
-              n(
-                "contour.clean.threshold",
-                "Threshold",
-                ["native"],
-                "auto",
-                {},
-              ),
-              n(
-                "contour.clean.removeSmallComponents",
-                "Remove small components",
-                ["native", "opencv"],
-                "auto",
-                {},
-              ),
-              n(
-                "contour.clean.repair",
-                "Repair gaps",
-                ["native"],
-                "auto",
-                {},
-              ),
-              n(
-                "contour.clean.smooth",
-                "Smooth mask",
-                ["native"],
-                "auto",
-                {},
-              ),
-              n(
-                "contour.clean.quality",
-                "Quality metrics",
-                ["native"],
-                "auto",
-                {},
-              ),
+              n("contour.clean.threshold", "Threshold", ["native"], "auto", {}),
+              n("contour.clean.removeSmallComponents", "Remove small components", ["native", "opencv"], "auto", {}),
+              n("contour.clean.repair", "Repair gaps", ["native"], "auto", {}),
+              n("contour.clean.smooth", "Smooth mask", ["native"], "auto", {}),
+              n("contour.clean.quality", "Quality metrics", ["native"], "auto", {}),
             ],
           ),
 
@@ -178,16 +148,85 @@ export function createComponentRegistry(): ComponentRegistry {
       ),
 
       // -----------------------------
-      // Segmentation (placeholder)
+      // Segmentation (pipeline)
       // -----------------------------
       n(
         "segmentation",
         "Segmentation",
-        ["native"],
+        ["native", "opencv"],
         "auto",
         {},
-        [],
-        "Placeholder: will become multi-step segmentation pipeline.",
+        [
+          n(
+            "segmentation.resize",
+            "Resize",
+            ["native", "opencv"],
+            "auto",
+            {
+              resizeAlgo: { kind: "number", label: "Resize algo", min: 0, max: 3, step: 1, default: 1 },
+              targetMaxW: { kind: "number", label: "Target max width", min: 100, max: 4000, step: 50, default: 1200 },
+            },
+            undefined,
+            "Prepare image for stable downstream processing.",
+          ),
+
+          n(
+            "segmentation.denoise",
+            "Denoise",
+            ["native", "opencv"],
+            "auto",
+            {
+              denoiseAlgo: { kind: "number", label: "Denoise algo", min: 0, max: 2, step: 1, default: 1 },
+              blurK: { kind: "number", label: "Blur kernel", min: 1, max: 21, step: 2, default: 3 },
+              bilateralSigma: { kind: "number", label: "Bilateral sigma", min: 1, max: 150, step: 1, default: 35 },
+            },
+            undefined,
+            "Reduce noise before thresholding.",
+          ),
+
+          n(
+            "segmentation.color",
+            "Color / Gray",
+            ["native", "opencv"],
+            "auto",
+            {
+              colorMode: { kind: "number", label: "Color mode", min: 0, max: 3, step: 1, default: 1 },
+              hsvChannel: { kind: "number", label: "HSV channel", min: 0, max: 2, step: 1, default: 2 },
+            },
+            undefined,
+            "Select color space / channel features for thresholding.",
+          ),
+
+          n(
+            "segmentation.threshold",
+            "Threshold",
+            ["native", "opencv"],
+            "auto",
+            {
+              thresholdAlgo: { kind: "number", label: "Threshold algo", min: 0, max: 3, step: 1, default: 1 },
+              manualT: { kind: "number", label: "Manual threshold", min: 0, max: 255, step: 1, default: 128 },
+              adaptBlock: { kind: "number", label: "Adaptive block", min: 3, max: 101, step: 2, default: 31 },
+              adaptC: { kind: "number", label: "Adaptive C", min: -50, max: 50, step: 1, default: 3 },
+            },
+            undefined,
+            "Convert features into a binary mask.",
+          ),
+
+          n(
+            "segmentation.morphology",
+            "Morphology cleanup",
+            ["native", "opencv"],
+            "auto",
+            {
+              morphAlgo: { kind: "number", label: "Morph algo", min: 0, max: 3, step: 1, default: 2 },
+              morphK: { kind: "number", label: "Kernel size", min: 1, max: 31, step: 2, default: 5 },
+              morphIters: { kind: "number", label: "Iterations", min: 1, max: 5, step: 1, default: 1 },
+            },
+            undefined,
+            "Remove specks, fill holes, and stabilize regions.",
+          ),
+        ],
+        "Fixed-order segmentation pipeline. Presets configure each step.",
       ),
     ],
   );

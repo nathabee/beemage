@@ -5,28 +5,76 @@ import { loadComponentConfigs } from "../app/tuning/store";
 import { isOpenCvInjected } from "../app/engine/engineAvailability";
 import { logWarn } from "../app/log";
 
-export type MaskOpId = "contour.clean.removeSmallComponents";
+export type EngineId = "native" | "opencv";
 
+// -----------------------------
+// Universal op typing
+// -----------------------------
 export type MaskOpInputs = {
   mask: Uint8Array;
   width: number;
   height: number;
 };
 
-export type MaskOpParamsByOp = {
+export type ImageOpInputs = {
+  image: ImageData;
+  width: number;
+  height: number;
+};
+
+export type OpId =
+  | "contour.clean.removeSmallComponents"
+  | "segmentation.resize"
+  | "segmentation.denoise"
+  | "segmentation.color"
+  | "segmentation.threshold"
+  | "segmentation.morphology";
+
+export type OpInputsByOp = {
+  "contour.clean.removeSmallComponents": MaskOpInputs;
+
+  "segmentation.resize": ImageOpInputs;
+  "segmentation.denoise": ImageOpInputs;
+  "segmentation.color": ImageOpInputs;
+  "segmentation.threshold": ImageOpInputs;
+
+  "segmentation.morphology": MaskOpInputs;
+};
+
+export type OpOutputsByOp = {
+  "contour.clean.removeSmallComponents": Uint8Array;
+
+  "segmentation.resize": ImageData;
+  "segmentation.denoise": ImageData;
+  "segmentation.color": ImageData;
+  "segmentation.threshold": Uint8Array;
+
+  "segmentation.morphology": Uint8Array;
+};
+
+export type OpParamsByOp = {
   "contour.clean.removeSmallComponents": {
     cleanMinArea: number;
   };
+
+  "segmentation.resize": { resizeAlgo: number; targetMaxW: number };
+  "segmentation.denoise": { denoiseAlgo: number; blurK: number; bilateralSigma: number };
+  "segmentation.color": { colorMode: number; hsvChannel: number };
+  "segmentation.threshold": { thresholdAlgo: number; manualT: number; adaptBlock: number; adaptC: number };
+  "segmentation.morphology": { morphAlgo: number; morphK: number; morphIters: number };
 };
 
-export type EngineId = "native" | "opencv";
-
-export type MaskOpImpls = {
-  [K in MaskOpId]: {
-    native: (input: MaskOpInputs, params: MaskOpParamsByOp[K]) => Uint8Array | Promise<Uint8Array>;
-    opencv: (input: MaskOpInputs, params: MaskOpParamsByOp[K]) => Uint8Array | Promise<Uint8Array>;
+export type OpImpls = {
+  [K in OpId]: {
+    native: (input: OpInputsByOp[K], params: OpParamsByOp[K]) => OpOutputsByOp[K] | Promise<OpOutputsByOp[K]>;
+    opencv: (input: OpInputsByOp[K], params: OpParamsByOp[K]) => OpOutputsByOp[K] | Promise<OpOutputsByOp[K]>;
   };
 };
+
+// -----------------------------
+// Back-compat alias (contour code unchanged)
+// -----------------------------
+export type MaskOpId = "contour.clean.removeSmallComponents";
 
 const registry = createComponentRegistry();
 
@@ -34,9 +82,9 @@ function getRuntime() {
   return { opencvReady: isOpenCvInjected() };
 }
 
-async function resolveEngineAndParams(op: MaskOpId): Promise<{
+async function resolveEngineAndParams<K extends OpId>(op: K): Promise<{
   engine: EngineId;
-  params: MaskOpParamsByOp[typeof op];
+  params: OpParamsByOp[K];
   fallbackReason?: string;
   opencvReady: boolean;
 }> {
@@ -45,30 +93,89 @@ async function resolveEngineAndParams(op: MaskOpId): Promise<{
 
   const resolved = resolveComponent(op, registry, stored, runtime);
 
-  // Typed param mapping (keeps callers clean, keeps clamping rules centralized later)
   if (op === "contour.clean.removeSmallComponents") {
-    const cleanMinArea = Number(resolved.params.cleanMinArea ?? 12);
-
+    const cleanMinArea = Number((resolved.params as any).cleanMinArea ?? 12);
     return {
       engine: resolved.engine,
-      params: { cleanMinArea },
+      params: { cleanMinArea } as OpParamsByOp[K],
       fallbackReason: resolved.fallbackReason,
       opencvReady: !!runtime.opencvReady,
     };
   }
 
-  // unreachable, but TS likes completeness
+  if (op === "segmentation.resize") {
+    const resizeAlgo = Number((resolved.params as any).resizeAlgo ?? 1);
+    const targetMaxW = Number((resolved.params as any).targetMaxW ?? 900);
+    return {
+      engine: resolved.engine,
+      params: { resizeAlgo, targetMaxW } as OpParamsByOp[K],
+      fallbackReason: resolved.fallbackReason,
+      opencvReady: !!runtime.opencvReady,
+    };
+  }
+
+  if (op === "segmentation.denoise") {
+    const denoiseAlgo = Number((resolved.params as any).denoiseAlgo ?? 1);
+    const blurK = Number((resolved.params as any).blurK ?? 5);
+    const bilateralSigma = Number((resolved.params as any).bilateralSigma ?? 35);
+    return {
+      engine: resolved.engine,
+      params: { denoiseAlgo, blurK, bilateralSigma } as OpParamsByOp[K],
+      fallbackReason: resolved.fallbackReason,
+      opencvReady: !!runtime.opencvReady,
+    };
+  }
+
+  if (op === "segmentation.color") {
+    const colorMode = Number((resolved.params as any).colorMode ?? 1);
+    const hsvChannel = Number((resolved.params as any).hsvChannel ?? 2);
+    return {
+      engine: resolved.engine,
+      params: { colorMode, hsvChannel } as OpParamsByOp[K],
+      fallbackReason: resolved.fallbackReason,
+      opencvReady: !!runtime.opencvReady,
+    };
+  }
+
+  if (op === "segmentation.threshold") {
+    const thresholdAlgo = Number((resolved.params as any).thresholdAlgo ?? 1);
+    const manualT = Number((resolved.params as any).manualT ?? 128);
+    const adaptBlock = Number((resolved.params as any).adaptBlock ?? 21);
+    const adaptC = Number((resolved.params as any).adaptC ?? 2);
+    return {
+      engine: resolved.engine,
+      params: { thresholdAlgo, manualT, adaptBlock, adaptC } as OpParamsByOp[K],
+      fallbackReason: resolved.fallbackReason,
+      opencvReady: !!runtime.opencvReady,
+    };
+  }
+
+  if (op === "segmentation.morphology") {
+    const morphAlgo = Number((resolved.params as any).morphAlgo ?? 2);
+    const morphK = Number((resolved.params as any).morphK ?? 7);
+    const morphIters = Number((resolved.params as any).morphIters ?? 1);
+    return {
+      engine: resolved.engine,
+      params: { morphAlgo, morphK, morphIters } as OpParamsByOp[K],
+      fallbackReason: resolved.fallbackReason,
+      opencvReady: !!runtime.opencvReady,
+    };
+  }
+
   throw new Error(`[opsDispatch] Unknown op: ${op}`);
 }
 
-export async function runMaskOpCore(op: MaskOpId, input: MaskOpInputs, impls: MaskOpImpls): Promise<Uint8Array> {
+export async function runOpCore<K extends OpId>(
+  op: K,
+  input: OpInputsByOp[K],
+  impls: OpImpls,
+): Promise<OpOutputsByOp[K]> {
   const { engine, params, fallbackReason, opencvReady } = await resolveEngineAndParams(op);
 
   if (engine === "opencv" && !opencvReady) {
     logWarn(`OpenCV selected for ${op} but not ready; falling back to native. ${fallbackReason ?? ""}`.trim());
-    return await impls[op].native(input, params as any);
+    return await impls[op].native(input as any, params as any);
   }
 
-  // If platform's opencv impl is just a stub, it can internally fallback or warn.
-  return await impls[op][engine](input, params as any);
+  return await impls[op][engine](input as any, params as any);
 }
