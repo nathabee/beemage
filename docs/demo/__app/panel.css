@@ -692,3 +692,81 @@ input[type="color"] {
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+
+/* Segmentation layout */
+.segLayout {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 12px;
+}
+
+.segHeaderRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.segTitle {
+  font-weight: 600;
+}
+
+.segPresetList {
+  display: grid;
+  gap: 8px;
+}
+
+.segPresetCard {
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 10px;
+  cursor: grab;
+  user-select: none;
+}
+
+.segPresetCard:active {
+  cursor: grabbing;
+}
+
+.segPresetCardTitle {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.segPresetCardDesc {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.segPipeline .segSteps {
+  display: grid;
+  gap: 10px;
+}
+
+.segDropZone {
+  border: 1px dashed rgba(255,255,255,0.18);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.segDropZoneHeader {
+  font-size: 12px;
+  padding: 8px 10px;
+  opacity: 0.85;
+}
+
+.segDropZone.is-over {
+  outline: 2px solid rgba(255,255,255,0.22);
+  outline-offset: 2px;
+}
+
+.segStepTitle {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.segStepAssigned {
+  font-size: 12px;
+}
