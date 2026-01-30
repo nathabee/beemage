@@ -46,7 +46,7 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
     // Snapshot returns defaults if not loaded yet (based on your store behavior).
     const snap = getDevConfigSnapshot();
     return !!snap?.traceConsole;
-  }
+  } 
 
   function installGlobalErrorHooksOnce(): void {
     const g: any = globalThis as any;

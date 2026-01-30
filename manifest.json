@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BeeContour — Extract the main outline",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "BeeContour extracts the main outline from an image directly in your browser. Works best with high-contrast subjects such as winter trees.",
   "author": "nathabee",
   "homepage_url": "https://nathabee.github.io/beecontour/",

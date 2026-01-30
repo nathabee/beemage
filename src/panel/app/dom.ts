@@ -115,6 +115,16 @@ export function getDom() {
     "segMaskCanvas",
   );
 
+  const segNextBtn = must(
+    document.getElementById("segNextBtn") as HTMLButtonElement | null,
+    "segNextBtn",
+  );
+
+  const segResetBtn = must(
+    document.getElementById("segResetBtn") as HTMLButtonElement | null,
+    "segResetBtn",
+  );
+
 
   // -----------------------------
   // Colors tab
@@ -302,6 +312,8 @@ export function getDom() {
     segRunBtn,
     segStatusEl,
     segMaskCanvasEl,
+    segNextBtn,
+    segResetBtn,
 
 
     // Colors 

@@ -49,8 +49,32 @@ Conventions:
   * Demo: OpenCV mode allowed via seam + loader.
   * Extension: OpenCV forced-off / native fallback (CSP-safe), but engine strategy storage remains compatible.
 
+ ---
 
----
+#### v0.0.9 — Epic: Segmentation step runner (interactive execution + live preview)
+
+* Add **step-by-step execution controls** to the Segmentation tab:
+
+  * `Next step` advances the pipeline by exactly one subprocess
+  * `Run all` executes the full pipeline sequentially
+  * `Reset` clears the session and preview
+* Introduce a **segmentation session state** in the tab to avoid recomputation:
+
+  * persists intermediate artifacts between clicks (image for steps 1–3, mask for steps 4–5)
+  * tracks current step index and pipeline progress
+* Enhance pipeline UX with **visual step state**:
+
+  * highlight the active step while waiting for user action
+  * mark completed steps as done
+  * keep fixed pipeline order; presets still configure each subprocess via tuning
+* Upgrade preview behavior:
+
+  * single preview canvas displays intermediate **image outputs** (steps 1–3)
+  * switches to **mask preview** for threshold/morphology outputs (steps 4–5)
+* Add lightweight status reporting during execution:
+
+  * current step name + completion status
+  * error handling path surfaces failures without breaking the tab state
 
 ---
 
@@ -71,7 +95,7 @@ Conventions:
 
   * dropping a preset calls `tuningController.applyPreset(...)`
   * preset values are persisted via the tuning store and immediately reflected by the tuning UI
-* Extend the **tuning registry** to include segmentation components so engine/policy resolution works uniformly:
+* Extend the **tuning registry** to include segmentation components so resolution works uniformly:
 
   * register `segmentation` and the 5 step nodes with parameter schemas + defaults
   * enables consistent `resolveComponent(...)` behavior for segmentation ops
@@ -80,6 +104,7 @@ Conventions:
   * extension build remains native-only (OpenCV paths stubbed/fallback as needed)
   * demo build can provide OpenCV implementations via the demo dispatcher wiring
 
+ 
 
 ---
 
