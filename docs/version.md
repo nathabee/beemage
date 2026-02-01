@@ -51,6 +51,19 @@ Conventions:
 
  ---
 
+#### v0.0.10 — Epic: Segmentation issues and native code
+
+* Ensure tracing is mounted at boot (panel.ts) so logs work before visiting Settings
+* Segmentation pipeline now seeds from the original source canvas (not from processed/edge output)
+* Implement native demo ops for segmentation steps: resize, denoise, color, morphology (no OpenCV in native)
+* Wire demo seam swap so demo uses `/demo/src` opsDispatchImpl while extension stays on `/src`
+* Add richer per-op trace output (impl source + params) to verify correct dispatcher path
+* Fix segmentation reset: clear session + restore preview from source (no “blank image” state)
+* Keep tuning nodes collapsed by default in all scopes (expand only when needed)
+* Docs: add “Open demo in new window” link/button in `docs/index.html`
+
+---
+
 #### v0.0.9 — Epic: Segmentation step runner (interactive execution + live preview)
 
 * Add **step-by-step execution controls** to the Segmentation tab:

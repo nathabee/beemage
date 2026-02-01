@@ -10,18 +10,17 @@ import { createColorsTab } from "./tabs/colors/tab";
 import { createSettingsTab } from "./tabs/settings/tab";
 import { createLogsTab } from "./tabs/logs/tab";
 import { createTuningController } from "./app/tuning/controller";
+
 import * as actionLog from "../shared/actionLog";
 import * as debugTrace from "../shared/debugTrace";
 
+import { ensureDevConfigLoaded } from "../shared/devConfigStore";
 
-// import { setBusy } from "./app/state"; //DEBUG PB
-
-
-(function boot() {
+async function boot(): Promise<void> {
   const dom = getDom();
 
- 
-
+  // Load dev config early so logTrace sees persisted settings immediately.
+  await ensureDevConfigLoaded().catch(() => null);
 
   const bus = createBus();
   bus.start();
@@ -33,9 +32,8 @@ import * as debugTrace from "../shared/debugTrace";
     cache,
   };
 
- 
   const tuning = createTuningController({
-    getRuntimeAvailability: () => ({ opencvReady: false }),  
+    getRuntimeAvailability: () => ({ opencvReady: false }),
 
     debugTraceAppend: (message) =>
       debugTrace.append({
@@ -54,10 +52,11 @@ import * as debugTrace from "../shared/debugTrace";
 
   tuning.mount({ mountEl: dom.tuningMountEl, scopeRootId: "app" });
   tuning.mount({ mountEl: dom.contourTuningMountEl, scopeRootId: "contour" });
+  tuning.mount({ mountEl: dom.segTuningMountEl, scopeRootId: "segmentation" });
 
   const contourTab = createContourTab(dom, bus);
   const colorsTab = createColorsTab(dom, bus);
-  const segmentationTab = createSegmentationTab(dom, bus,tuning);
+  const segmentationTab = createSegmentationTab(dom, bus, tuning);
   const settingsTab = createSettingsTab(dom, bus);
   const logsTab = createLogsTab(dom, bus);
 
@@ -77,4 +76,6 @@ import * as debugTrace from "../shared/debugTrace";
 
   tabs.bind();
   tabs.boot();
-})();
+}
+
+void boot();

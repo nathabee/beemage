@@ -9,6 +9,11 @@ function tracePlatformResolves(): Plugin {
     enforce: "pre",
     async resolveId(source, importer, options) {
       const shouldTrace =
+        // exact local import used by opsDispatch.ts
+        source === "./opsDispatchImpl" ||
+        source.endsWith("/opsDispatchImpl") ||
+        source.endsWith("/opsDispatchImpl.ts") ||
+
         source.includes("panel/platform/runtime") ||
         source.includes("shared/platform/storage") ||
         source.includes("panel/platform/engineAdapter") ||
@@ -18,7 +23,6 @@ function tracePlatformResolves(): Plugin {
         source.includes("platform/engineAdapter") ||
         source.includes("platform/opsDispatchImpl");
 
-
       if (shouldTrace) {
         const r = await this.resolve(source, importer, { ...options, skipSelf: true });
         console.log("[app-trace] source   :", source);
@@ -26,6 +30,7 @@ function tracePlatformResolves(): Plugin {
         console.log("[app-trace] resolved :", r?.id);
         console.log("----");
       }
+
       return null;
     },
   };

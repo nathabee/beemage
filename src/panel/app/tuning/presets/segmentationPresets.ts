@@ -49,7 +49,7 @@ export const segmentationPresets: ReadonlyArray<TuningPreset> = [
     title: "Morphology: Fill holes (close)",
     target: "segmentation.morphology",
     params: [
-      { id: "segmentation.morphology", key: "morphAlgo", value: 2 },
+      { id: "segmentation.morphology", key: "morphAlgo", value: 3 },
       { id: "segmentation.morphology", key: "morphK", value: 7 },
       { id: "segmentation.morphology", key: "morphIters", value: 1 },
     ],

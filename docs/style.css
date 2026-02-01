@@ -121,16 +121,21 @@ button:hover,
 
 .btn{
   background-color: var(--accent);
-  color: #e70909;
+  color: #000;
   font-weight: bold;
   padding: 0.5rem 1rem;
-  border: none;
+
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgb(248, 11, 30);
+
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s ease;
   text-decoration: none;
   display: inline-block;
 }
+
 .btn:hover{ 
   background-color: var(--accentHover); }
 

@@ -1,6 +1,6 @@
 // src/panel/tabs/segmentation/view.ts
 import type { Dom } from "../../app/dom";
-import type { SegmentationModel } from "./model";
+import type { SegmentationModel, SegStepId } from "./model";
 import type { TuningController } from "../../app/tuning/controller";
 
 import {
@@ -11,6 +11,7 @@ import {
 
 type SegmentationView = {
   set(model: SegmentationModel): void;
+  resetUi(): void;
   dispose(): void;
 };
 
@@ -29,20 +30,14 @@ function presetMatchesDropTarget(preset: TuningPreset, dropTarget: string): bool
   return preset.target === dropTarget;
 }
 
-export function createSegmentationView(dom: Dom, tuningController: TuningController): SegmentationView {
+export function createSegmentationView(
+  dom: Dom,
+  tuningController: TuningController,
+  model: SegmentationModel,
+): SegmentationView {
   const disposers: Array<() => void> = [];
 
-  // local UI state: which preset is currently assigned to each step box
-  const assignedByStep = new Map<string, string>(); // stepComponentId -> presetId
-
-  // Stable lookup of step elements so recipe drop can update all labels
-  const stepEls: Record<string, HTMLElement> = {
-    "segmentation.resize": dom.segStepResizeEl,
-    "segmentation.denoise": dom.segStepDenoiseEl,
-    "segmentation.color": dom.segStepColorEl,
-    "segmentation.threshold": dom.segStepThresholdEl,
-    "segmentation.morphology": dom.segStepMorphologyEl,
-  };
+  const stepEls = model.getStepEls(dom);
 
   function renderPresetLibrary() {
     const host = dom.segPresetListEl;
@@ -88,20 +83,29 @@ export function createSegmentationView(dom: Dom, tuningController: TuningControl
   }
 
   function applyRecipeLabels(recipePreset: TuningPreset) {
-    // For recipe presets, we want the UI to clearly show "this recipe is active".
-    // Simplest: stamp the recipe title onto all step boxes.
-    for (const stepId of Object.keys(stepEls)) {
-      assignedByStep.set(stepId, recipePreset.id);
+    // Stamp recipe title onto all step boxes + header
+    for (const stepId of Object.keys(stepEls) as SegStepId[]) {
+      model.assignedByStep.set(stepId, recipePreset.id);
       setAssignedLabel(stepEls[stepId], recipePreset.title);
     }
 
-    // Also stamp recipe title on header
+    model.activeRecipePresetId = recipePreset.id;
     setAssignedLabel(dom.segRecipeDropEl, recipePreset.title);
+  }
+
+  function applySingleStepLabel(stepId: SegStepId, preset: TuningPreset, dropEl: HTMLElement) {
+    model.assignedByStep.set(stepId, preset.id);
+    setAssignedLabel(dropEl, preset.title);
+
+    // Optional policy choice:
+    // If user edits a single step, keep the recipe header as-is OR clear it.
+    // I’d keep it as-is unless you explicitly want “recipe deactivated”.
+    // model.activeRecipePresetId = null;
+    // clearAssignedLabel(dom.segRecipeDropEl);
   }
 
   function attachDropZone(dropEl: HTMLElement, dropTarget: string) {
     const onDragEnter = (ev: DragEvent) => {
-      // Some engines require dragenter preventDefault to allow drop consistently.
       ev.preventDefault();
       dropEl.classList.add("is-over");
     };
@@ -132,16 +136,10 @@ export function createSegmentationView(dom: Dom, tuningController: TuningControl
       }
 
       if (dropTarget === "recipe") {
-        // Recipe drop overrides step assignments visually.
         applyRecipeLabels(preset);
       } else {
-        // Normal per-step drop: just update that step label.
-        assignedByStep.set(dropTarget, preset.id);
-        setAssignedLabel(dropEl, preset.title);
-
-        // Optional: if user sets a single step, you might want to "deactivate" recipe header.
-        // If you prefer that behavior, uncomment:
-        // clearAssignedLabel(dom.segRecipeDropEl);
+        // dropTarget is a step id
+        applySingleStepLabel(dropTarget as SegStepId, preset, dropEl);
       }
 
       // Apply to tuning store (controller logs + rerender)
@@ -166,15 +164,26 @@ export function createSegmentationView(dom: Dom, tuningController: TuningControl
     attachDropZone(dom.segRecipeDropEl, "recipe");
 
     // Step drops
-    attachDropZone(dom.segStepResizeEl, "segmentation.resize");
-    attachDropZone(dom.segStepDenoiseEl, "segmentation.denoise");
-    attachDropZone(dom.segStepColorEl, "segmentation.color");
-    attachDropZone(dom.segStepThresholdEl, "segmentation.threshold");
-    attachDropZone(dom.segStepMorphologyEl, "segmentation.morphology");
+    attachDropZone(stepEls["segmentation.resize"], "segmentation.resize");
+    attachDropZone(stepEls["segmentation.denoise"], "segmentation.denoise");
+    attachDropZone(stepEls["segmentation.color"], "segmentation.color");
+    attachDropZone(stepEls["segmentation.threshold"], "segmentation.threshold");
+    attachDropZone(stepEls["segmentation.morphology"], "segmentation.morphology");
+  }
+
+  function resetUi() {
+    model.assignedByStep.clear();
+    model.activeRecipePresetId = null;
+
+    clearAssignedLabel(dom.segRecipeDropEl);
+    for (const stepId of Object.keys(stepEls) as SegStepId[]) {
+      clearAssignedLabel(stepEls[stepId]);
+    }
   }
 
   function set(_model: SegmentationModel) {
-    // UI is driven by drag/drop; placeholder model doesn't affect it currently.
+    // If later you want: re-render labels from model state.
+    // For now, drag/drop mutates DOM immediately, so nothing to do.
   }
 
   function dispose() {
@@ -183,5 +192,5 @@ export function createSegmentationView(dom: Dom, tuningController: TuningControl
   }
 
   initOnce();
-  return { set, dispose };
+  return { set, resetUi, dispose };
 }

@@ -48,6 +48,18 @@ function policyOptions(args: {
   return args.isRoot ? base : [{ value: "inherit", label: "Inherit" }, ...base];
 }
 
+function defaultNodeOpen(args: {
+  treeScopeId: ComponentId;
+  node: TuningNodeVm;
+  depth: number;
+}): boolean {
+  // Policy: tuning UI is always collapsed by default in all views/scopes.
+  // Users expand only when needed.
+  void args; // keep signature stable (and avoid unused var lint if you add it later)
+  return false;
+}
+
+
 
 function isParamOverride(
   n: TuningNodeVm,
@@ -132,8 +144,9 @@ function renderNode(args: {
   depth: number;
   isRoot: boolean;
   handlers: TuningViewHandlers;
+  treeScopeId: ComponentId;
 }): HTMLElement {
-  const { node, depth, isRoot, handlers } = args;
+  const { node, depth, isRoot, handlers, treeScopeId } = args;
 
   const wrap = el("div", {
     style: `margin-left:${Math.min(depth * 14, 56)}px; margin-top:10px;`,
@@ -144,13 +157,23 @@ function renderNode(args: {
       "border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px; background:rgba(0,0,0,0.12);",
   });
 
-  // Header row
+  // Header row (always visible)
   const head = el("div", { class: "row", style: "align-items:center; justify-content:space-between; gap:10px;" });
 
   const titleWrap = el("div");
   titleWrap.appendChild(el("div", { style: "font-weight:700;" }, node.title));
-  if (node.description) titleWrap.appendChild(el("div", { class: "muted", style: "font-size:12px; margin-top:2px;" }, node.description));
-  if (node.isGroup) titleWrap.appendChild(el("div", { class: "muted", style: "font-size:12px; margin-top:2px;" }, "Group (policy affects children)"));
+
+  if (node.description) {
+    titleWrap.appendChild(
+      el("div", { class: "muted", style: "font-size:12px; margin-top:2px;" }, node.description),
+    );
+  }
+
+  if (node.isGroup) {
+    titleWrap.appendChild(
+      el("div", { class: "muted", style: "font-size:12px; margin-top:2px;" }, "Group (policy affects children)"),
+    );
+  }
 
   head.appendChild(titleWrap);
 
@@ -176,8 +199,6 @@ function renderNode(args: {
     sel.appendChild(opt);
   }
 
-  // Ensure the selected value exists in the list.
-  // If not (e.g., stored "opencv" but this node can't implement), fall back to "inherit" or "native".
   const allowedValues = new Set(opts.map((o) => o.value));
   const desired = node.effectivePolicy;
 
@@ -186,7 +207,6 @@ function renderNode(args: {
   } else {
     sel.value = isRoot ? "native" : "inherit";
   }
-
 
   sel.addEventListener("change", () => {
     void handlers.onSetPolicy(node.id, sel.value as EnginePolicy);
@@ -226,81 +246,97 @@ function renderNode(args: {
     );
   }
 
-  // Params
+  // Collapsible body (params + children)
   const paramKeys = Object.keys(node.paramsSchema ?? {});
-  if (paramKeys.length > 0) {
-    const paramsBox = el("div", { style: "margin-top:10px;" });
-    paramsBox.appendChild(el("div", { class: "muted", style: "font-weight:600; margin-bottom:6px;" }, "Parameters"));
+  const hasParams = paramKeys.length > 0;
+  const hasChildren = node.children.length > 0;
 
-    for (const key of paramKeys) {
-      const schema = node.paramsSchema[key];
-      const value = node.effectiveParams[key];
-      paramsBox.appendChild(
-        renderParamInput({
-          node,
-          compId: node.id,
-          key,
-          schema,
-          value,
-          handlers,
-        }),
-      );
+  if (hasParams || hasChildren) {
+    const details = el("details", { style: "margin-top:10px;" }) as HTMLDetailsElement;
+    details.open = defaultNodeOpen({ treeScopeId, node, depth });
+
+    const summary = el("summary", { style: "cursor:pointer; user-select:none;" }, "Details");
+    details.appendChild(summary);
+
+    if (hasParams) {
+      const paramsBox = el("div", { style: "margin-top:10px;" });
+      paramsBox.appendChild(el("div", { class: "muted", style: "font-weight:600; margin-bottom:6px;" }, "Parameters"));
+
+      for (const key of paramKeys) {
+        const schema = node.paramsSchema[key];
+        const value = node.effectiveParams[key];
+        paramsBox.appendChild(
+          renderParamInput({
+            node,
+            compId: node.id,
+            key,
+            schema,
+            value,
+            handlers,
+          }),
+        );
+      }
+
+      details.appendChild(paramsBox);
     }
 
-    box.appendChild(paramsBox);
-  }
-
-  // Children
-  if (node.children.length > 0) {
-    const kids = el("div", { style: "margin-top:10px;" });
-    for (const ch of node.children) {
-      kids.appendChild(
-        renderNode({
-          node: ch,
-          depth: depth + 1,
-          isRoot: false,
-          handlers,
-        }),
-      );
+    if (hasChildren) {
+      const kids = el("div", { style: "margin-top:10px;" });
+      for (const ch of node.children) {
+        kids.appendChild(
+          renderNode({
+            node: ch,
+            depth: depth + 1,
+            isRoot: false,
+            handlers,
+            treeScopeId,
+          }),
+        );
+      }
+      details.appendChild(kids);
     }
-    box.appendChild(kids);
+
+    box.appendChild(details);
   }
 
   wrap.appendChild(box);
   return wrap;
 }
 
+
 export function createTuningView(mountEl: HTMLElement, handlers: TuningViewHandlers): TuningView {
   let disposed = false;
 
-  function render(tree: TuningTreeVm) {
-    if (disposed) return;
-    clear(mountEl);
+ function render(tree: TuningTreeVm) {
+  if (disposed) return;
+  clear(mountEl);
 
-    const treatAsAbsoluteRoot = tree.scopeId === "app";
+  const treatAsAbsoluteRoot = tree.scopeId === "app";
 
-    // Header
-    const top = el("div", { class: "row", style: "align-items:center; justify-content:space-between; gap:10px;" });
-    top.appendChild(el("div", { style: "font-weight:700;" }, "Tuning"));
-    top.appendChild(
-      el(
-        "div",
-        { class: "muted", style: "font-size:12px;" },
-        `OpenCV runtime: ${tree.runtime.opencvReady ? "ready" : "not available"}`,
-      ),
-    );
-    mountEl.appendChild(top);
+  // Header
+  const top = el("div", { class: "row", style: "align-items:center; justify-content:space-between; gap:10px;" });
+  top.appendChild(el("div", { style: "font-weight:700;" }, "Tuning"));
+  top.appendChild(
+    el(
+      "div",
+      { class: "muted", style: "font-size:12px;" },
+      `OpenCV runtime: ${tree.runtime.opencvReady ? "ready" : "not available"}`,
+    ),
+  );
+  mountEl.appendChild(top);
 
-    // Root node
-    mountEl.appendChild(
-      renderNode({
-        node: tree.root,
-        depth: 0,
-        isRoot: treatAsAbsoluteRoot,
-        handlers,
-      }),
-    );
-  }
+  // Root node
+  mountEl.appendChild(
+    renderNode({
+      node: tree.root,
+      depth: 0,
+      isRoot: treatAsAbsoluteRoot,
+      handlers,
+      treeScopeId: tree.scopeId,
+    }),
+  );
+}
+
 
   function dispose() {
     disposed = true;

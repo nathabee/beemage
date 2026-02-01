@@ -11,6 +11,7 @@ import { createSegmentationView } from "./view";
 
 import { runImageOp, runMaskOp, type SegImageInput } from "./ops/ops";
 import { renderMask } from "../contour/lib/morphology";
+import type { SegStepId } from "./model";
 
 type Bus = ReturnType<typeof createBus>;
 
@@ -41,17 +42,12 @@ const STEPS: Array<{
 
 export function createSegmentationTab(dom: Dom, _bus: Bus, tuningController: TuningController) {
   const model = createSegmentationModel();
-  const view = createSegmentationView(dom, tuningController);
+  const view = createSegmentationView(dom, tuningController, model);
 
   let session: SegSession | null = null;
 
-  const stepEls: Record<string, HTMLElement> = {
-    "segmentation.resize": dom.segStepResizeEl,
-    "segmentation.denoise": dom.segStepDenoiseEl,
-    "segmentation.color": dom.segStepColorEl,
-    "segmentation.threshold": dom.segStepThresholdEl,
-    "segmentation.morphology": dom.segStepMorphologyEl,
-  };
+  const stepEls = model.getStepEls(dom);
+
 
   function setStatus(text: string) {
     dom.segStatusEl.textContent = text || "";
@@ -64,7 +60,8 @@ export function createSegmentationTab(dom: Dom, _bus: Bus, tuningController: Tun
     }
   }
 
-  function setActiveStep(stepId: string | null) {
+
+  function setActiveStep(stepId: SegStepId | null) {
     // Clear all first
     for (const el of Object.values(stepEls)) {
       el.classList.remove("is-active");
@@ -106,7 +103,7 @@ export function createSegmentationTab(dom: Dom, _bus: Bus, tuningController: Tun
   }
 
   function buildSessionFromSource(): SegSession | null {
-    const src = dom.outCanvasEl; // choose a canonical source; swap later if needed
+    const src = dom.srcCanvasEl; // choose a canonical source; swap later if needed
     const width = src.width;
     const height = src.height;
 
@@ -240,13 +237,30 @@ export function createSegmentationTab(dom: Dom, _bus: Bus, tuningController: Tun
   }
 
   function reset() {
+    // Reset the preset UI labels
+    view.resetUi();
+
+    // Reset pipeline state
     session = null;
     clearStepClasses();
-    setStatus("Idle");
+
+    // Immediately re-seed from source so preview never goes blank
+    const seeded = buildSessionFromSource();
+    if (seeded) {
+      session = seeded;
+      setActiveStep(STEPS[0]?.id ?? null);
+      renderPreviewFromSession();
+      setStatus("Ready (reset to source)");
+      return;
+    }
+
+    // No source available -> clear preview
+    setStatus("No image");
 
     const ctx = dom.segMaskCanvasEl.getContext("2d") as CanvasRenderingContext2D | null;
     if (ctx) ctx.clearRect(0, 0, dom.segMaskCanvasEl.width, dom.segMaskCanvasEl.height);
   }
+
 
   function bind() {
     dom.segRunBtn.addEventListener("click", () => {
@@ -276,16 +290,61 @@ export function createSegmentationTab(dom: Dom, _bus: Bus, tuningController: Tun
 
   function mount() {
     logTrace("[segmentation] mount");
-    setStatus("Idle");
+
+    // If we already have a session (e.g. returning to the tab), just show it.
+    if (session) {
+      renderPreviewFromSession();
+      setStatus("Ready");
+      view.set(model);
+      return;
+    }
+
+    // Otherwise, try to seed from the original input canvas (loaded in contour tab).
+    const seeded = buildSessionFromSource();
+    if (seeded) {
+      session = seeded;
+      clearStepClasses();
+      setActiveStep(STEPS[0]?.id ?? null);
+      renderPreviewFromSession();
+      setStatus("Ready (source loaded)");
+    } else {
+      clearStepClasses();
+
+      const ctx = dom.segMaskCanvasEl.getContext("2d") as CanvasRenderingContext2D | null;
+      if (ctx) ctx.clearRect(0, 0, dom.segMaskCanvasEl.width, dom.segMaskCanvasEl.height);
+
+      setStatus("No image");
+    }
+
     view.set(model);
   }
+
 
   function refresh() {
     logTrace("[segmentation] refresh");
     view.set(model);
+
     // Keep session; do not reset on refresh.
-    if (session) renderPreviewFromSession();
+    if (session) {
+      renderPreviewFromSession();
+      return;
+    }
+
+    // If no session yet but the contour tab already loaded an image, show it now.
+    const seeded = buildSessionFromSource();
+    if (seeded) {
+      session = seeded;
+      clearStepClasses();
+      setActiveStep(STEPS[0]?.id ?? null);
+      renderPreviewFromSession();
+      setStatus("Ready (source loaded)");
+      return;
+    }
+
+    // Otherwise keep UI clean and honest.
+    setStatus("No image");
   }
+
 
   function unmount() { }
 

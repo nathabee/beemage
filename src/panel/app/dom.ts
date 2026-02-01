@@ -125,6 +125,11 @@ export function getDom() {
     "segResetBtn",
   );
 
+  const segTuningMountEl = must(
+    document.getElementById("segTuningMount") as HTMLDivElement | null,
+    "segTuningMount",
+  );
+
 
   // -----------------------------
   // Colors tab
@@ -314,6 +319,7 @@ export function getDom() {
     segMaskCanvasEl,
     segNextBtn,
     segResetBtn,
+    segTuningMountEl,
 
 
     // Colors 
