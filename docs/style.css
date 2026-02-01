@@ -58,11 +58,15 @@ body {
   white-space: nowrap;
 }
 
+
 .fullLink{
   display:block;
   margin-left:auto;
   padding:8px 12px;
   border:1px solid rgba(255,255,255,0.18);
+  background-color: var(--accent);
+  color: #000;
+  text-align: center;
   border-radius:10px;
   text-decoration:none;
   font-size:12px;
@@ -71,11 +75,6 @@ body {
 }
 .fullLink:hover{
   opacity:1;
-}
-
-.panel-actions--link:hover{
-  background-color: rgba(255,255,255,0.04);
-  border-radius: 10px;
 }
 
 /***************************************************/
@@ -115,6 +114,26 @@ button:hover,
 }
 
 .button-like input[type="file"] { display: none; }
+
+.btn1Link{
+  display: inline-block;
+  line-height: 1; /* keeps it button-like */
+}
+
+.btn{
+  background-color: var(--accent);
+  color: #000;
+  font-weight: bold;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn:hover{ 
+  background-color: var(--accentHover); }
 
 /***************************************************/
 /* Two-column layout */
