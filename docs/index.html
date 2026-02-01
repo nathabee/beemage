@@ -50,16 +50,16 @@
       </div>
 
       <ul>
-        <p style="margin-top: 1rem;">
+        <li style="margin-top: 1rem;">
           🔗 View the full source code and documentation on
           <a href="https://github.com/nathabee/beecontour/" target="_blank" rel="noreferrer">GitHub Repository</a>
-        </p>
-
-        <p style="margin-top: 1rem;">
+        </li>
+        <li style="margin-top: 1rem;">
           🔗 Downloads / Releases
           <a href="https://github.com/nathabee/beecontour/releases" target="_blank" rel="noreferrer">Releases</a>
-        </p>
+        </li>
       </ul>
+
 
       <div class="translate-box">
         🌐 Translate: <span id="google_translate_element"></span>
@@ -80,13 +80,17 @@
     <div class="layout">
       <!-- LEFT: DEMO -->
       <aside class="left" id="demoPanel">
-        <div class="panel-actions">
-          <h2 class="panel-title">Interactive Demo</h2>
-          <button id="toggleDemo" title="Collapse demo">⤢</button>
+        <div class="panel-actions panel-actions--link">
+          <a class="panel-actionsLink" href="https://nathabee.github.io/beecontour/demo/" target="_blank"
+            rel="noreferrer" aria-label="Open full page demo"></a>
 
-          <button id="demoSmaller" title="Shrink demo">−</button>
-          <button id="demoBigger" title="Expand demo">+</button>
+          <h2 class="panel-title">Interactive Demo</h2>
+
+          <button id="toggleDemo" title="Collapse demo" type="button">⤢</button>
+          <button id="demoSmaller" title="Shrink demo" type="button">−</button>
+          <button id="demoBigger" title="Expand demo" type="button">+</button>
         </div>
+
 
         <p class="panel-lead">
           Interactive panel UI with mocked data. No account access. No extension APIs.
