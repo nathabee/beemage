@@ -106,7 +106,7 @@ button,
   transition: background-color 0.2s ease;
   text-decoration: none;
   display: inline-block;
-}
+} 
 
 button:hover,
 .button-like:hover {
@@ -115,7 +115,7 @@ button:hover,
 
 .button-like input[type="file"] { display: none; }
 
-.btn1Link{
+.btnLink{
   display: inline-block;
   line-height: 1; /* keeps it button-like */
 }
