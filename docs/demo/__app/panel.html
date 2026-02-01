@@ -141,6 +141,17 @@
      SEGMENTATION VIEW
      ========================= -->
       <section id="viewSegmentation" class="view" role="tabpanel" aria-labelledby="tabSegmentation" hidden>
+
+
+        <div class="segHeaderActions">
+          <button id="segRunBtn" class="btn" type="button">Run all</button>
+          <button id="segNextBtn" class="btn" type="button">Next step</button>
+          <button id="segResetBtn" class="btn" type="button">Reset</button>
+
+          <span id="segStatus" class="muted" style="font-size:12px;">Idle</span>
+        </div>
+
+
         <div class="segLayout">
           <!-- Left: Preset library -->
           <div class="segPresets">
@@ -155,24 +166,15 @@
 
           <!-- Right: Fixed pipeline -->
           <div class="segPipeline">
-            <div class="segHeaderRow">
-              <div class="segTitle">Pipeline</div>
 
-              <div class="segHeaderActions">
-                <button id="segRunBtn" class="btn" type="button">Run all</button>
-                <button id="segNextBtn" class="btn" type="button">Next step</button>
-                <button id="segResetBtn" class="btn" type="button">Reset</button>
 
-                <span id="segStatus" class="muted" style="font-size:12px;">Idle</span>
-
-                <div id="segRecipeDrop" class="segDropZone segDropZoneHeader" data-seg-drop="recipe"
-                  aria-label="Drop a full recipe preset here" title="Drop a recipe preset here">
-                  <span class="segStepAssigned muted" data-assigned>Drop recipe here</span>
-                </div>
+              <div id="segRecipeDrop" class="segDropZone segDropZoneHeader" data-seg-drop="recipe"
+                aria-label="Drop a full recipe preset here" title="Drop a recipe preset here">
+                <span class="segStepAssigned muted" data-assigned>Drop recipe here</span>
               </div>
+ 
 
-            </div>
-
+              <div class="segTitle">Pipeline</div> 
 
             <div class="segSteps" aria-label="Segmentation steps">
               <div id="segStepResize" class="segDropZone segStep" data-seg-step="segmentation.resize"
@@ -219,7 +221,21 @@
               </div>
             </details>
           </div>
+
+
         </div>
+
+
+        <!-- Segmentation tab: TUNING (scoped) -->
+        <details class="searchBox" id="segTuningBox" role="group" open>
+          <summary>Tuning</summary>
+
+          <p class="muted" style="margin-top:0;">
+            Segmentation-only tuning (mirrors central tuning state).
+          </p>
+
+          <div id="segTuningMount"></div>
+        </details>
       </section>
 
 
@@ -369,7 +385,7 @@
         </details>
 
         <!-- ENGINE -->
-        <details class="searchBox" id="settingsEngineBox" role="group" open>
+        <details class="searchBox" id="settingsEngineBox" role="group">
           <summary>Engine</summary>
 
           <p class="muted" style="margin-top: 0;">
