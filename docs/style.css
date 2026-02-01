@@ -116,13 +116,12 @@ button:hover,
 .button-like input[type="file"] { display: none; }
 
 .btnLink{
-  display: inline-block;
-  line-height: 1; /* keeps it button-like */
+  display: inline-block; 
 }
 
 .btn{
   background-color: var(--accent);
-  color: #000;
+  color: #e70909;
   font-weight: bold;
   padding: 0.5rem 1rem;
   border: none;
