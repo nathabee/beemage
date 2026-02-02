@@ -2,7 +2,7 @@
 import { createTuningModel, type TuningModel, type TuningNodeVm, type TuningTreeVm } from "./model";
 import { createTuningView, type TuningView } from "./view";
 import type { ComponentId, EnginePolicy, ParamValue, RuntimeEngineAvailability } from "./types";
-import type { TuningPreset } from "./presets/segmentationPresets";
+import type { TuningPreset } from "./presets/types";
 
 type Mount = {
   mountEl: HTMLElement;
@@ -22,8 +22,14 @@ export type TuningController = {
   unmount(mountEl: HTMLElement): void;
   refresh(): Promise<void>;
 
-  // NEW: apply a preset in one batch (one rerender)
+  // Apply a preset in one batch (one rerender)
   applyPreset(preset: TuningPreset): Promise<void>;
+
+  // NEW: read resolved params for a component (defaults + overrides + inheritance)
+  getEffectiveParams(id: ComponentId): Promise<Record<string, ParamValue>>;
+
+  // NEW (optional but recommended): let other tabs change params in a single place
+  setParamValue(id: ComponentId, key: string, value: ParamValue): Promise<void>;
 
   dispose(): void;
 };
@@ -39,6 +45,17 @@ function pickSubtreeRootVm(root: TuningNodeVm, scopeRootId: ComponentId): Tuning
   }
 
   throw new Error(`[tuning] scopeRootId not found in VM tree: ${scopeRootId}`);
+}
+
+function findVmNode(root: TuningNodeVm, id: ComponentId): TuningNodeVm | null {
+  if (root.id === id) return root;
+  const stack: TuningNodeVm[] = [...(root.children ?? [])];
+  while (stack.length > 0) {
+    const n = stack.shift()!;
+    if (n.id === id) return n;
+    for (const ch of n.children ?? []) stack.push(ch);
+  }
+  return null;
 }
 
 export function createTuningController(deps: TuningControllerDeps): TuningController {
@@ -135,6 +152,23 @@ export function createTuningController(deps: TuningControllerDeps): TuningContro
     await rerenderAll();
   }
 
+    async function getEffectiveParams(id: ComponentId): Promise<Record<string, ParamValue>> {
+    const appTree = await computeAppTree();
+    const node = findVmNode(appTree.root, id);
+    if (!node) throw new Error(`[tuning] getEffectiveParams: unknown component id ${id}`);
+    return { ...(node.effectiveParams ?? {}) };
+  }
+
+  async function setParamValue(id: ComponentId, key: string, value: ParamValue): Promise<void> {
+    await model.setParam(id, key, value);
+
+    deps.actionLogAppend(`[tuning] param ${id}.${key} = ${String(value)}`);
+    deps.debugTraceAppend(`[tuning] setParamValue id=${id} key=${key} value=${String(value)}`);
+
+    await rerenderAll();
+  }
+
+
   function mount(args: { mountEl: HTMLElement; scopeRootId: ComponentId }) {
     if (disposed) return;
 
@@ -172,5 +206,6 @@ export function createTuningController(deps: TuningControllerDeps): TuningContro
     mounts.length = 0;
   }
 
-  return { mount, unmount, refresh, applyPreset, dispose };
+  return { mount, unmount, refresh, applyPreset, getEffectiveParams, setParamValue, dispose };
+
 }

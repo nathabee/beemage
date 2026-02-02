@@ -1,17 +1,5 @@
 // src/panel/app/tuning/presets/segmentationPresets.ts
-import type { ComponentId, EnginePolicy, ParamValue } from "../types";
-
-export type TuningPreset = {
-  id: string;
-  title: string;
-  description?: string;
-
-  // Where it is intended to be dropped (useful for UI filtering)
-  target: ComponentId; // e.g. "segmentation" or "segmentation.threshold"
-
-  policies?: Array<{ id: ComponentId; policy: EnginePolicy }>;
-  params?: Array<{ id: ComponentId; key: string; value: ParamValue }>;
-};
+import type { TuningPreset } from "./types";
 
 export const segmentationPresets: ReadonlyArray<TuningPreset> = [
   {

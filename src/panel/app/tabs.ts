@@ -2,7 +2,7 @@
 import type { Dom } from "./dom";
 import { getDevConfigSnapshot } from "../../shared/devConfigStore";
 
-type TabKey = "segmentation" | "contour" | "colors" | "settings" | "logs";
+type TabKey = "segmentation" | "pipeline" | "contour" | "colors" | "settings" | "logs";
 
 type TabApi = {
   bind(): void;
@@ -24,6 +24,7 @@ type TabsMap = Record<TabKey, TabApi>;
 export function createTabs(dom: Dom, tabs: TabsMap) {
   const tabButtons: Record<TabKey, HTMLButtonElement> = {
     segmentation: dom.tabSegmentation,
+    pipeline: dom.tabPipeline,
     contour: dom.tabContour,
     colors: dom.tabColors,
     settings: dom.tabSettings,
@@ -32,6 +33,7 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
 
   const views: Record<TabKey, HTMLElement> = {
     segmentation: dom.viewSegmentation,
+    pipeline: dom.viewPipeline,
     contour: dom.viewContour,
     colors: dom.viewColors,
     settings: dom.viewSettings,
@@ -46,7 +48,7 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
     // Snapshot returns defaults if not loaded yet (based on your store behavior).
     const snap = getDevConfigSnapshot();
     return !!snap?.traceConsole;
-  } 
+  }
 
   function installGlobalErrorHooksOnce(): void {
     const g: any = globalThis as any;
@@ -124,6 +126,11 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
     tabButtons.segmentation.addEventListener("click", (e) => {
       e.preventDefault?.();
       activate("segmentation");
+    });
+
+    tabButtons.pipeline.addEventListener("click", (e) => {
+      e.preventDefault?.();
+      activate("pipeline");
     });
 
     tabButtons.colors.addEventListener("click", (e) => {

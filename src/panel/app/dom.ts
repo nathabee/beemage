@@ -18,13 +18,14 @@ export function getDom() {
   const tabSettings = must(document.getElementById("tabSettings") as HTMLButtonElement | null, "tabSettings");
   const tabLogs = must(document.getElementById("tabLogs") as HTMLButtonElement | null, "tabLogs");
   const tabSegmentation = must(document.getElementById("tabSegmentation") as HTMLButtonElement | null, "tabSegmentation");
-
+  const tabPipeline = must(document.getElementById("tabPipeline") as HTMLButtonElement | null, "tabPipeline");
+  
   const viewContour = must(document.getElementById("viewContour") as HTMLElement | null, "viewContour");
   const viewColors = must(document.getElementById("viewColors") as HTMLElement | null, "viewColors");
   const viewSettings = must(document.getElementById("viewSettings") as HTMLElement | null, "viewSettings");
   const viewLogs = must(document.getElementById("viewLogs") as HTMLElement | null, "viewLogs");
   const viewSegmentation = must(document.getElementById("viewSegmentation") as HTMLElement | null, "viewSegmentation");
-
+  const viewPipeline = must(document.getElementById("viewPipeline") as HTMLElement | null, "viewPipeline");
 
   // -----------------------------
   // Contour tab
@@ -60,6 +61,19 @@ export function getDom() {
   const contourTuningMountEl = must(
     document.getElementById("contourTuningMount") as HTMLDivElement | null,
     "contourTuningMount",
+  );
+
+  // -----------------------------
+  // Pipeline tab (NEW)
+  // -----------------------------
+  const pipelineStatusEl = must(
+    document.getElementById("pipelineStatus") as HTMLSpanElement | null,
+    "pipelineStatus",
+  );
+
+  const pipelineTuningMountEl = must(
+    document.getElementById("pipelineTuningMount") as HTMLDivElement | null,
+    "pipelineTuningMount",
   );
 
   // -----------------------------
@@ -276,6 +290,7 @@ export function getDom() {
     tabSettings,
     tabLogs,
     tabSegmentation,
+    tabPipeline,
 
 
     viewContour,
@@ -283,6 +298,7 @@ export function getDom() {
     viewColors,
     viewSettings,
     viewLogs,
+    viewPipeline,
 
     // Contour
     dropZoneEl,
@@ -305,6 +321,10 @@ export function getDom() {
     svgPreviewTextEl,
     // Contour tuning
     contourTuningMountEl,
+
+    // Pipeline
+    pipelineStatusEl,
+    pipelineTuningMountEl,
 
     // Segmentation
     segPresetListEl,

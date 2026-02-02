@@ -155,6 +155,7 @@ export function createComponentRegistry(): ComponentRegistry {
         "Segmentation",
         ["native", "opencv"],
         "auto",
+
         {},
         [
           n(
@@ -228,6 +229,164 @@ export function createComponentRegistry(): ComponentRegistry {
         ],
         "Fixed-order segmentation pipeline. Presets configure each step.",
       ),
+
+      // -----------------------------
+      // Pipeline (generic runner)
+      // -----------------------------
+      n(
+        "pipeline",
+        "Pipeline",
+        ["native", "opencv"],
+        "auto",
+        {
+          // Topology selector (text for now; later upgrade to enum schema)
+          mode: {
+            kind: "text",
+            label: "Pipeline mode",
+            default: "segmentation",
+          },
+        },
+        [
+          // Edge pipeline (minimal)
+          n(
+            "pipeline.edge",
+            "Edge pipeline",
+            ["native", "opencv"],
+            "inherit",
+            {},
+            [
+              n(
+                "pipeline.edge.prep",
+                "Prep",
+                ["native", "opencv"],
+                "inherit",
+                {
+                  targetMaxW: { kind: "number", label: "Target max width", min: 200, max: 4000, step: 50, default: 1200 },
+                },
+              ),
+
+              n(
+                "pipeline.edge.edges",
+                "Edges",
+                ["native", "opencv"],
+                "inherit",
+                {
+                  edgeThreshold: { kind: "number", label: "Edge threshold", min: 1, max: 255, step: 1, default: 70 },
+                  edgesDark: { kind: "boolean", label: "Edges are dark", default: true },
+                },
+              ),
+            ],
+          ),
+
+          // Clean pipeline (mask cleanup)
+          n(
+            "pipeline.clean",
+            "Clean pipeline",
+            ["native", "opencv"],
+            "inherit",
+            {},
+            [
+              n(
+                "pipeline.clean.threshold",
+                "Threshold",
+                ["native", "opencv"],
+                "inherit",
+                {
+                  thresholdAlgo: { kind: "number", label: "Threshold algo", min: 0, max: 3, step: 1, default: 1 },
+                  manualT: { kind: "number", label: "Manual threshold", min: 0, max: 255, step: 1, default: 128 },
+                },
+              ),
+
+              n(
+                "pipeline.clean.morphology",
+                "Morphology cleanup",
+                ["native", "opencv"],
+                "inherit",
+                {
+                  morphAlgo: { kind: "number", label: "Morph algo", min: 0, max: 3, step: 1, default: 2 },
+                  morphK: { kind: "number", label: "Kernel size", min: 1, max: 31, step: 2, default: 5 },
+                  morphIters: { kind: "number", label: "Iterations", min: 1, max: 5, step: 1, default: 1 },
+                },
+              ),
+            ],
+          ),
+
+          // Surface pipeline (region-aware)
+          n(
+            "pipeline.surface",
+            "Surface pipeline",
+            ["native", "opencv"],
+            "inherit",
+            {},
+            [
+              n(
+                "pipeline.surface.bg",
+                "Separate background",
+                ["native", "opencv"],
+                "inherit",
+                {
+                  bgTol: { kind: "number", label: "BG tolerance (Lab)", min: 1, max: 50, step: 1, default: 14 },
+                },
+              ),
+
+              n(
+                "pipeline.surface.quantize",
+                "Flatten / quantize colors",
+                ["native", "opencv"],
+                "inherit",
+                {
+                  kColors: { kind: "number", label: "K colors", min: 2, max: 32, step: 1, default: 16 },
+                  smoothSigma: { kind: "number", label: "Smooth strength", min: 0, max: 100, step: 1, default: 35 },
+                },
+              ),
+
+              n(
+                "pipeline.surface.regions",
+                "Build region label map",
+                ["native", "opencv"],
+                "inherit",
+                {
+                  minRegionArea: { kind: "number", label: "Min region area", min: 0, max: 5000, step: 10, default: 150 },
+                },
+              ),
+
+              n(
+                "pipeline.surface.merge",
+                "Merge tiny / highlight regions",
+                ["native", "opencv"],
+                "inherit",
+                {
+                  mergeSmallMode: { kind: "number", label: "Merge mode", min: 0, max: 2, step: 1, default: 0 },
+                  thinAsStroke: { kind: "boolean", label: "Thin regions as stroke", default: true },
+                },
+              ),
+
+              n(
+                "pipeline.surface.vectorize",
+                "Vectorize regions to SVG",
+                ["native", "opencv"],
+                "inherit",
+                {
+                  simplifyEps: { kind: "number", label: "Simplify epsilon (px)", min: 0, max: 10, step: 0.1 as any, default: 1.8 as any },
+                  fillRule: { kind: "text", label: "Fill rule", default: "evenodd" },
+                },
+              ),
+
+              n(
+                "pipeline.surface.outline",
+                "Outline stroke layer",
+                ["native", "opencv"],
+                "inherit",
+                {
+                  outlinePx: { kind: "number", label: "Outline width (px)", min: 0, max: 10, step: 1, default: 2 },
+                },
+              ),
+            ],
+          ),
+        ],
+        "Generic pipeline runner. A preset can select topology via pipeline.mode and then set step params.",
+      ),
+
     ],
   );
 

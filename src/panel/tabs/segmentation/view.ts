@@ -5,9 +5,11 @@ import type { TuningController } from "../../app/tuning/controller";
 
 import {
   segmentationPresets,
-  getSegmentationPresetById,
-  type TuningPreset,
+  getSegmentationPresetById, 
 } from "../../app/tuning/presets/segmentationPresets";
+import { 
+  type TuningPreset,
+} from "../../app/tuning/presets/types";
 
 type SegmentationView = {
   set(model: SegmentationModel): void;

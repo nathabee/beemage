@@ -1,214 +1,475 @@
-# drag and drop pipeline
+# Pipeline runner architecture and extension guide
 
-Below is a concrete segmentation-style example, and then how you’d model + run it in **OpenCV.js** (with a UI that lets the user drag/drop steps 1..5).
+This document explains the generic Pipeline tab end-to-end:
 
-## 1) The core idea: a consecutive pipeline
+* where pipeline names come from (combo box)
+* what gets built when you select a pipeline/recipe
+* what gets executed when you run step-by-step (Next) or Run all
+* how parameters are resolved (registry + presets + stored configs)
+* how we finally arrive at the dispatcher (`runOp` → `runOpCore` → `opImpls`)
+* what code changes are required to add a **new pipeline** and/or **new ops**
 
-A “subprocess” is simply a function:
+## Mental model
 
-* **input**: `Mat`
-* **output**: `Mat`
-* **params**: user-editable
-* optional **preview**: show output of each step
+There are three distinct layers:
 
-### Example segmentation pipeline (simple but real)
+1. **Pipeline catalogue**: defines *what pipelines/stages/ops exist* (topology registry)
+2. **Tuning registry + store**: defines *what parameters exist + defaults + engine policy* and stores user overrides (including presets)
+3. **Dispatcher**: executes an op id using resolved params + selected engine (native/opencv) and calls the concrete implementation
 
-Goal: segment a foreground object from background in a robust way (classic binary segmentation).
+The Pipeline tab combines (1) + (2) and executes via (3).
 
-1. **Resize** (speed + stable parameter ranges)
-2. **Denoise** (Gaussian blur or bilateral filter)
-3. **Color space / grayscale** (BGR → Gray, or BGR → HSV)
-4. **Threshold** (Otsu / Adaptive / fixed)
-5. **Morphology cleanup** (open/close to remove specks + fill holes)
-
-That’s already a good “1..5” chain.
-
-## 2) Diagram of your drag-and-drop idea
-
-Here’s a diagram matching what you described: user selects step count (1..5), then chooses one operator per step from a palette (resize, blur, threshold, …). Each step uses the previous output.
+## Diagram: top-to-bottom flow
 
 ```mermaid
-flowchart LR
-  A[Input Image] --> S1[Step 1: Resize<br/>option: native / area / ...]
-  S1 --> S2[Step 2: Denoise<br/>Gaussian / Median / Bilateral]
-  S2 --> S3[Step 3: Convert Color<br/>BGR->Gray / BGR->HSV]
-  S3 --> S4[Step 4: Threshold<br/>Otsu / Adaptive / Manual]
-  S4 --> S5[Step 5: Morphology<br/>Open / Close / Erode / Dilate]
-  S5 --> R[Result Mask / Segmentation Output]
+flowchart TD
+  A[panel.ts boot] --> B[createTuningController]
+  A --> C[createTabs(...)]
 
-  %% UI views (optional)
-  S1 --- P1[(Preview 1)]
-  S2 --- P2[(Preview 2)]
-  S3 --- P3[(Preview 3)]
-  S4 --- P4[(Preview 4)]
-  S5 --- P5[(Preview 5)]
+  C --> D[Pipeline tab mount/refresh]
+  D --> E[createPipelineTab]
+  E --> F[createPipelineModel]
+  F --> G[createPipelineCatalogue]
+
+  D --> H[createPipelineView render]
+  H --> I[Combo box options = vm.pipelines]
+  I --> G
+
+  H --> J[User selects pipeline/recipe]
+  J --> K[tab.ts handlers]
+  K --> L[model.setActivePipeline / setActiveRecipe]
+  L --> M[model.rebuildInstalled]
+  M --> G
+
+  K --> N[tuning.setParamValue('pipeline','mode'/'recipe')]
+  N --> O[tuning store persisted overrides]
+
+  H --> P[User clicks Next]
+  P --> Q[tab.ts runNext]
+  Q --> R[seed input from srcCanvas]
+  Q --> S[model.runNext]
+
+  S --> T[buildPlanFromInstalled]
+  T --> G
+
+  S --> U[getEffectiveParams(tuningId)]
+  U --> V[tuning registry + stored overrides]
+  V --> O
+
+  S --> W[runOp(dispatchId,payload)]
+  W --> X[opsDispatch.ts runOp]
+  X --> Y[opsDispatchCore.ts runOpCore]
+  Y --> Z[resolveComponent(opId, registry, stored, runtime)]
+  Z --> V
+  Y --> AA[choose engine, coerce params]
+  Y --> AB[opImpls[opId][engine](...)]
+  AB --> AC[segmentation/lib/* implementations]
 ```
 
-In the UI, each box is a “node” the user can drop in. You can render previews under each node.
+## 0) Where the Pipeline tab is mounted
 
-## 3) “Which subprocess can you see?” (good step palette for segmentation)
+### `src/panel/panel.ts`
 
-If you want the palette to feel powerful but not overwhelming, these are the most useful *atomic* steps:
+* creates the `tuning` controller
+* mounts tuning UIs (including `pipelineTuningMountEl`)
+* creates each tab (contour/segmentation/pipeline/…)
+* registers the tab objects into `createTabs(dom, {...})`
 
-### Preprocessing
+The Pipeline tab lifecycle is driven by `createTabs`, not by the view.
 
-* Resize (fast + consistent)
-* Crop / ROI
-* Normalize / histogram equalization (CLAHE)
-* Blur: Gaussian / Median / Bilateral (noise control)
+### `src/panel/app/tabs.ts`
 
-### Feature / representation
+* `tabs.boot()` sets initial tab and calls that tab’s `mount()`
+* tab switching calls:
 
-* Convert color: BGR→Gray, BGR→HSV
-* Channel extract (HSV S/V, etc.)
-* Edge detect (Canny) — more contour-oriented than segmentation
+  * `mount()` the first time the view is activated
+  * `refresh()` on subsequent activations
 
-### Segmentation / mask creation
+So the first entry point is:
 
-* Threshold: fixed, Otsu, adaptive
-* InRange (HSV range masking) — super useful for color-based segmentation
-* GrabCut (more advanced, interactive)
+`createTabs.activate("pipeline")` → `pipelineTab.mount()`
 
-### Mask cleanup
+## 1) Where the pipeline names in the combo box come from
 
-* Morphology: erode/dilate/open/close
-* Connected components / remove small blobs (filter by area)
-* Fill holes (via morphology or floodfill)
+### Source of truth: `src/panel/app/pipeline/catalogue.ts`
 
-### Postprocessing
+`createPipelineCatalogue()` defines:
 
-* Contours extraction
-* Smooth/approx polygon
-* Vectorize/export
+* `pipelines: PipelineSpec[]` (segmentation, edge, clean, surface…)
+* `ops: OpSpec[]` (the list of runnable ops, and whether they are dispatch/js)
 
-For a “1..5 steps” constraint, I’d start with: **Resize → Blur → ColorConvert → Threshold/InRange → Morphology**.
+### How it reaches the combo box
 
-## 4) How to implement the chain in OpenCV.js (sequential Mat → Mat)
+#### `src/panel/tabs/pipeline/model.ts`
 
-The key differences vs Python:
+`createPipelineModel()` owns a `catalogue = createPipelineCatalogue()` and `getVm()` returns:
 
-* In OpenCV.js you must manage memory: `mat.delete()`
-* You can still “reuse output for next input” cleanly by returning a new `Mat` each step, or by writing into a preallocated `dst`.
+* `vm.pipelines = catalogue.pipelines.map(...)`
 
-### A minimal pipeline runner (OpenCV.js)
+#### `src/panel/tabs/pipeline/view.ts`
 
-```js
-// Each step: (src: cv.Mat) => cv.Mat
-function runPipeline(src0, steps) {
-  let cur = src0;         // cv.Mat
-  let owned = false;      // if we created cur, we must delete it
+`render(vm)` calls `renderSelects(activePipelineId, activeRecipeId)` and renders `<option>` from **`vm.pipelines`**.
 
-  for (const step of steps) {
-    const next = step(cur);
+So:
 
-    // If cur was produced by a previous step, free it now.
-    if (owned) cur.delete();
+* **data origin**: `app/pipeline/catalogue.ts`
+* **VM assembly**: `tabs/pipeline/model.ts`
+* **DOM rendering**: `tabs/pipeline/view.ts`
 
-    cur = next;
-    owned = true;
-  }
+## 2) What happens when you select a pipeline
 
-  return cur; // caller owns and must delete()
-}
-```
+### UI event
 
-### Example step implementations
+`tabs/pipeline/view.ts` listens to `selectPipeline.change` and calls:
 
-```js
-function stepResize({ maxW = 900 }) {
-  return (src) => {
-    const dst = new cv.Mat();
-    const scale = Math.min(1, maxW / src.cols);
-    const dsize = new cv.Size(Math.round(src.cols * scale), Math.round(src.rows * scale));
-    cv.resize(src, dst, dsize, 0, 0, cv.INTER_AREA);
-    return dst;
-  };
-}
+`handlers.onSelectPipeline(id)`
 
-function stepGray() {
-  return (src) => {
-    const dst = new cv.Mat();
-    cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY); // or BGR2GRAY depending on your input
-    return dst;
-  };
-}
+### Handler
 
-function stepGaussianBlur({ k = 5 }) {
-  return (src) => {
-    const dst = new cv.Mat();
-    const ksize = new cv.Size(k, k);
-    cv.GaussianBlur(src, dst, ksize, 0, 0, cv.BORDER_DEFAULT);
-    return dst;
-  };
-}
+`tabs/pipeline/tab.ts` implements `onSelectPipeline`:
 
-function stepOtsuThreshold() {
-  return (src) => {
-    const dst = new cv.Mat();
-    cv.threshold(src, dst, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU);
-    return dst;
-  };
-}
+1. `model.setActivePipeline(id)`
+2. `render()`
+3. persists selection: `tuning.setParamValue("pipeline","mode",id)`
 
-function stepMorphClose({ k = 5, it = 1 }) {
-  return (src) => {
-    const dst = new cv.Mat();
-    const kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(k, k));
-    cv.morphologyEx(src, dst, cv.MORPH_CLOSE, kernel, new cv.Point(-1, -1), it);
-    kernel.delete();
-    return dst;
-  };
-}
-```
+### Model rebuilds the installed pipeline
 
-### Compose a 5-step segmentation pipeline
+`tabs/pipeline/model.ts`:
 
-```js
-const steps = [
-  stepResize({ maxW: 900 }),
-  stepGaussianBlur({ k: 5 }),
-  stepGray(),
-  stepOtsuThreshold(),
-  stepMorphClose({ k: 7, it: 1 }),
-];
+* `setActivePipeline(id)`:
 
-// srcMat = cv.imread(canvas) or however you load it
-const outMat = runPipeline(srcMat, steps);
+  * sets `activePipelineId`
+  * resets `activeRecipeId = "default"`
+  * calls `reset()`
 
-// show result
-cv.imshow(outputCanvas, outMat);
+* `reset()`:
 
-// cleanup
-outMat.delete();
-```
+  * `rebuildInstalled()`
+  * `resetRunState()`
 
-That is exactly the “output reused as input for the next call” pattern — just explicit.
+* `rebuildInstalled()`:
 
-## 5) How to map this to your drag-and-drop UI
+  * reads `PipelineSpec` from `catalogue.getPipeline(activePipelineId)`
+  * selects a recipe (`makeRecipesForPipeline(spec)`)
+  * builds `InstalledPipeline` (stageId → list of op instances)
 
-Model each step as a small spec:
+So the “configuration you see” (stages + ops list) is assembled from:
 
-```ts
-type StepSpec = {
-  id: string;              // unique
-  op: string;              // "resize" | "blur" | ...
-  params: Record<string, any>;
-};
-```
+* `PipelineSpec` (stage titles, stage IO, allowedOps, defaultOps)
+* `OpSpec` (op titles, op IO, dispatchId/tuningId)
+* `InstalledPipeline` (actual op instances installed into each stage)
 
-Then your palette is basically:
+## 3) Where the stage configuration UI comes from
 
-* op metadata (name, category, input type constraints, parameter schema)
-* a function factory that turns `StepSpec` into `(Mat)=>Mat`
+What appears under the stage cards is purely the **model VM**.
 
-Your UI:
+### Model builds StageVm
 
-* user picks **N = 1..5**
-* for each slot i, user chooses an op and edits params
-* you run the pipeline and render:
+`tabs/pipeline/model.ts` → `getVm()`:
 
-  * final output
-  * optionally intermediate previews (after each step)
+* maps installed stages into `StageVm[]`
+* fills titles from `PipelineSpec.stages`
+* fills op titles/IO from `catalogue.ops`
+* state comes from `opState` / `stageState`
 
-If you want, you can also allow branching later (graph instead of linear), but a 1..5 linear chain is a perfect v1.
+### View renders StageVm
+
+`tabs/pipeline/view.ts` → `renderStages(vm)`:
+
+* iterates `vm.stages`
+* prints `input -> output` info
+* (and if provided) draws preview canvases from outputs
+
+Important constraint: the view only draws previews if the VM exposes them. If the model does not store per-step outputs into the VM, the view cannot invent them.
+
+## 4) Execution chain: Next step (step-by-step) to dispatcher
+
+### UI → tab
+
+`tabs/pipeline/view.ts` click → `handlers.onNext()`
+
+`tabs/pipeline/tab.ts`:
+
+1. `seedInputOnceIfMissing()` (reads `srcCanvas`)
+2. `await model.runNext()`
+3. `render()`
+
+### Model executes one op
+
+`tabs/pipeline/model.ts` → `runNext()`:
+
+1. validates pipeline is implemented and input exists
+2. builds plan if needed: `buildPlanFromInstalled()`
+3. seeds `currentArtifact` from input at first step
+4. resolves params:
+
+   * `params = await deps.runner.getEffectiveParams(step.tuningId)`
+5. dispatch execution:
+
+   * `runOp(step.dispatchId, payload)` for dispatch ops
+6. enforces output type and updates:
+
+   * `currentArtifact`
+   * `lastOutput`
+   * `opState`, `stageState`
+   * `nextIndex`
+
+### Dispatcher hop
+
+`runOp` is imported from:
+
+`src/panel/platform/opsDispatch.ts`
+
+And that calls:
+
+* `opsDispatchCore.ts` to resolve engine + params
+* `opsDispatchImpl.ts` to run the actual implementation
+
+So the final execution chain is:
+
+`tabs/pipeline/model.ts` → `platform/opsDispatch.ts` → `platform/opsDispatchCore.ts` → `platform/opsDispatchImpl.ts`
+
+## 5) Execution chain: Run all (universal runner)
+
+Run all is the same destination but a different orchestration:
+
+* view click → tab.ts `runAll()`
+* `model.runAll()` calls:
+
+  * `runInstalledPipeline({ catalogue, installed, inputImage, deps })`
+
+`src/panel/app/pipeline/runner.ts` then:
+
+* iterates stages and ops
+* resolves params per op via `deps.getEffectiveParams(op.tuningId)`
+* dispatches via `runOp(dispatchId, payload)` for dispatch ops
+
+So:
+
+`tabs/pipeline/model.ts` → `app/pipeline/runner.ts` → `platform/opsDispatch.ts` → `opsDispatchCore.ts` → `opsDispatchImpl.ts`
+
+## 6) Where tuning registry and presets enter the chain
+
+### Registry is used at runtime by the dispatcher
+
+`src/panel/platform/opsDispatchCore.ts` imports and instantiates:
+
+* `createComponentRegistry()` from `src/panel/app/tuning/registry.ts`
+
+It also calls:
+
+* `loadComponentConfigs()` from `src/panel/app/tuning/store.ts` (persisted overrides)
+
+Then it merges:
+
+* registry defaults + stored overrides + runtime availability (opencv injected or not)
+
+via:
+
+* `resolveComponent(opId, registry, stored, runtime)`
+
+### Presets are UI data until applied
+
+Presets are applied by the tuning controller, not by the pipeline runner directly.
+
+From your `rg` output:
+
+* segmentation preset listing + selection:
+
+  * `src/panel/tabs/segmentation/view.ts` imports `segmentationPresets` and `getSegmentationPresetById`
+
+* preset application:
+
+  * `src/panel/app/tuning/controller.ts` implements `applyPreset(preset: TuningPreset)`
+
+When applied, presets become stored overrides. Those overrides are later read by:
+
+* `tuning.getEffectiveParams(...)` (UI / runner)
+* `loadComponentConfigs()` (dispatcher runtime path)
+
+## 7) Input initialization and reset behavior
+
+### Segmentation tab (reference behavior)
+
+`src/panel/tabs/segmentation/tab.ts`:
+
+* builds a session by reading `dom.srcCanvasEl`
+* on `reset()` it immediately re-seeds from source so preview is never blank
+
+### Pipeline tab (current behavior)
+
+`src/panel/tabs/pipeline/tab.ts`:
+
+* seeds input from `srcCanvas` on:
+
+  * `mount()` (once)
+  * `refresh()` (if missing)
+  * `Next` (if missing)
+  * `Run all` (always refreshes input)
+
+Practical impact:
+
+* If `srcCanvas` is empty, pipeline cannot run and should show “No input image”.
+* If you want pipeline to behave like segmentation (always showing the current source immediately), the pipeline tab must re-seed the input on reset/mount/refresh (and ensure the view renders an input preview, not only run results).
+
+## 8) Adding a new pipeline: what changes in code
+
+Adding a new pipeline usually means **two different kinds of work**:
+
+1. Defining topology: stages + which ops run (catalogue)
+2. Defining new operations: typing + tuning + implementations (dispatcher + registry + libs)
+
+### Checklist: add a new pipeline using existing ops (no new ops)
+
+If your new pipeline is only a different ordering/selection of existing ops:
+
+1. `src/panel/app/pipeline/catalogue.ts`
+
+   * add a new `PipelineSpec`
+   * define stages, allowedOps, defaultOps
+
+2. `src/panel/app/tuning/registry.ts`
+
+   * usually no changes if you reuse existing tuning ids
+   * optionally add a tuning subtree under `pipeline.*` to provide pipeline-wide parameters
+
+3. (Optional) `src/panel/app/tuning/presets/pipelinePresets.ts`
+
+   * add presets that set:
+
+     * `pipeline.mode`
+     * recipe selection
+     * relevant step parameters
+
+No dispatcher changes needed if no new op ids are introduced.
+
+### Checklist: add a new pipeline that introduces new ops (new process)
+
+If the pipeline introduces a new operation (a new `OpId`), you currently must update **four** areas:
+
+1. **Pipeline catalogue**
+
+   * `src/panel/app/pipeline/catalogue.ts`
+   * add a new `OpSpec` for the op (with `dispatchId` and `tuningId`)
+   * include it in some pipeline stage `allowedOps/defaultOps`
+
+2. **Tuning registry**
+
+   * `src/panel/app/tuning/registry.ts`
+   * add a component node for the op’s `tuningId`
+   * define param schema + defaults
+   * define engine policy and implemented engines
+
+3. **Dispatcher core typing and param coercion**
+
+   * `src/panel/platform/opsDispatchCore.ts`
+   * extend:
+
+     * `OpId` union
+     * `OpInputsByOp`, `OpOutputsByOp`, `OpParamsByOp`
+   * add a new `if (op === "your.new.op") { ... }` block in `resolveEngineAndParams()` to coerce params from resolved values
+
+   This is why the dispatcher is “universal-ish” but not fully universal: `opsDispatchCore.ts` is a closed, typed map and must be extended for each new op.
+
+4. **Dispatcher implementations**
+
+   * `src/panel/platform/opsDispatchImpl.ts`
+   * add `opImpls["your.new.op"] = { native: ..., opencv: ... }`
+   * your implementation will typically call a helper function in a `lib/` module
+
+### Where new implementation code should live
+
+For segmentation-related image ops you currently store helpers in:
+
+`src/panel/tabs/segmentation/lib/`
+
+* `color.ts`
+* `denoise.ts`
+* `morphology.ts`
+* `resize.ts`
+* `threshold.ts`
+
+So if you add a new segmentation-like step (image→image or image→mask or mask→mask), the normal pattern is:
+
+* add a new helper file in `src/panel/tabs/segmentation/lib/<newStep>.ts`
+* import it in `opsDispatchImpl.ts`
+* wire it into `opImpls[...]`
+
+For non-segmentation pipelines, you can still follow the same convention:
+
+* put the low-level algorithm in a `tabs/<domain>/lib/` folder
+* keep `opsDispatchImpl.ts` as the central routing table
+
+## 9) Worked example: add a “clean” pipeline using segmentation libs
+
+Goal: create a new pipeline that does:
+
+1. Threshold (image → mask)
+2. Morphology cleanup (mask → mask)
+3. Remove small components (mask → mask) using the contour morphology helper
+
+### A) Catalogue: new pipeline spec
+
+In `src/panel/app/pipeline/catalogue.ts` add a `PipelineSpec` roughly like:
+
+* pipeline id: `clean`
+* stages:
+
+  * `clean.binarize` (image→mask) default op: `op.seg.threshold`
+  * `clean.cleanup` (mask→mask) default ops: `op.seg.morphology`, `op.contour.clean.removeSmallComponents`
+
+This uses existing ops, so no new op ids required.
+
+### B) Ensure the ops exist as `OpSpec`
+
+Your existing ops already exist in the dispatcher as:
+
+* `segmentation.threshold`
+* `segmentation.morphology`
+* `contour.clean.removeSmallComponents`
+
+So your `OpSpec` entries should point at those dispatch ids and tuning ids, for example:
+
+* `dispatchId: "segmentation.threshold"`, `tuningId: "segmentation.threshold"`
+* `dispatchId: "segmentation.morphology"`, `tuningId: "segmentation.morphology"`
+* `dispatchId: "contour.clean.removeSmallComponents"`, `tuningId: "contour.clean.removeSmallComponents"`
+
+### C) No dispatcher-core change needed
+
+Because you reused existing op ids, you do not touch:
+
+* `opsDispatchCore.ts` typing maps
+* `opsDispatchImpl.ts` routing
+
+### D) Implementation functions already exist
+
+* Threshold helper: `src/panel/tabs/segmentation/lib/threshold.ts`
+* Morphology helper: `src/panel/tabs/segmentation/lib/morphology.ts`
+* Remove-small-components helper: `src/panel/tabs/contour/lib/morphology` (already used in `opsDispatchImpl.ts`)
+
+So the pipeline works with existing code.
+
+## 10) What to tell a user of the Pipeline tab
+
+* The combo box list is defined by the pipeline catalogue (`app/pipeline/catalogue.ts`).
+* Selecting a pipeline rebuilds an installed pipeline (stages + specific ops per stage) in the model.
+* Running step-by-step executes one op at a time through the dispatcher, resolving parameters from tuning:
+
+  * defaults come from the tuning registry (`app/tuning/registry.ts`)
+  * overrides come from stored tuning config (including presets)
+* The visuals (input/output canvases) are purely what the model exposes and the view draws; if you want “see the image after each step”, the model must store each step output and the view must render it.
+
+## 11) Known sharp edge: dispatcher “universality”
+
+Right now, adding a new op is not only “add an OpSpec”:
+
+* you must also extend `opsDispatchCore.ts` because it hardcodes:
+
+  * the set of allowed op ids
+  * typing for inputs/outputs/params
+  * param coercion defaults per op
+
+This is deliberate for strict typing, but it means every new op is a multi-file change.
+
+---
  
