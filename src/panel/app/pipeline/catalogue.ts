@@ -128,20 +128,6 @@ export function createPipelineCatalogue(): PipelineCatalogue {
 
     // Future pipelines (visible in UI, but not runnable yet)
     {
-      id: "edge",
-      title: "Edge",
-      implemented: false,
-      description: "Future: edge extraction pipeline.",
-      stages: [],
-    },
-    {
-      id: "clean",
-      title: "Clean",
-      implemented: false,
-      description: "Future: cleanup pipeline (mask repair / smooth).",
-      stages: [],
-    },
-    {
       id: "surface",
       title: "Surface",
       implemented: false,

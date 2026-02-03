@@ -52,8 +52,7 @@ async function boot(): Promise<void> {
 
   tuning.mount({ mountEl: dom.tuningMountEl, scopeRootId: "app" });
   tuning.mount({ mountEl: dom.contourTuningMountEl, scopeRootId: "contour" });
-  tuning.mount({ mountEl: dom.segTuningMountEl, scopeRootId: "segmentation" });
-  tuning.mount({ mountEl: dom.pipelineTuningMountEl, scopeRootId: "pipeline" });
+  tuning.mount({ mountEl: dom.segTuningMountEl, scopeRootId: "segmentation" }); 
 
   const contourTab = createContourTab(dom, bus);
   const colorsTab = createColorsTab(dom, bus);

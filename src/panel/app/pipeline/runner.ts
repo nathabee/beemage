@@ -60,24 +60,25 @@ function validateChainIO(stageIo: OpIO, ops: OpSpec[]): string | null {
   return null;
 }
 
-async function execDispatchOp(spec: Extract<OpSpec, { kind: "dispatch" }>, input: Artifact, deps: PipelineRunnerDeps): Promise<Artifact> {
-  const params = await deps.getEffectiveParams(spec.tuningId).catch(() => ({}));
+async function execDispatchOp(
+  spec: Extract<OpSpec, { kind: "dispatch" }>,
+  input: Artifact,
+  deps: PipelineRunnerDeps,
+): Promise<Artifact> {
+  // NOTE: params are resolved inside opsDispatchCore via registry + stored configs.
+  // deps.getEffectiveParams is not used for dispatch ops in this architecture.
 
-  // Convention:
-  // - image->image : runOp(dispatchId, { image, width, height, params })
-  // - image->mask  : runOp(dispatchId, { image, width, height, params })
-  // - mask->mask   : runOp(dispatchId, { mask, width, height, params })
   if (spec.io.input === "image") {
     if (!isImage(input)) throw new Error(ioMismatch("image", input.type));
     const { width, height } = input;
 
     if (spec.io.output === "image") {
-      const out = await runOp(spec.dispatchId as any, { image: input.image, width, height, params } as any);
+      const out = await runOp(spec.dispatchId as any, { image: input.image, width, height } as any);
       return makeImageArtifact(out as ImageData);
     }
 
     // image -> mask
-    const out = await runOp(spec.dispatchId as any, { image: input.image, width, height, params } as any);
+    const out = await runOp(spec.dispatchId as any, { image: input.image, width, height } as any);
     return makeMaskArtifact(out as Uint8Array, width, height);
   }
 
@@ -89,7 +90,7 @@ async function execDispatchOp(spec: Extract<OpSpec, { kind: "dispatch" }>, input
     throw new Error("Invalid op spec: mask input cannot produce image (not supported here)");
   }
 
-  const out = await runOp(spec.dispatchId as any, { mask: input.mask, width, height, params } as any);
+  const out = await runOp(spec.dispatchId as any, { mask: input.mask, width, height } as any);
   return makeMaskArtifact(out as Uint8Array, width, height);
 }
 
@@ -98,10 +99,13 @@ async function execOp(spec: OpSpec, input: Artifact, deps: PipelineRunnerDeps): 
     return await execDispatchOp(spec, input, deps);
   }
 
+  // JS ops still use deps.getEffectiveParams (because they have no dispatcher-resolved params)
   const params = spec.tuningId ? await deps.getEffectiveParams(spec.tuningId).catch(() => ({})) : {};
   const out = await spec.run({ input, params });
   return out;
 }
+
+ 
 
 /**
  * Executes an InstalledPipeline using the catalogue for:
