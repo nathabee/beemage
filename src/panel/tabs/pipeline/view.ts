@@ -46,14 +46,43 @@ function drawImageToCanvas(canvas: HTMLCanvasElement, img: ImageData): void {
 function drawMaskToCanvas(canvas: HTMLCanvasElement, mask: Uint8Array, width: number, height: number): void {
   canvas.width = width;
   canvas.height = height;
+
   const ctx = canvas.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D | null;
   if (!ctx) return;
+
+  // First pass: detect whether this is binary and how dense it is.
+  let maxV = 0;
+  let onCount = 0;
+  const n = width * height;
+
+  for (let i = 0; i < n; i++) {
+    const v = mask[i] ?? 0;
+    if (v > maxV) maxV = v;
+    if (v > 0) onCount++;
+  }
+
+  const isBinary = maxV <= 1;
+
+  // For preview: binary masks are easiest to read as "black foreground on white background".
+  // If mask is 0/1: show 1 as black, 0 as white.
+  const invertBinaryPreview = true;
 
   const img = ctx.createImageData(width, height);
   const d = img.data;
 
-  for (let i = 0; i < width * height; i++) {
-    const v = mask[i] ?? 0;
+  for (let i = 0; i < n; i++) {
+    const raw = mask[i] ?? 0;
+
+    let v: number;
+
+    if (isBinary) {
+      const bit = raw > 0 ? 1 : 0;
+      v = invertBinaryPreview ? (bit ? 0 : 255) : (bit ? 255 : 0);
+    } else {
+      // Already 0..255 — keep as is.
+      v = raw;
+    }
+
     const j = i * 4;
     d[j] = v;
     d[j + 1] = v;
@@ -64,11 +93,8 @@ function drawMaskToCanvas(canvas: HTMLCanvasElement, mask: Uint8Array, width: nu
   ctx.putImageData(img, 0, 0);
 }
 
-function statusLineFromResult(res: PipelineRunResult | null): string {
-  if (!res) return "Idle";
-  if (res.status === "ok") return `OK: ${res.title}`;
-  return `ERROR: ${res.error ?? res.title}`;
-}
+
+ 
 
 export function createPipelineView(args: {
   hostEl: HTMLElement;
@@ -272,10 +298,19 @@ export function createPipelineView(args: {
     row.appendChild(el("div", { class: "muted", style: "font-size:12px;" }, `${st.input} -> ${st.output}`));
 
     const stageOut = st.outputArtifact as Artifact | undefined;
+
+    // Stage output once (top-level), constrained height, no forced full-width stretch.
     if (stageOut) {
-      const canvas = el("canvas", { class: "canvas", style: "margin-top:8px;" }) as HTMLCanvasElement;
+      const canvas = el("canvas", {
+        class: "canvas",
+        style:
+          "margin-top:8px; display:block; margin-left:auto; margin-right:auto; " +
+          "max-width:100%; max-height:260px; width:auto; height:auto;",
+      }) as HTMLCanvasElement;
+
       if (isImage(stageOut)) drawImageToCanvas(canvas, stageOut.image);
       if (isMask(stageOut)) drawMaskToCanvas(canvas, stageOut.mask, stageOut.width, stageOut.height);
+
       row.appendChild(canvas);
     }
 
@@ -283,7 +318,10 @@ export function createPipelineView(args: {
     if (ops.length) {
       const opsWrap = el("div", { style: "margin-top:10px; display:flex; flex-direction:column; gap:8px;" });
 
-      for (const op of ops) {
+      for (let i = 0; i < ops.length; i++) {
+        const op = ops[i];
+        const isLast = i === ops.length - 1;
+
         const opRow = el("div", { class: "card", style: "padding:8px;" });
 
         const opHead = el("div", { class: "row", style: "align-items:center; justify-content:space-between;" });
@@ -293,11 +331,20 @@ export function createPipelineView(args: {
 
         opRow.appendChild(el("div", { class: "muted", style: "font-size:12px;" }, `${op.input} -> ${op.output}`));
 
-        const opOut = op.outputArtifact as Artifact | undefined;
+        // Avoid duplicate: if we already showed stageOut, skip the last op preview.
+        const opOut = (stageOut && isLast) ? undefined : (op.outputArtifact as Artifact | undefined);
+
         if (opOut) {
-          const canvas = el("canvas", { class: "canvas", style: "margin-top:8px;" }) as HTMLCanvasElement;
+          const canvas = el("canvas", {
+            class: "canvas",
+            style:
+              "margin-top:8px; display:block; margin-left:auto; margin-right:auto; " +
+              "max-width:100%; max-height:200px; width:auto; height:auto;",
+          }) as HTMLCanvasElement;
+
           if (isImage(opOut)) drawImageToCanvas(canvas, opOut.image);
           if (isMask(opOut)) drawMaskToCanvas(canvas, opOut.mask, opOut.width, opOut.height);
+
           opRow.appendChild(canvas);
         }
 
@@ -309,6 +356,8 @@ export function createPipelineView(args: {
 
     return row;
   }
+
+
 
   return {
     mount(): void {

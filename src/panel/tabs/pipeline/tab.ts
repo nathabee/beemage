@@ -30,6 +30,86 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
   let view: PipelineView | null = null;
   let mounted = false;
 
+  // Track which tuning subtree is currently mounted into the Pipeline tab slot.
+  let mountedScopeRootId: string | null = null;
+
+  function clearPipelineTuningMount(): void {
+    dom.pipelineTuningMountEl.innerHTML = "";
+  }
+
+  function pickScopeCandidates(pipelineId: string): string[] {
+    // Universal strategy:
+    // 1) Try the pipeline id directly (segmentation, later edge/clean/surface if you make them root nodes).
+    // 2) Try "pipeline.<id>" in case you decide to nest under pipeline.* later.
+    // 3) Fall back to "pipeline" (UI state node: mode/recipe).
+    return [pipelineId, `pipeline.${pipelineId}`, "pipeline"];
+  }
+
+  function mountPipelineTuningForPipelineId(pipelineId: string): void {
+    const candidates = pickScopeCandidates(pipelineId);
+
+    // If we’re already mounted to the best candidate (first one that works), we’ll keep it.
+    // But we don’t know which one works until we try. So:
+    // - If current mount matches any candidate, we still attempt the first candidate first,
+    //   and short-circuit only if it equals mountedScopeRootId.
+    if (mountedScopeRootId === candidates[0]) return;
+
+    clearPipelineTuningMount();
+
+    let mountedOk: string | null = null;
+    let lastErr: unknown = null;
+
+    for (const scopeRootId of candidates) {
+      try {
+        tuning.mount({ mountEl: dom.pipelineTuningMountEl, scopeRootId });
+        mountedOk = scopeRootId;
+        break;
+      } catch (e) {
+        lastErr = e;
+        // Clear mount slot before next attempt (defensive).
+        clearPipelineTuningMount();
+      }
+    }
+
+    if (!mountedOk) {
+      // Absolute fallback: leave it empty, but log what happened.
+      mountedScopeRootId = null;
+
+      actionLog.append({
+        scope: "panel",
+        kind: "info",
+        message: `Pipeline tuning mount failed for "${pipelineId}" (no matching scope).`,
+      });
+
+      debugTrace.append({
+        scope: "panel",
+        kind: "error",
+        message: "Pipeline tuning mount failed (no candidate scopeRootId worked)",
+        meta: {
+          pipelineId,
+          candidates,
+          error: lastErr instanceof Error ? lastErr.message : String(lastErr),
+        },
+      });
+
+      return;
+    }
+
+    mountedScopeRootId = mountedOk;
+
+    actionLog.append({
+      scope: "panel",
+      kind: "info",
+      message: `Pipeline tuning mount: pipelineId=${pipelineId}, scopeRootId=${mountedOk}`,
+    });
+  }
+
+  function mountScopedTuningForActivePipeline(): void {
+    const vm = model.getVm();
+    const pipelineId = typeof vm.activePipelineId === "string" ? vm.activePipelineId : "segmentation";
+    mountPipelineTuningForPipelineId(pipelineId);
+  }
+
   function readSourceImageData(): ImageData | null {
     const src = dom.srcCanvasEl;
     const w = src.width;
@@ -67,6 +147,9 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
 
     model.setActivePipeline(mode);
     model.setActiveRecipe(recipe);
+
+    // Critical: Pipeline tab tuning must match the selected pipeline
+    mountScopedTuningForActivePipeline();
   }
 
   function ensureView(): PipelineView {
@@ -75,21 +158,34 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
     actionLog.append({ scope: "panel", kind: "info", message: "Pipeline view: create + mount" });
 
     view = createPipelineView({
-      hostEl: dom.viewPipeline,
+      hostEl: dom.pipelineViewMountEl,
       statusEl: dom.pipelineStatusEl,
       handlers: {
         onSelectPipeline: (id) => {
           actionLog.append({ scope: "panel", kind: "info", message: `Pipeline select: ${id}` });
+
           model.setActivePipeline(id);
-          render();
+
+          // Persist selection
           void tuning.setParamValue("pipeline", "mode", id);
+
+          // Remount tuning subtree to match selection
+          mountScopedTuningForActivePipeline();
+
+          render();
         },
+
         onSelectRecipe: (id) => {
           actionLog.append({ scope: "panel", kind: "info", message: `Recipe select: ${id}` });
+
           model.setActiveRecipe(id);
-          render();
+
+          // Persist selection
           void tuning.setParamValue("pipeline", "recipe", id);
+
+          render();
         },
+
         onRunAll: () => void runAll(),
         onNext: () => void runNext(),
         onReset: () => {
@@ -99,13 +195,18 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
           if (img) model.setInputImageData(img);
 
           actionLog.append({ scope: "panel", kind: "info", message: "Pipeline reset (reseed from source)" });
+
+          mountScopedTuningForActivePipeline();
           render();
         },
-
       },
     });
 
     view.mount();
+
+    // Ensure tuning mount exists even if user never touches the select.
+    mountScopedTuningForActivePipeline();
+
     return view;
   }
 
@@ -146,7 +247,9 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
 
     actionLog.append({ scope: "panel", kind: "info", message: "Pipeline tab: mount()" });
 
-    seedInputOnceIfMissing();
+    // Always pull the latest source image on first entry to the tab.
+    refreshInputForRun();
+
     await syncPipelineFromTuning();
 
     actionLog.append({ scope: "panel", kind: "info", message: "Pipeline tab: render()" });
@@ -158,10 +261,13 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
 
     actionLog.append({ scope: "panel", kind: "info", message: "Pipeline tab: refresh()" });
 
-    seedInputOnceIfMissing();
+    // When user comes back to Pipeline tab, keep it in sync with the source canvas.
+    refreshInputForRun();
+
     await syncPipelineFromTuning();
     render();
   }
+
 
   function unmount(): void {
     mounted = false;
@@ -170,8 +276,12 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
 
   function dispose(): void {
     actionLog.append({ scope: "panel", kind: "info", message: "Pipeline tab: dispose()" });
+
     view?.dispose();
     view = null;
+
+    mountedScopeRootId = null;
+    clearPipelineTuningMount();
   }
 
   return { bind, mount, unmount, refresh, dispose };

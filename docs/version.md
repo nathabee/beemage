@@ -26,28 +26,17 @@ Conventions:
 ---
 
  
-#### FUTURE — Fix: Demo OpenCV dispatch output correctness + tab freeze hardening
+ 
+#### v0.1.0 — Epic: Universal pipeline runner foundation
 
-* **Fix OpenCV mask output format (demo)**
-
-  * Ensure OpenCV ops return a **binary mask** (`0|1`) to match the native pipeline expectations (native `renderMask()` treats `1` as “on”).
-  * Current OpenCV `ocvRemoveSmallComponents()` returns `0|255`, which makes the pipeline interpret everything as “off” → **white/empty result**.
-  * Add a single normalization step before returning: `out[i] = out255 ? 1 : 0`.
-
-* **Add debug probes for OpenCV correctness (demo-only)**
-
-  * Log `sum(mask)` / `countOn` before and after `removeSmallComponents` to confirm you are not zeroing the mask.
-  * Log `nLabels`, `minArea`, and first few `stats.intAt(lbl, CC_STAT_AREA)` values to validate stats indexing.
-
-* **Prevent Settings “hide Logs” navigation loop / freeze**
-
-  * Keep the hardened `applyDevToolsVisibility()` behavior: only click Settings **if Logs is currently active** (avoid mount→loadAll→click loops).
-  * Remove/avoid any unconditional `dom.tabSettings.click()` when toggling dev tools visibility.
-
-* **Clarify demo vs extension behavior**
-
-  * Demo: OpenCV mode allowed via seam + loader.
-  * Extension: OpenCV forced-off / native fallback (CSP-safe), but engine strategy storage remains compatible.
+* Introduce the universal pipeline runner (`panel/app/pipeline`) with catalogue-driven stages/ops and IO validation
+* Add the new Pipeline tab (`panel/tabs/pipeline`) with pipeline + recipe selectors and per-stage previews
+* Wire runner ops through `opsDispatch` so pipeline execution uses the same dispatch seam as existing tabs
+* Extend tuning to support universal pipeline workflows (pipeline selection persisted via `pipeline.mode` and scoped tuning mounts)
+* Align pipeline runner param resolution with registry-based defaults + overrides (`getEffectiveParams`)
+* Keep Segmentation tab functional while duplicating its execution path through the universal runner for parity testing
+* Add action/debug traces for pipeline validation failures and op execution failures (pipelineId/stageId/opId + dims)
+* Demo/extension seam preserved: demo uses mock impls, extension build remains native-only (no OpenCV injection)
 
  ---
 

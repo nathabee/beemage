@@ -76,6 +76,12 @@ export function getDom() {
     "pipelineTuningMount",
   );
 
+    const pipelineViewMountEl = must(
+    document.getElementById("pipelineViewMount") as HTMLDivElement | null,
+    "pipelineViewMount",
+  );
+
+
   // -----------------------------
   // Segmentation tab 
   // -----------------------------  
@@ -324,7 +330,9 @@ export function getDom() {
 
     // Pipeline
     pipelineStatusEl,
-    pipelineTuningMountEl,
+    pipelineTuningMountEl, 
+    pipelineViewMountEl, 
+
 
     // Segmentation
     segPresetListEl,
