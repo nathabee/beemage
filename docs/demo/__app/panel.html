@@ -18,7 +18,6 @@
       <div class="tabs" role="tablist" aria-label="Panel tabs">
         <button id="tabContour" class="tab is-active" role="tab" aria-selected="true" type="button">Contour</button>
         <button id="tabPipeline" class="tab" role="tab" aria-selected="false" type="button">Pipeline</button>
-        <button id="tabSegmentation" class="tab" role="tab" aria-selected="false" type="button">Segmentation</button>
         <button id="tabColors" class="tab" role="tab" aria-selected="false" type="button">Colors</button>
         <button id="tabSettings" class="tab" role="tab" aria-selected="false" type="button">Settings</button>
         <button id="tabLogs" class="tab" role="tab" aria-selected="false" type="button">Logs</button>
@@ -40,18 +39,8 @@
               <input id="fileInput" type="file" accept="image/*" />
             </div>
           </div>
-        </div>
+        </div> 
 
-        <div class="row" style="align-items:center;">
-          <button id="btnProcess" type="button" disabled>Process</button>
-          <button id="btnClean" type="button" disabled>Clean &amp; Smooth</button>
-          <button id="btnDownload" type="button" disabled>Download PNG</button>
-          <button id="btnVectorize" type="button" disabled>Vectorize (SVG)</button>
-          <button id="btnDownloadSvg" type="button" disabled>Download SVG</button>
-
-          <span id="contourSpinner" class="spinner is-hidden" aria-hidden="true"></span>
-          <span id="contourStatus" class="status">No image loaded</span>
-        </div>
 
         <div class="grid4">
           <div class="card">
@@ -59,68 +48,9 @@
             <canvas id="srcCanvas" class="canvas" width="640" height="360" aria-label="Input preview"></canvas>
           </div>
 
-          <div class="card">
-            <div class="cardTitle">Output</div>
-            <canvas id="outCanvas" class="canvas" width="640" height="360" aria-label="Contour output"></canvas>
-          </div>
 
-          <div class="card">
-            <div class="cardTitle">Clean 1 (Repaired)</div>
-            <canvas id="clean1Canvas" class="canvas" width="640" height="360" aria-label="Clean stage 1"></canvas>
-          </div>
-
-          <div class="card">
-            <div class="cardTitle">Clean 2 (Smoothed)</div>
-            <canvas id="clean2Canvas" class="canvas" width="640" height="360" aria-label="Clean stage 2"></canvas>
-          </div>
         </div>
 
-        <details class="searchBox" id="svgBox" role="group">
-          <summary>SVG Preview</summary>
-
-          <div class="row" style="align-items:flex-start;">
-            <div class="card" style="flex:1; min-width: 280px;">
-              <div class="cardTitle">Rendered</div>
-              <img id="svgPreviewImg" alt="SVG preview"
-                style="width:100%; height:auto; border-radius:10px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.03);" />
-            </div>
-
-            <div class="card" style="flex:1; min-width: 280px;">
-              <div class="cardTitle">SVG Markup</div>
-              <pre id="svgPreviewText" class="report" aria-label="SVG markup preview"></pre>
-            </div>
-          </div>
-        </details>
-
-        <details class="searchBox" id="contourOptionsBox" role="group" open>
-          <summary>Options</summary>
-
-          <p class="muted" style="margin-top:0;">
-            Contour parameters are configured in the <strong>Tuning</strong> section below.
-          </p>
-
-          <div class="row" style="align-items:center; margin-top:10px;">
-            <span class="muted" style="min-width:90px;">Quality</span>
-            <span id="cleanQualityBadge" class="qBadge qBadge--off">—</span>
-
-            <div class="qBar" aria-label="Clean quality">
-              <div id="cleanQualityFill" class="qBarFill" style="width:0%;"></div>
-            </div>
-
-            <span id="cleanQualityText" class="status"></span>
-          </div>
-        </details>
-
-        <!-- Contour tab: TUNING (scoped) -->
-        <details class="searchBox" id="contourTuningBox" role="group" open>
-          <summary>Tuning</summary>
-
-          <p class="muted" style="margin-top:0;">
-            Contour-only tuning (mirrors central tuning state).
-          </p>
-
-          <div id="contourTuningMount"></div>
-        </details>
       </section>
 
       <!-- =========================
@@ -152,98 +82,7 @@
       </section>
 
 
-      <!-- =========================
- SEGMENTATION VIEW
- ========================= -->
-      <section id="viewSegmentation" class="view" role="tabpanel" aria-labelledby="tabSegmentation" hidden>
 
-        <div class="segHeaderActions">
-          <button id="segRunBtn" class="btn" type="button">Run all</button>
-          <button id="segNextBtn" class="btn" type="button">Next step</button>
-          <button id="segResetBtn" class="btn" type="button">Reset</button>
-
-          <span id="segStatus" class="muted" style="font-size:12px;">Idle</span>
-        </div>
-
-        <div class="segLayout">
-          <!-- Left: Preset library -->
-          <div class="segPresets">
-            <div class="segHeaderRow">
-              <div class="segTitle">Presets</div>
-              <div class="muted" style="font-size:12px;">Drag a preset onto a step.</div>
-            </div>
-
-            <!-- Filled by view.ts -->
-            <div id="segPresetList" class="segPresetList" aria-label="Segmentation preset library"></div>
-          </div>
-
-          <!-- Right: Fixed pipeline -->
-          <div class="segPipeline">
-
-            <div id="segRecipeDrop" class="segDropZone segDropZoneHeader" data-seg-drop="recipe"
-              aria-label="Drop a full recipe preset here" title="Drop a recipe preset here">
-              <span class="segStepAssigned muted" data-assigned>Drop recipe here</span>
-            </div>
-
-            <div class="segTitle">Pipeline</div>
-
-            <div class="segSteps" aria-label="Segmentation steps">
-              <div id="segStepResize" class="segDropZone segStep" data-seg-step="segmentation.resize"
-                aria-label="Resize step drop zone">
-                <div class="segStepTitle">1. Resize</div>
-                <div class="segStepAssigned muted" data-assigned>Drop preset…</div>
-              </div>
-
-              <div id="segStepDenoise" class="segDropZone segStep" data-seg-step="segmentation.denoise"
-                aria-label="Denoise step drop zone">
-                <div class="segStepTitle">2. Denoise</div>
-                <div class="segStepAssigned muted" data-assigned>Drop preset…</div>
-              </div>
-
-              <div id="segStepColor" class="segDropZone segStep" data-seg-step="segmentation.color"
-                aria-label="Color step drop zone">
-                <div class="segStepTitle">3. Color / Gray</div>
-                <div class="segStepAssigned muted" data-assigned>Drop preset…</div>
-              </div>
-
-              <div id="segStepThreshold" class="segDropZone segStep" data-seg-step="segmentation.threshold"
-                aria-label="Threshold step drop zone">
-                <div class="segStepTitle">4. Threshold</div>
-                <div class="segStepAssigned muted" data-assigned>Drop preset…</div>
-              </div>
-
-              <div id="segStepMorphology" class="segDropZone segStep" data-seg-step="segmentation.morphology"
-                aria-label="Morphology step drop zone">
-                <div class="segStepTitle">5. Morphology cleanup</div>
-                <div class="segStepAssigned muted" data-assigned>Drop preset…</div>
-              </div>
-            </div>
-
-            <div class="segPreview" style="margin-top:12px;">
-              <div class="muted" style="font-size:12px; margin-bottom:6px;">Mask preview</div>
-              <canvas id="segMaskCanvas" class="segCanvas" aria-label="Segmentation mask preview"></canvas>
-            </div>
-
-            <details class="searchBox" role="group" open style="margin-top:12px;">
-              <summary>Status</summary>
-              <div class="muted" style="font-size:12px; line-height:1.4;">
-                Fixed pipeline order. Presets configure each step (algo + params) via tuning store.
-              </div>
-            </details>
-          </div>
-        </div>
-
-        <!-- Segmentation tab: TUNING (scoped) -->
-        <details class="searchBox" id="segTuningBox" role="group" open>
-          <summary>Tuning</summary>
-
-          <p class="muted" style="margin-top:0;">
-            Segmentation-only tuning (mirrors central tuning state).
-          </p>
-
-          <div id="segTuningMount"></div>
-        </details>
-      </section>
 
       <!-- =========================
  COLORS VIEW
