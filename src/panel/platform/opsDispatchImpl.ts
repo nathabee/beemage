@@ -2,7 +2,7 @@
 import type { OpImpls } from "./opsDispatchCore";
 import { logWarn, logTrace } from "../app/log";
 
-import { removeSmallComponents } from "../tabs/contour/lib/morphology";
+import { removeSmallComponents } from "../tabs/pipeline/lib/morphology";
 
 import { thresholdManual } from "../tabs/pipeline/lib/threshold";
 import { resizeNative } from "../tabs/pipeline/lib/resize";

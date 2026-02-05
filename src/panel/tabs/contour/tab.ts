@@ -1,49 +1,89 @@
 // src/panel/tabs/contour/tab.ts
-
 import type { Dom } from "../../app/dom";
 import type { Bus } from "../../app/bus";
 
-import { createInitialContourTabState, resetContourTabState } from "./model";
 import { createContourTabView } from "./view";
+import { createInitialContourTabState } from "./model";
 
-import { loadImageFromFile } from "./ops/load";
-import { processImage } from "./ops/process";
-import { cleanOutput } from "./ops/clean";
-import { vectorizeToSvg } from "./ops/vectorize";
+import * as actionLog from "../../../shared/actionLog";
+import * as debugTrace from "../../../shared/debugTrace";
 
 export function createContourTab(dom: Dom, _bus: Bus) {
   const state = createInitialContourTabState();
   const view = createContourTabView(dom, state);
 
-  function bindDragDrop() {
-    const dz = dom.dropZoneEl;
-
-    function setHover(on: boolean) {
-      dz.classList.toggle("is-hover", on);
+  async function decodeImageFromFile(file: File): Promise<HTMLImageElement> {
+    if (!file.type.startsWith("image/")) {
+      throw new Error(`Unsupported file type: ${file.type || "unknown"}`);
     }
 
-    dz.addEventListener("dragover", (e) => {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image();
+      img.decoding = "async";
+      img.src = url;
+
+      if (typeof (img as any).decode === "function") {
+        await (img as any).decode();
+      } else {
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error("Image decode failed."));
+        });
+      }
+
+      return img;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  async function loadIntoSourceCanvas(file: File): Promise<void> {
+    const img = await decodeImageFromFile(file);
+
+    view.drawImageToSource(img);
+    view.showLoadOk(file.name);
+
+    actionLog.append({ scope: "panel", kind: "info", message: `Input loaded: ${file.name}` });
+
+    debugTrace.append({
+      scope: "panel",
+      kind: "info",
+      message: "Contour input loaded into srcCanvas",
+      meta: {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        canvasW: dom.srcCanvasEl.width,
+        canvasH: dom.srcCanvasEl.height,
+        naturalW: img.naturalWidth || img.width,
+        naturalH: img.naturalHeight || img.height,
+      },
+    });
+  }
+
+  function bindDragDrop(): void {
+    dom.dropZoneEl.addEventListener("dragover", (e) => {
       e.preventDefault();
-      setHover(true);
+      view.setHover(true);
     });
 
-    dz.addEventListener("dragleave", () => setHover(false));
+    dom.dropZoneEl.addEventListener("dragleave", () => view.setHover(false));
 
-    dz.addEventListener("drop", (e) => {
+    dom.dropZoneEl.addEventListener("drop", (e) => {
       e.preventDefault();
-      setHover(false);
+      view.setHover(false);
 
-      const files = e.dataTransfer?.files;
-      if (!files || files.length === 0) return;
+      const f = e.dataTransfer?.files?.[0];
+      if (!f) return;
 
-      void loadImageFromFile(dom, state, files[0], {
-        setStatus: view.setStatus,
-        setContourBusyVisual: view.setContourBusyVisual,
-        clearCanvases: view.clearCanvases,
-        clearCleanCanvasesOnly: view.clearCleanCanvasesOnly,
-        clearSvgPreview: view.clearSvgPreview,
-        updateEnabled: view.updateEnabled,
-        getNumber: view.getNumber,
+      void loadIntoSourceCanvas(f).catch((err) => {
+        const msg = err instanceof Error ? err.message : String(err);
+
+        view.showLoadError(msg);
+
+        actionLog.append({ scope: "panel", kind: "error", message: `Input load failed: ${msg}` });
+        debugTrace.append({ scope: "panel", kind: "error", message: "Input load failed", meta: { error: msg } });
       });
     });
 
@@ -51,79 +91,25 @@ export function createContourTab(dom: Dom, _bus: Bus) {
       const f = dom.fileInputEl.files?.[0];
       if (!f) return;
 
-      void loadImageFromFile(dom, state, f, {
-        setStatus: view.setStatus,
-        setContourBusyVisual: view.setContourBusyVisual,
-        clearCanvases: view.clearCanvases,
-        clearCleanCanvasesOnly: view.clearCleanCanvasesOnly,
-        clearSvgPreview: view.clearSvgPreview,
-        updateEnabled: view.updateEnabled,
-        getNumber: view.getNumber,
+      void loadIntoSourceCanvas(f).catch((err) => {
+        const msg = err instanceof Error ? err.message : String(err);
+
+        view.showLoadError(msg);
+
+        actionLog.append({ scope: "panel", kind: "error", message: `Input load failed: ${msg}` });
+        debugTrace.append({ scope: "panel", kind: "error", message: "Input load failed", meta: { error: msg } });
       });
 
       dom.fileInputEl.value = "";
     });
   }
 
-  function bind() {
+  function bind(): void {
     bindDragDrop();
-
-    dom.btnDownloadEl.addEventListener("click", () => view.downloadPng());
-    dom.btnDownloadSvgEl.addEventListener("click", () => view.downloadSvg());
-
-    dom.btnProcessEl.addEventListener("click", () => {
-      void processImage(dom, state, {
-        setStatus: view.setStatus,
-        setContourBusyVisual: view.setContourBusyVisual,
-        clearCleanCanvasesOnly: view.clearCleanCanvasesOnly,
-        clearSvgPreview: view.clearSvgPreview,
-        updateEnabled: view.updateEnabled,
-        getNumber: view.getNumber,
-      });
-    });
-
-    dom.btnCleanEl.addEventListener("click", () => {
-      void cleanOutput(dom, state, {
-        setStatus: view.setStatus,
-        setContourBusyVisual: view.setContourBusyVisual,
-        clearSvgPreview: view.clearSvgPreview,
-        updateEnabled: view.updateEnabled,
-        getNumber: view.getNumber,
-        updateCleanQualityUI: view.updateCleanQualityUI,
-      });
-    });
-
-    dom.btnVectorizeEl.addEventListener("click", () => {
-      void vectorizeToSvg(dom, state, {
-        setStatus: view.setStatus,
-        setContourBusyVisual: view.setContourBusyVisual,
-        updateEnabled: view.updateEnabled,
-        showError: view.showError,
-        getNumber: view.getNumber,
-      });
-    });
-
-
-    // initial UI
-    resetContourTabState(state);
-    view.clearSvgPreview();
-    view.updateEnabled();
-    view.setStatus("No image loaded");
-    dom.contourSpinnerEl.classList.add("is-hidden");
   }
 
-  function mount() {
-    // no-op for now
-  }
+  function mount(): void {}
+  function unmount(): void {}
 
-  function unmount() {
-    // no-op for now
-  }
-
-  return {
-    id: "contour" as const,
-    bind,
-    mount,
-    unmount,
-  };
+  return { id: "contour" as const, bind, mount, unmount };
 }

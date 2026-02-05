@@ -137,10 +137,8 @@ export function createComponentRegistry(): ComponentRegistry {
             {
               scale: { kind: "number", label: "Scale", min: 1, max: 10, step: 1, default: 1 },
               transparentBg: { kind: "number", label: "Transparent bg (0/1)", min: 0, max: 1, step: 1, default: 1 },
-              // NOTE: if your ParamSchema does NOT support string yet, keep this out for now.
-              // If it does support string, use kind: "string".
-              // If not, we’ll store a numeric color index instead.
-              color: { kind: "string" as any, label: "Color", default: "#000" as any },
+              color: { kind: "text", label: "Color", default: "#3bca1e" },
+
             } as any,
             undefined,
             "Convert the edge mask into an SVG.",
@@ -231,7 +229,7 @@ export function createComponentRegistry(): ComponentRegistry {
         ],
         "Fixed-order segmentation pipeline. Presets configure each step.",
       ),
-       // -----------------------------
+      // -----------------------------
       // Contour
       // -----------------------------
       n(
@@ -272,7 +270,18 @@ export function createComponentRegistry(): ComponentRegistry {
             },
             [
               n("contour.clean.threshold", "Threshold", ["native"], "auto", {}),
-              n("contour.clean.removeSmallComponents", "Remove small components", ["native", "opencv"], "auto", {}),
+              n(
+                "contour.clean.removeSmallComponents",
+                "Remove small components",
+                ["native", "opencv"],
+                "auto",
+                {
+                  cleanMinArea: { kind: "number", label: "Min fragment size", min: 0, max: 5000, step: 1, default: 12 },
+                },
+                undefined,
+                "Remove connected components smaller than the minimum area.",
+              ),
+
               n("contour.clean.repair", "Repair gaps", ["native"], "auto", {}),
               n("contour.clean.smooth", "Smooth mask", ["native"], "auto", {}),
               n("contour.clean.quality", "Quality metrics", ["native"], "auto", {}),

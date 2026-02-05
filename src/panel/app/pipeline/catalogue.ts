@@ -111,6 +111,15 @@ export function createPipelineCatalogue(): PipelineCatalogue {
       tuningId: "svg.create",
     },
 
+    {
+  kind: "dispatch",
+  id: "op.contour.clean.removeSmallComponents",
+  title: "Remove small components",
+  io: { input: "mask", output: "mask" },
+  dispatchId: "contour.clean.removeSmallComponents",
+  tuningId: "contour.clean.removeSmallComponents",
+},
+
     // Useful generic ops (JS) for testing / wiring (optional)
     {
       kind: "js",
@@ -248,6 +257,37 @@ export function createPipelineCatalogue(): PipelineCatalogue {
         },
       ],
     },
+
+{
+  id: "cleanup",
+  title: "Cleanup (min area)",
+  implemented: true,
+  description: "Image -> mask -> cleanup (morphology + remove small components).",
+  stages: [
+    {
+      id: "stage.cleanup.prep",
+      title: "Prep",
+      io: { input: "image", output: "image" },
+      allowedOps: ["op.seg.resize", "op.util.pass"],
+      defaultOps: ["op.seg.resize"],
+    },
+    {
+      id: "stage.cleanup.binarize",
+      title: "Binarize",
+      io: { input: "image", output: "mask" },
+      allowedOps: ["op.seg.threshold"],
+      defaultOps: ["op.seg.threshold"],
+    },
+    {
+      id: "stage.cleanup.morph",
+      title: "Mask cleanup",
+      io: { input: "mask", output: "mask" },
+      allowedOps: ["op.seg.morphology", "op.contour.clean.removeSmallComponents"],
+      defaultOps: ["op.seg.morphology", "op.contour.clean.removeSmallComponents"],
+    },
+  ],
+},
+
 
     
     // Future pipelines (visible in UI, but not runnable yet)

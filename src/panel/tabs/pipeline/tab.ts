@@ -9,6 +9,8 @@ import * as debugTrace from "../../../shared/debugTrace";
 import * as actionLog from "../../../shared/actionLog";
 import type { TuningController } from "../../app/tuning/controller";
 import type { ParamValue } from "../../app/tuning/types";
+import { setLastPipelineOutputFromVm } from "../../app/pipeline/outputStore";
+
 
 export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController) {
   const model = createPipelineModel({
@@ -215,11 +217,14 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
           const img = readSourceImageData();
           if (img) model.setInputImageData(img);
 
+          setLastPipelineOutputFromVm(model.getVm());
+
           actionLog.append({ scope: "panel", kind: "info", message: "Pipeline reset (reseed from source)" });
 
           mountScopedTuningForActivePipeline();
           render();
         },
+
       },
     });
 
@@ -243,7 +248,11 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
     try {
       await model.runAll();
     } finally {
+      // Publish last pipeline output for other tabs (Colors etc.)
+      setLastPipelineOutputFromVm(model.getVm());
+
       render();
+      surfacePipelineErrorsToActionLog();
     }
   }
 
@@ -255,9 +264,14 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
     try {
       await model.runNext();
     } finally {
+      // Publish last pipeline output for other tabs (Colors etc.)
+      setLastPipelineOutputFromVm(model.getVm());
+
       render();
+      surfacePipelineErrorsToActionLog();
     }
   }
+
 
   function bind(): void {
     // view binds its own internal UI

@@ -4,7 +4,6 @@ export const OPS_IMPL_SOURCE = "demo" as const;
 import type { OpImpls } from "../../../../src/panel/platform/opsDispatchCore";
 import { logTrace, logWarn } from "../../../../src/panel/app/log";
 
-import { removeSmallComponents as nativeRemoveSmallComponents } from "../../../../src/panel/tabs/contour/lib/morphology";
 import { ocvRemoveSmallComponents } from "./ops/removeSmallComponents";
 
 import { thresholdManual } from "../../../../src/panel/tabs/pipeline/lib/threshold";
@@ -12,6 +11,7 @@ import { resizeNative } from "../../../../src/panel/tabs/pipeline/lib/resize";
 import { denoiseNative } from "../../../../src/panel/tabs/pipeline/lib/denoise";
 import { colorNative } from "../../../../src/panel/tabs/pipeline/lib/color";
 import { morphologyNative } from "../../../../src/panel/tabs/pipeline/lib/morphology";
+import { removeSmallComponents as nativeRemoveSmallComponents } from "../../../../src/panel/tabs/pipeline/lib/morphology";
 import { edgeFromMask } from "../../../../src/panel/tabs/pipeline/lib/edge";
 
 import { edgeMaskToSvg } from "../../../../src/panel/tabs/pipeline/lib/svg";

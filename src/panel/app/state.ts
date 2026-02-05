@@ -11,6 +11,7 @@ import type { Dom } from "./dom";
 import { logTrace, logError } from "./log";
 
 let busyCount = 0;
+let prevDisabled = new Map<HTMLElement, boolean>();
 
 export function getBusy(): boolean {
   return busyCount > 0;
@@ -88,12 +89,7 @@ function applyBusy(dom: Dom, next: boolean): void {
   // -----------------------------
   // Contour tab controls
   // -----------------------------
-  dom.fileInputEl.disabled = next;
-  dom.btnProcessEl.disabled = next;
-  dom.btnCleanEl.disabled = next;
-  dom.btnDownloadEl.disabled = next; 
-  dom.btnVectorizeEl.disabled = next;
-  dom.btnDownloadSvgEl.disabled = next;
+  dom.fileInputEl.disabled = next; 
   // -----------------------------
   // Settings (dev config)
   // -----------------------------

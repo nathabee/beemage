@@ -17,51 +17,22 @@ export function getDom() {
   const tabColors = must(document.getElementById("tabColors") as HTMLButtonElement | null, "tabColors");
   const tabSettings = must(document.getElementById("tabSettings") as HTMLButtonElement | null, "tabSettings");
   const tabLogs = must(document.getElementById("tabLogs") as HTMLButtonElement | null, "tabLogs");
-  const tabSegmentation = must(document.getElementById("tabSegmentation") as HTMLButtonElement | null, "tabSegmentation");
   const tabPipeline = must(document.getElementById("tabPipeline") as HTMLButtonElement | null, "tabPipeline");
-  
+
   const viewContour = must(document.getElementById("viewContour") as HTMLElement | null, "viewContour");
   const viewColors = must(document.getElementById("viewColors") as HTMLElement | null, "viewColors");
   const viewSettings = must(document.getElementById("viewSettings") as HTMLElement | null, "viewSettings");
   const viewLogs = must(document.getElementById("viewLogs") as HTMLElement | null, "viewLogs");
-  const viewSegmentation = must(document.getElementById("viewSegmentation") as HTMLElement | null, "viewSegmentation");
   const viewPipeline = must(document.getElementById("viewPipeline") as HTMLElement | null, "viewPipeline");
 
   // -----------------------------
-  // Contour tab
+  // Contour tab 
   // -----------------------------
   const dropZoneEl = must(document.getElementById("dropZone") as HTMLDivElement | null, "dropZone");
   const fileInputEl = must(document.getElementById("fileInput") as HTMLInputElement | null, "fileInput");
-  const btnProcessEl = must(document.getElementById("btnProcess") as HTMLButtonElement | null, "btnProcess");
-  const btnCleanEl = must(document.getElementById("btnClean") as HTMLButtonElement | null, "btnClean");
-  const btnDownloadEl = must(document.getElementById("btnDownload") as HTMLButtonElement | null, "btnDownload");
-
-  const contourStatusEl = must(document.getElementById("contourStatus") as HTMLSpanElement | null, "contourStatus");
-  const contourSpinnerEl = must(document.getElementById("contourSpinner") as HTMLSpanElement | null, "contourSpinner");
-
-  const srcCanvasEl = must(document.getElementById("srcCanvas") as HTMLCanvasElement | null, "srcCanvas");
-  const outCanvasEl = must(document.getElementById("outCanvas") as HTMLCanvasElement | null, "outCanvas");
-  const clean1CanvasEl = must(document.getElementById("clean1Canvas") as HTMLCanvasElement | null, "clean1Canvas");
-  const clean2CanvasEl = must(document.getElementById("clean2Canvas") as HTMLCanvasElement | null, "clean2Canvas");
+  const srcCanvasEl = must(document.getElementById("srcCanvas") as HTMLCanvasElement | null, "srcCanvas"); 
 
 
-  const cleanQualityBadgeEl = must(document.getElementById("cleanQualityBadge") as HTMLSpanElement | null, "cleanQualityBadge");
-  const cleanQualityFillEl = must(document.getElementById("cleanQualityFill") as HTMLDivElement | null, "cleanQualityFill");
-  const cleanQualityTextEl = must(document.getElementById("cleanQualityText") as HTMLSpanElement | null, "cleanQualityText");
-
-
-
-  const btnVectorizeEl = must(document.getElementById("btnVectorize") as HTMLButtonElement | null, "btnVectorize");
-  const btnDownloadSvgEl = must(document.getElementById("btnDownloadSvg") as HTMLButtonElement | null, "btnDownloadSvg");
-
-  const svgPreviewImgEl = must(document.getElementById("svgPreviewImg") as HTMLImageElement | null, "svgPreviewImg");
-  const svgPreviewTextEl = must(document.getElementById("svgPreviewText") as HTMLPreElement | null, "svgPreviewText");
-
-  // Tuning mount (Contour)
-  const contourTuningMountEl = must(
-    document.getElementById("contourTuningMount") as HTMLDivElement | null,
-    "contourTuningMount",
-  );
 
   // -----------------------------
   // Pipeline tab (NEW)
@@ -76,79 +47,13 @@ export function getDom() {
     "pipelineTuningMount",
   );
 
-    const pipelineViewMountEl = must(
+  const pipelineViewMountEl = must(
     document.getElementById("pipelineViewMount") as HTMLDivElement | null,
     "pipelineViewMount",
   );
 
 
-  // -----------------------------
-  // Segmentation tab 
-  // -----------------------------  
-  const segPresetListEl = must(
-    document.getElementById("segPresetList") as HTMLDivElement | null,
-    "segPresetList",
-  );
 
-  const segRecipeDropEl = must(
-    document.getElementById("segRecipeDrop") as HTMLDivElement | null,
-    "segRecipeDrop",
-  );
-
-  const segStepResizeEl = must(
-    document.getElementById("segStepResize") as HTMLDivElement | null,
-    "segStepResize",
-  );
-
-  const segStepDenoiseEl = must(
-    document.getElementById("segStepDenoise") as HTMLDivElement | null,
-    "segStepDenoise",
-  );
-
-  const segStepColorEl = must(
-    document.getElementById("segStepColor") as HTMLDivElement | null,
-    "segStepColor",
-  );
-
-  const segStepThresholdEl = must(
-    document.getElementById("segStepThreshold") as HTMLDivElement | null,
-    "segStepThreshold",
-  );
-
-  const segStepMorphologyEl = must(
-    document.getElementById("segStepMorphology") as HTMLDivElement | null,
-    "segStepMorphology",
-  );
-
-  const segRunBtn = must(
-    document.getElementById("segRunBtn") as HTMLButtonElement | null,
-    "segRunBtn",
-  );
-
-  const segStatusEl = must(
-    document.getElementById("segStatus") as HTMLSpanElement | null,
-    "segStatus",
-  );
-
-  const segMaskCanvasEl = must(
-    document.getElementById("segMaskCanvas") as HTMLCanvasElement | null,
-    "segMaskCanvas",
-  );
-
-  const segNextBtn = must(
-    document.getElementById("segNextBtn") as HTMLButtonElement | null,
-    "segNextBtn",
-  );
-
-  const segResetBtn = must(
-    document.getElementById("segResetBtn") as HTMLButtonElement | null,
-    "segResetBtn",
-  );
-
-  const segTuningMountEl = must(
-    document.getElementById("segTuningMount") as HTMLDivElement | null,
-    "segTuningMount",
-  );
 
 
   // -----------------------------
@@ -295,12 +200,10 @@ export function getDom() {
     tabColors,
     tabSettings,
     tabLogs,
-    tabSegmentation,
     tabPipeline,
 
 
     viewContour,
-    viewSegmentation,
     viewColors,
     viewSettings,
     viewLogs,
@@ -309,45 +212,14 @@ export function getDom() {
     // Contour
     dropZoneEl,
     fileInputEl,
-    btnProcessEl,
-    btnCleanEl,
-    btnDownloadEl,
-    contourStatusEl,
-    contourSpinnerEl,
-    srcCanvasEl,
-    outCanvasEl,
-    clean1CanvasEl,
-    clean2CanvasEl,
-    cleanQualityBadgeEl,
-    cleanQualityFillEl,
-    cleanQualityTextEl,
-    btnVectorizeEl,
-    btnDownloadSvgEl,
-    svgPreviewImgEl,
-    svgPreviewTextEl,
-    // Contour tuning
-    contourTuningMountEl,
+    srcCanvasEl, 
 
     // Pipeline
     pipelineStatusEl,
-    pipelineTuningMountEl, 
-    pipelineViewMountEl, 
+    pipelineTuningMountEl,
+    pipelineViewMountEl,
 
 
-    // Segmentation
-    segPresetListEl,
-    segRecipeDropEl,
-    segStepResizeEl,
-    segStepDenoiseEl,
-    segStepColorEl,
-    segStepThresholdEl,
-    segStepMorphologyEl,
-    segRunBtn,
-    segStatusEl,
-    segMaskCanvasEl,
-    segNextBtn,
-    segResetBtn,
-    segTuningMountEl,
 
 
     // Colors 

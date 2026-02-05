@@ -25,6 +25,17 @@ Conventions:
 
 ---
 
+### v0.1.2 — Epic: Remove non-universal UI
+
+* Remove Segmentation tab (all segmentation workflows run via Pipeline tab)
+* Remove Contour-tab “clean / vectorize / svg / download” workflows (run via Pipeline tab)
+* Reduce Contour tab to **Input only**: load image into `#srcCanvas` (drag-drop + file picker)
+* Remove legacy DOM + TS wiring for removed controls, keep tabs: Contour, Pipeline, Colors, Settings, Logs
+* Ensure **all runtime errors** are surfaced to `actionLog` + `debugTrace` (no silent failures)
+
+---
+
+
  #### v0.1.1 — Epic: Add EDGE + SVG pipelines
 
 * Introduce new artifact type: `svg` (pipeline IO + VM + preview/download support)

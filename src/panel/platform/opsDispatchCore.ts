@@ -25,6 +25,8 @@ export type ImageOpInputs = {
 // -----------------------------
 // Dispatch op ids (must match opImpls keys and pipeline dispatchId)
 // -----------------------------
+// src/panel/platform/opsDispatchCore.ts
+
 export type OpId =
   | "contour.clean.removeSmallComponents"
   | "segmentation.resize"
@@ -37,7 +39,6 @@ export type OpId =
   | "edge.morphology"
   | "edge.extract"
   | "svg.create";
-;
 
 export type OpInputsByOp = {
   "contour.clean.removeSmallComponents": MaskOpInputs;
@@ -52,8 +53,8 @@ export type OpInputsByOp = {
   "edge.threshold": ImageOpInputs;
   "edge.morphology": MaskOpInputs;
   "edge.extract": MaskOpInputs;
-  "svg.create": MaskOpInputs;
 
+  "svg.create": MaskOpInputs;
 };
 
 export type OpOutputsByOp = {
@@ -69,14 +70,12 @@ export type OpOutputsByOp = {
   "edge.threshold": Uint8Array;
   "edge.morphology": Uint8Array;
   "edge.extract": Uint8Array;
-  "svg.create": string;
 
+  "svg.create": string;
 };
 
 export type OpParamsByOp = {
-  "contour.clean.removeSmallComponents": {
-    cleanMinArea: number;
-  };
+  "contour.clean.removeSmallComponents": { cleanMinArea: number };
 
   "segmentation.resize": { resizeAlgo: number; targetMaxW: number };
   "segmentation.denoise": { denoiseAlgo: number; blurK: number; bilateralSigma: number };
@@ -88,9 +87,10 @@ export type OpParamsByOp = {
   "edge.threshold": { manualT: number };
   "edge.morphology": { morphAlgo: number; morphK: number; morphIters: number };
   "edge.extract": {};
-  "svg.create": { scale: number; transparentBg: number; color: string };
 
+  "svg.create": { scale: number; transparentBg: number; color: string };
 };
+
 
 export type OpImpls = {
   [K in OpId]: {
@@ -109,7 +109,29 @@ const registry = createComponentRegistry();
 function getRuntime() {
   return { opencvReady: isOpenCvInjected() };
 }
+ 
 
+async function resolveEngineAndParams<K extends OpId>(op: K): Promise<{
+  engine: EngineId;
+  params: OpParamsByOp[K];
+  fallbackReason?: string;
+  opencvReady: boolean;
+}> {
+  const stored = await loadComponentConfigs();
+  const runtime = getRuntime();
+
+  const resolved = resolveComponent(op, registry, stored, runtime);
+
+  return {
+    engine: resolved.engine,
+    params: resolved.params as OpParamsByOp[K],
+    fallbackReason: resolved.fallbackReason,
+    opencvReady: !!runtime.opencvReady,
+  };
+}
+
+
+/*
 async function resolveEngineAndParams<K extends OpId>(op: K): Promise<{
   engine: EngineId;
   params: OpParamsByOp[K];
@@ -253,6 +275,7 @@ async function resolveEngineAndParams<K extends OpId>(op: K): Promise<{
 
   throw new Error(`[opsDispatch] Unknown op: ${op}`);
 }
+*/
 
 export async function runOpCore<K extends OpId>(
   op: K,

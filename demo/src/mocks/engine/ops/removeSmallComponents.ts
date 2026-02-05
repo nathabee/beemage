@@ -1,34 +1,25 @@
-// /demo/src/moks/engine/opts/removeSmallComponents.ts
+// demo/src/mocks/engine/ops/removeSmallComponents.ts
 
-
-import { removeSmallComponents as nativeRemoveSmallComponents } from "../../../../../src/panel/tabs/contour/lib/morphology";
+import { removeSmallComponents as nativeRemoveSmallComponents } from "../../../../../src/panel/tabs/pipeline/lib/morphology";
 import { getCvOrNull } from "./helpers/cv";
 
-import { traceScope, logWarn, logError } from "../../../../../src/panel/app/log";
-
+import { traceScope } from "../../../../../src/panel/app/log";
 
 type MaskInput = { mask: Uint8Array; width: number; height: number };
 type RemoveSmallParams = { cleanMinArea: number };
 
-export function ocvRemoveSmallComponents(
-  input: MaskInput,
-  params: RemoveSmallParams,
-): Uint8Array {
+export function ocvRemoveSmallComponents(input: MaskInput, params: RemoveSmallParams): Uint8Array {
   const { width, height } = input;
 
   const minArea = Math.max(0, Math.floor(Number(params.cleanMinArea ?? 0)));
-  traceScope("oopenCV RemoveSmallComponents: params", {width, height, minArea});
+  traceScope("OpenCV removeSmallComponents params", { width, height, minArea });
 
+  if (!width || !height) return input.mask;
   if (minArea <= 1) return input.mask;
 
   const cv = getCvOrNull();
-  if (!cv) {
-    // Robust fallback (covers “injected flag true but cv missing”)
-    return nativeRemoveSmallComponents(input.mask, width, height, minArea);
-  }
+  if (!cv) return nativeRemoveSmallComponents(input.mask, width, height, minArea);
 
- 
-  // Build CV_8UC1 from input mask (0/255)
   const src = new cv.Mat(height, width, cv.CV_8UC1);
   try {
     const srcData = src.data as Uint8Array;
@@ -40,14 +31,7 @@ export function ocvRemoveSmallComponents(
     const centroids = new cv.Mat();
 
     try {
-      const nLabels: number = cv.connectedComponentsWithStats(
-        src,
-        labels,
-        stats,
-        centroids,
-        8,
-        cv.CV_32S,
-      );
+      const nLabels: number = cv.connectedComponentsWithStats(src, labels, stats, centroids, 8, cv.CV_32S);
 
       const CC_STAT_AREA: number = (cv as any).CC_STAT_AREA ?? 4;
 
@@ -57,7 +41,7 @@ export function ocvRemoveSmallComponents(
         if (area < minArea) remove[lbl] = true;
       }
 
-      // Output must match the rest of the pipeline: 0/1 (NOT 0/255)
+      // output 0/1
       const out = new Uint8Array(width * height);
       const labData = labels.data32S as Int32Array;
 

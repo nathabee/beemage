@@ -4,6 +4,9 @@ import type { Bus } from "../../app/bus";
 
 import { createColorsView } from "./view";
 import { applyFillToImage, makePreviewFromClick } from "./model";
+import { getLastPipelineOutput } from "../../app/pipeline/outputStore";
+ 
+import type { Preview } from "./model";
 
 type TabApi = {
   bind(): void;
@@ -20,38 +23,65 @@ const PALETTE_20 = [
 export function createColorsTab(dom: Dom, _bus: Bus): TabApi {
   const view = createColorsView(dom);
 
-  // Working image for the Colors tab (starts as copy of outCanvas)
+  // Working image for the Colors tab (starts as copy of the last pipeline output)
   let baseImg: ImageData | null = null;
-  let preview: ReturnType<typeof makePreviewFromClick> extends { ok: true; preview: infer P } ? P : any = null;
+  let preview: Preview | null = null;
 
   function setStatus(t: string) {
     view.setStatus(t);
   }
 
-  function readOutCanvas(): ImageData | null {
-    const ctx = dom.outCanvasEl.getContext("2d");
-    if (!ctx) return null;
+  function maskToImageData(mask: Uint8Array, w: number, h: number): ImageData {
+    const out = new ImageData(w, h);
+    const d = out.data;
 
-    const w = dom.outCanvasEl.width;
-    const h = dom.outCanvasEl.height;
-    if (w <= 0 || h <= 0) return null;
+    // Render mask 1 => black, 0 => white (easy to see regions)
+    for (let p = 0, i = 0; p < mask.length; p++, i += 4) {
+      const on = (mask[p] ?? 0) > 0;
+      const v = on ? 0 : 255;
+      d[i + 0] = v;
+      d[i + 1] = v;
+      d[i + 2] = v;
+      d[i + 3] = 255;
+    }
 
-    return ctx.getImageData(0, 0, w, h);
+    return out;
   }
 
-  function resetFromOutput() {
-    const img = readOutCanvas();
+  function readPipelineOutputAsImage(): ImageData | null {
+    const out = getLastPipelineOutput();
+
+    if (out.type === "image") return out.image;
+
+    if (out.type === "mask") {
+      return maskToImageData(out.mask, out.width, out.height);
+    }
+
+    // SVG output isn't directly usable for pixel flood-fill here
+    return null;
+  }
+
+  function explainWhyNoInput(): string {
+    const out = getLastPipelineOutput();
+    if (out.type === "svg") return "Pipeline output is SVG. Colors needs an image or mask output.";
+    return "No pipeline output available. Run the Pipeline first.";
+  }
+
+  function resetFromPipelineOutput(): void {
+    const img = readPipelineOutputAsImage();
+
     if (!img) {
       baseImg = null;
       preview = null;
       view.setApplyEnabled(false);
       view.setCancelEnabled(false);
-      setStatus("No output available. Run Process first.");
+      setStatus(explainWhyNoInput());
       return;
     }
 
     baseImg = img;
     preview = null;
+
     view.drawBase(baseImg);
     view.setApplyEnabled(false);
     view.setCancelEnabled(false);
@@ -59,34 +89,32 @@ export function createColorsTab(dom: Dom, _bus: Bus): TabApi {
   }
 
   /**
-   * Minimal requirement:
-   * - When entering Colors tab, if we never initialized (baseImg==null)
-   *   and contour output exists, prefill from outCanvas.
-   * - If baseImg already exists, keep the user's work as-is.
+   * On entering Colors tab:
+   * - if we already have baseImg, keep it (user work-in-progress)
+   * - otherwise, try to prefill from last pipeline output
    */
-  function maybePrefillOnEnter() {
+  function maybePrefillOnEnter(): void {
     if (baseImg) {
-      // Keep the last edited state.
       view.drawBase(baseImg);
       return;
     }
 
-    // Only prefill if contour output exists.
-    const img = readOutCanvas();
+    const img = readPipelineOutputAsImage();
     if (!img) {
-      setStatus("No output available. Run Process first.");
+      setStatus(explainWhyNoInput());
       return;
     }
 
     baseImg = img;
     preview = null;
+
     view.drawBase(baseImg);
     view.setApplyEnabled(false);
     view.setCancelEnabled(false);
-    setStatus("Loaded output. Pick a color, click inside a region.");
+    setStatus("Loaded pipeline output. Pick a color, click inside a region.");
   }
 
-  function applyPreview() {
+  function applyPreview(): void {
     if (!baseImg || !preview) return;
 
     const hex = view.getSelectedColor();
@@ -99,8 +127,9 @@ export function createColorsTab(dom: Dom, _bus: Bus): TabApi {
     setStatus("Fill applied. Click another region.");
   }
 
-  function cancelPreview() {
+  function cancelPreview(): void {
     if (!baseImg) return;
+
     preview = null;
     view.drawBase(baseImg);
     view.setApplyEnabled(false);
@@ -113,10 +142,9 @@ export function createColorsTab(dom: Dom, _bus: Bus): TabApi {
       view.bind();
       view.renderPalette(PALETTE_20);
 
-      // Canvas click => compute preview
       view.onCanvasClick((x, y) => {
         if (!baseImg) {
-          setStatus("No output available. Run Process first.");
+          setStatus(explainWhyNoInput());
           return;
         }
 
@@ -140,19 +168,17 @@ export function createColorsTab(dom: Dom, _bus: Bus): TabApi {
 
       dom.btnColorsApplyEl.addEventListener("click", () => applyPreview());
       dom.btnColorsCancelEl.addEventListener("click", () => cancelPreview());
-      dom.btnColorsResetEl.addEventListener("click", () => resetFromOutput());
+      dom.btnColorsResetEl.addEventListener("click", () => resetFromPipelineOutput());
 
-      // Key change: when user navigates to Colors tab, prefill if empty.
       dom.tabColors.addEventListener("click", () => {
-        // Let the tab system switch visibility first, then draw.
         queueMicrotask(() => maybePrefillOnEnter());
       });
 
-      // Initial status. Do NOT reset from output automatically on boot,
-      // otherwise it will take a snapshot before the user runs Process.
       setStatus("Idle");
       view.setApplyEnabled(false);
       view.setCancelEnabled(false);
     },
   };
 }
+
+

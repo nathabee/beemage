@@ -4,8 +4,7 @@ import { createBus } from "./app/bus";
 import { createTabs } from "./app/tabs";
 import { createPanelCache } from "./app/cache";
 
-import { createContourTab } from "./tabs/contour/tab";
-import { createSegmentationTab } from "./tabs/segmentation/tab";
+import { createContourTab } from "./tabs/contour/tab"; 
 import { createColorsTab } from "./tabs/colors/tab";
 import { createSettingsTab } from "./tabs/settings/tab";
 import { createLogsTab } from "./tabs/logs/tab";
@@ -50,27 +49,22 @@ async function boot(): Promise<void> {
       }),
   });
 
-  tuning.mount({ mountEl: dom.tuningMountEl, scopeRootId: "app" });
-  tuning.mount({ mountEl: dom.contourTuningMountEl, scopeRootId: "contour" });
-  tuning.mount({ mountEl: dom.segTuningMountEl, scopeRootId: "segmentation" }); 
+  tuning.mount({ mountEl: dom.tuningMountEl, scopeRootId: "app" }); 
 
   const contourTab = createContourTab(dom, bus);
-  const colorsTab = createColorsTab(dom, bus);
-  const segmentationTab = createSegmentationTab(dom, bus, tuning);
+  const colorsTab = createColorsTab(dom, bus); 
   const pipelineTab = createPipelineTab(dom, bus, tuning);
   const settingsTab = createSettingsTab(dom, bus);
   const logsTab = createLogsTab(dom, bus);
 
-  contourTab.bind();
-  segmentationTab.bind();
+  contourTab.bind(); 
   pipelineTab.bind();
   colorsTab.bind();
   settingsTab.bind();
   logsTab.bind();
 
   const tabs = createTabs(dom, {
-    contour: contourTab,
-    segmentation: segmentationTab,
+    contour: contourTab, 
     pipeline: pipelineTab,
     colors: colorsTab,
     settings: settingsTab,

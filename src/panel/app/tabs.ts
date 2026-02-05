@@ -2,7 +2,7 @@
 import type { Dom } from "./dom";
 import { getDevConfigSnapshot } from "../../shared/devConfigStore";
 
-type TabKey = "segmentation" | "pipeline" | "contour" | "colors" | "settings" | "logs";
+type TabKey =  "pipeline" | "contour" | "colors" | "settings" | "logs";
 
 type TabApi = {
   bind(): void;
@@ -22,8 +22,7 @@ type TabApi = {
 type TabsMap = Record<TabKey, TabApi>;
 
 export function createTabs(dom: Dom, tabs: TabsMap) {
-  const tabButtons: Record<TabKey, HTMLButtonElement> = {
-    segmentation: dom.tabSegmentation,
+  const tabButtons: Record<TabKey, HTMLButtonElement> = { 
     pipeline: dom.tabPipeline,
     contour: dom.tabContour,
     colors: dom.tabColors,
@@ -31,8 +30,7 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
     logs: dom.tabLogs,
   };
 
-  const views: Record<TabKey, HTMLElement> = {
-    segmentation: dom.viewSegmentation,
+  const views: Record<TabKey, HTMLElement> = { 
     pipeline: dom.viewPipeline,
     contour: dom.viewContour,
     colors: dom.viewColors,
@@ -122,11 +120,7 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
       e.preventDefault?.();
       activate("contour");
     });
-
-    tabButtons.segmentation.addEventListener("click", (e) => {
-      e.preventDefault?.();
-      activate("segmentation");
-    });
+ 
 
     tabButtons.pipeline.addEventListener("click", (e) => {
       e.preventDefault?.();

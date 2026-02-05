@@ -131,3 +131,93 @@ function clampInt(n: number, min: number, max: number): number {
 }
 
  
+// src/panel/tabs/pipeline/lib/morphology.ts
+
+export function removeSmallComponents(
+  src: Uint8Array,
+  width: number,
+  height: number,
+  minArea: number,
+): Uint8Array {
+  const minA = Math.max(0, Math.floor(Number(minArea ?? 0)));
+  if (!width || !height) return src;
+  if (minA <= 1) return src;
+
+  const dst = new Uint8Array(src); // copy
+  const visited = new Uint8Array(src.length);
+
+  // Queue buffers (avoid allocations inside BFS)
+  const qx = new Int32Array(src.length);
+  const qy = new Int32Array(src.length);
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx0 = y * width + x;
+      if (src[idx0] === 0 || visited[idx0] === 1) continue;
+
+      let head = 0;
+      let tail = 0;
+
+      visited[idx0] = 1;
+      qx[tail] = x;
+      qy[tail] = y;
+      tail++;
+
+      // Track members to erase later
+      const members: number[] = [idx0];
+
+      while (head < tail) {
+        const cx = qx[head];
+        const cy = qy[head];
+        head++;
+
+        // 4-neighborhood is enough for speck removal
+        // (keeps behavior stable vs diagonal bridges)
+        const n1x = cx - 1, n1y = cy;
+        const n2x = cx + 1, n2y = cy;
+        const n3x = cx, n3y = cy - 1;
+        const n4x = cx, n4y = cy + 1;
+
+        // Inline neighbor checks (faster than arrays)
+        if (n1x >= 0) {
+          const idx = n1y * width + n1x;
+          if (src[idx] !== 0 && visited[idx] === 0) {
+            visited[idx] = 1;
+            qx[tail] = n1x; qy[tail] = n1y; tail++;
+            members.push(idx);
+          }
+        }
+        if (n2x < width) {
+          const idx = n2y * width + n2x;
+          if (src[idx] !== 0 && visited[idx] === 0) {
+            visited[idx] = 1;
+            qx[tail] = n2x; qy[tail] = n2y; tail++;
+            members.push(idx);
+          }
+        }
+        if (n3y >= 0) {
+          const idx = n3y * width + n3x;
+          if (src[idx] !== 0 && visited[idx] === 0) {
+            visited[idx] = 1;
+            qx[tail] = n3x; qy[tail] = n3y; tail++;
+            members.push(idx);
+          }
+        }
+        if (n4y < height) {
+          const idx = n4y * width + n4x;
+          if (src[idx] !== 0 && visited[idx] === 0) {
+            visited[idx] = 1;
+            qx[tail] = n4x; qy[tail] = n4y; tail++;
+            members.push(idx);
+          }
+        }
+      }
+
+      if (members.length < minA) {
+        for (let i = 0; i < members.length; i++) dst[members[i]] = 0;
+      }
+    }
+  }
+
+  return dst;
+}
