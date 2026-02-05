@@ -20,6 +20,8 @@ export type RunState = "idle" | "ok" | "error";
 
 export type PipelineRecipeId = string;
 
+
+
 export type OpVm = {
   instanceId: string;
   opId: OpId;
@@ -27,6 +29,7 @@ export type OpVm = {
   input: ArtifactType;
   output: ArtifactType;
   state: RunState;
+  error?: string;
   outputArtifact?: Artifact;
 };
 
@@ -37,8 +40,10 @@ export type StageVm = {
   output: ArtifactType;
   ops: OpVm[];
   state: RunState;
+  error?: string;
   outputArtifact?: Artifact;
 };
+
 
 export type PipelineVm = {
   pipelines: Array<{ id: PipelineId; title: string }>;
@@ -130,6 +135,9 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
 
   let opOutput: Record<string, Artifact> = {};
   let stageOutput: Record<string, Artifact> = {};
+  let opError: Record<string, string> = {};
+  let stageError: Record<string, string> = {};
+
 
   function getSpec(): PipelineSpec {
     return catalogue.getPipeline(activePipelineId) ?? catalogue.pipelines[0]!;
@@ -206,6 +214,9 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
   function resetRunState(): void {
     opState = {};
     stageState = {};
+    opError = {};
+    stageError = {};
+
     plan = [];
     nextIndex = 0;
     currentArtifact = null;
@@ -217,6 +228,7 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
     const spec = getSpec();
     statusText = spec.implemented ? "Ready" : "Not implemented yet";
   }
+
 
   function reset(): void {
     rebuildInstalled();
@@ -319,49 +331,60 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
 
     plan = out;
   }
- 
 
-function pickLastAvailableOutput(result: PipelineRunResult): Artifact | null {
-  // If pipeline finished successfully, prefer the declared final output.
-  if (result.output) return result.output;
 
-  // If pipeline ended with error, still show the last successful artifact (stage output preferred).
-  for (let i = result.stages.length - 1; i >= 0; i--) {
-    const st = result.stages[i];
-    if (st.output) return st.output;
+  function pickLastAvailableOutput(result: PipelineRunResult): Artifact | null {
+    if (result.output) return result.output;
 
-    // Fallback: last op that produced an output
-    for (let j = st.ops.length - 1; j >= 0; j--) {
-      const op = st.ops[j];
-      if (op.output) return op.output;
+    for (let i = result.stages.length - 1; i >= 0; i--) {
+      const st = result.stages[i];
+      if (st.output) return st.output;
+
+      for (let j = st.ops.length - 1; j >= 0; j--) {
+        const op = st.ops[j];
+        if (op.output) return op.output;
+      }
     }
+
+    return null;
   }
 
-  return null;
-}
 
-function applyRunResultToCaches(result: PipelineRunResult): void {
-  opState = {};
-  stageState = {};
-  opOutput = {};
-  stageOutput = {};
+  function applyRunResultToCaches(result: PipelineRunResult): void {
+    opState = {};
+    stageState = {};
+    opError = {};
+    stageError = {};
+    opOutput = {};
+    stageOutput = {};
 
-  for (const st of result.stages) {
-    stageState[st.stageId] = st.status === "ok" ? "ok" : "error";
-    if (st.output) stageOutput[st.stageId] = st.output;
+    for (const st of result.stages) {
+      stageState[st.stageId] = st.status === "ok" ? "ok" : "error";
+      if (st.error) stageError[st.stageId] = st.error;
+      if (st.output) stageOutput[st.stageId] = st.output;
 
-    for (const op of st.ops) {
-      opState[op.instanceId] = op.status === "ok" ? "ok" : "error";
-      if (op.output) opOutput[op.instanceId] = op.output;
+      for (const op of st.ops) {
+        opState[op.instanceId] = op.status === "ok" ? "ok" : "error";
+        if (op.error) opError[op.instanceId] = op.error;
+        if (op.output) opOutput[op.instanceId] = op.output;
+      }
     }
+
+    lastOutput = pickLastAvailableOutput(result);
+
+    // If runner claims OK but gives no output, that’s a real bug; make it explicit.
+    if (result.status === "ok" && !lastOutput) {
+      deps.runner.debug("pipeline ok but no output artifact", {
+        pipelineId: result.pipelineId,
+        stages: result.stages.length,
+      });
+      statusText = "Done (but no output artifact)";
+      return;
+    }
+
+    statusText = result.status === "ok" ? "Done" : result.error ?? "Error";
   }
 
-  // Critical: if pipeline ended in error, result.output may be missing.
-  // Keep the last available successful output so Current output + Download still work.
-  lastOutput = pickLastAvailableOutput(result);
-
-  statusText = result.status === "ok" ? "Done" : result.error ?? "Error";
-}
 
 
   async function runAll(): Promise<void> {
@@ -512,7 +535,10 @@ function applyRunResultToCaches(result: PipelineRunResult): void {
 
       opState[step.instanceId] = "error";
       stageState[step.stageId] = "error";
-      statusText = `Error: ${step.opTitle}`;
+      stageError[step.stageId] = msg;
+      opError[step.instanceId] = msg;
+      statusText = `Error: ${step.opTitle} — ${msg}`;
+
 
       deps.runner.debug("pipeline next-step failed", {
         pipelineId: spec.id,
@@ -554,13 +580,14 @@ function applyRunResultToCaches(result: PipelineRunResult): void {
               input: opSpec.io.input,
               output: opSpec.io.output,
               state: opState[opInst.instanceId] ?? "idle",
+              error: opError[opInst.instanceId],
               outputArtifact: opOutput[opInst.instanceId],
             };
+
           })
           .filter(Boolean) as OpVm[];
 
         const stState = stageState[st.stageId] ?? (ops.some((o) => o.state === "error") ? "error" : "idle");
-
         return {
           stageId: st.stageId,
           title: stSpec.title,
@@ -568,8 +595,10 @@ function applyRunResultToCaches(result: PipelineRunResult): void {
           output: stSpec.io.output,
           ops,
           state: stState,
+          error: stageError[st.stageId],
           outputArtifact: stageOutput[st.stageId],
         };
+
       })
       .filter(Boolean) as StageVm[];
 

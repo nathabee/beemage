@@ -25,16 +25,17 @@ Conventions:
 
 ---
 
- 
- 
- 
-#### v0.1.1 — Epic: add new pipelines SVG and EDGE
+ #### v0.1.1 — Epic: Add EDGE + SVG pipelines
 
-* add new SVGartefact
-* add 2 new process edge and svg
-* add new EDGE pipeline with ....
-* add new SVG pipeline with .... (svg preset with color...)
-* add download pushbutton to download the final result
+* Introduce new artifact type: `svg` (pipeline IO + VM + preview/download support)
+* Add dispatch ops: `edge.*` (image → mask/image) and `svg.create` (mask/image → svg)
+* Define new pipeline **EDGE** (stages: resize → threshold → morphology → extract)
+* Define new pipeline **SVG** (stages: edge pipeline → svg.create; optional style params)
+* Add recipes/presets: `edge.fast/strong`, `svg.default` (incl. stroke/fill/color/scale defaults)
+* Ensure runner supports `image|mask → svg` in **Run all** path (final output must be `result.output`)
+* Pipeline tab: “Download” button exports final artifact (SVG or PNG) with stable filename
+* Error surfacing: stage/op failures shown in UI + actionLog + debugTrace, never silent
+
  
 #### v0.1.0 — Epic: Universal pipeline runner foundation
 

@@ -1,6 +1,6 @@
 // src/panel/tabs/pipeline/view.ts 
-import type { Artifact, ImageArtifact, MaskArtifact, SvgArtifact} from "../../app/pipeline/type";
- 
+import type { Artifact, ImageArtifact, MaskArtifact, SvgArtifact } from "../../app/pipeline/type";
+
 
 export type PipelineViewHandlers = {
   onSelectPipeline: (id: string) => void;
@@ -162,7 +162,7 @@ function drawMaskToCanvas(canvas: HTMLCanvasElement, mask: Uint8Array, width: nu
 }
 
 
- 
+
 
 export function createPipelineView(args: {
   hostEl: HTMLElement;
@@ -441,9 +441,13 @@ export function createPipelineView(args: {
 
     row.appendChild(el("div", { class: "muted", style: "font-size:12px;" }, `${st.input} -> ${st.output}`));
 
-    const stageOut = st.outputArtifact as Artifact | undefined;
+    if (typeof st.error === "string" && st.error.length > 0) {
+      row.appendChild(
+        el("div", { style: "margin-top:6px; font-size:12px; white-space:pre-wrap;" }, `Stage error: ${st.error}`),
+      );
+    }
 
-    // Stage output once (top-level)
+    const stageOut = st.outputArtifact as Artifact | undefined;
     if (stageOut) {
       row.appendChild(renderArtifactPreview(stageOut, 260));
     }
@@ -465,9 +469,13 @@ export function createPipelineView(args: {
 
         opRow.appendChild(el("div", { class: "muted", style: "font-size:12px;" }, `${op.input} -> ${op.output}`));
 
-        // Avoid duplicate: if we already showed stageOut, skip the last op preview.
-        const opOut = stageOut && isLast ? undefined : (op.outputArtifact as Artifact | undefined);
+        if (typeof op.error === "string" && op.error.length > 0) {
+          opRow.appendChild(
+            el("div", { style: "margin-top:6px; font-size:12px; white-space:pre-wrap;" }, `Op error: ${op.error}`),
+          );
+        }
 
+        const opOut = stageOut && isLast ? undefined : (op.outputArtifact as Artifact | undefined);
         if (opOut) {
           opRow.appendChild(renderArtifactPreview(opOut, 200));
         }
@@ -480,6 +488,7 @@ export function createPipelineView(args: {
 
     return row;
   }
+
 
   return {
     mount(): void {

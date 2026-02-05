@@ -32,6 +32,27 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
 
   // Track which tuning subtree is currently mounted into the Pipeline tab slot.
   let mountedScopeRootId: string | null = null;
+  let lastSurfacedError: string | null = null;
+
+  function surfacePipelineErrorsToActionLog(): void {
+    const vm = model.getVm();
+    const hasError = vm.stages.some((s) => s.state === "error") || String(vm.statusText).toLowerCase().includes("error");
+
+    if (!hasError) {
+      lastSurfacedError = null;
+      return;
+    }
+
+    const msg = String(vm.statusText || "Pipeline error");
+    if (msg === lastSurfacedError) return;
+    lastSurfacedError = msg;
+
+    actionLog.append({
+      scope: "panel",
+      kind: "error",
+      message: `Pipeline: ${msg}`,
+    });
+  }
 
   function clearPipelineTuningMount(): void {
     dom.pipelineTuningMountEl.innerHTML = "";
