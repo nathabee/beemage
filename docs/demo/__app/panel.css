@@ -144,12 +144,21 @@ h3 {
 /* -----------------------------
    Views
 ----------------------------- */
-.view {
-  background: transparent;
+ 
+
+
+/* Hidden attribute must always hide, regardless of classes */
+[hidden] {
+  display: none !important;
 }
 
-.view[hidden] {
-  display: none !important;
+/* Defensive: only the active view is visible */
+.view {
+  display: none;
+}
+.view.is-active {
+  display: block;
+  background: transparent;
 }
 
 /* -----------------------------
