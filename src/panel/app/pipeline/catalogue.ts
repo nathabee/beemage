@@ -68,6 +68,49 @@ export function createPipelineCatalogue(): PipelineCatalogue {
       tuningId: "segmentation.morphology",
     },
 
+        // Edge ops (dispatch to existing opsDispatch ids)
+    {
+      kind: "dispatch",
+      id: "op.edge.resize",
+      title: "Resize",
+      io: { input: "image", output: "image" },
+      dispatchId: "edge.resize",
+      tuningId: "edge.resize",
+    },
+    {
+      kind: "dispatch",
+      id: "op.edge.threshold",
+      title: "Threshold",
+      io: { input: "image", output: "mask" },
+      dispatchId: "edge.threshold",
+      tuningId: "edge.threshold",
+    },
+    {
+      kind: "dispatch",
+      id: "op.edge.morphology",
+      title: "Morphology cleanup",
+      io: { input: "mask", output: "mask" },
+      dispatchId: "edge.morphology",
+      tuningId: "edge.morphology",
+    },
+    {
+      kind: "dispatch",
+      id: "op.edge.extract",
+      title: "Edge extract",
+      io: { input: "mask", output: "mask" },
+      dispatchId: "edge.extract",
+      tuningId: "edge.extract",
+    },
+
+    {
+      kind: "dispatch",
+      id: "op.svg.create",
+      title: "Create SVG",
+      io: { input: "mask", output: "svg" },
+      dispatchId: "svg.create",
+      tuningId: "svg.create",
+    },
+
     // Useful generic ops (JS) for testing / wiring (optional)
     {
       kind: "js",
@@ -125,7 +168,88 @@ export function createPipelineCatalogue(): PipelineCatalogue {
         },
       ],
     },
+    {
+      id: "svg",
+      title: "SVG",
+      implemented: true,
+      description: "Image to SVG outline (resize -> threshold -> morph -> edge -> svg).",
+      stages: [
+        {
+          id: "stage.svg.prep",
+          title: "Prep",
+          io: { input: "image", output: "image" },
+          allowedOps: ["op.edge.resize", "op.util.pass"],
+          defaultOps: ["op.edge.resize"],
+        },
+        {
+          id: "stage.svg.binarize",
+          title: "Binarize",
+          io: { input: "image", output: "mask" },
+          allowedOps: ["op.edge.threshold"],
+          defaultOps: ["op.edge.threshold"],
+        },
+        {
+          id: "stage.svg.cleanup",
+          title: "Mask cleanup",
+          io: { input: "mask", output: "mask" },
+          allowedOps: ["op.edge.morphology"],
+          defaultOps: ["op.edge.morphology"],
+        },
+        {
+          id: "stage.svg.edge",
+          title: "Extract edges",
+          io: { input: "mask", output: "mask" },
+          allowedOps: ["op.edge.extract"],
+          defaultOps: ["op.edge.extract"],
+        },
+        {
+          id: "stage.svg.emit",
+          title: "Create SVG",
+          io: { input: "mask", output: "svg" },
+          allowedOps: ["op.svg.create"],
+          defaultOps: ["op.svg.create"],
+        },
+      ],
+    },
 
+        {
+      id: "edge",
+      title: "Edge",
+      implemented: true,
+      description: "Edge extraction pipeline (image -> mask -> edges).",
+      stages: [
+        {
+          id: "stage.edge.prep",
+          title: "Prep",
+          io: { input: "image", output: "image" },
+          allowedOps: ["op.edge.resize", "op.util.pass"],
+          defaultOps: ["op.edge.resize"],
+        },
+        {
+          id: "stage.edge.binarize",
+          title: "Binarize",
+          io: { input: "image", output: "mask" },
+          allowedOps: ["op.edge.threshold"],
+          defaultOps: ["op.edge.threshold"],
+        },
+        {
+          id: "stage.edge.cleanup",
+          title: "Mask cleanup",
+          io: { input: "mask", output: "mask" },
+          allowedOps: ["op.edge.morphology"],
+          defaultOps: ["op.edge.morphology"],
+        },
+        {
+          id: "stage.edge.extract",
+          title: "Extract edges",
+          io: { input: "mask", output: "mask" },
+          allowedOps: ["op.edge.extract"],
+          defaultOps: ["op.edge.extract"],
+        },
+      ],
+    },
+
+    
     // Future pipelines (visible in UI, but not runnable yet)
     {
       id: "surface",

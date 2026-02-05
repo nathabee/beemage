@@ -55,6 +55,7 @@ export type PipelineVm = {
 
   outputImage?: { width: number; height: number; data: ImageData };
   outputMask?: { width: number; height: number; data: Uint8Array };
+  outputSvg?: { width: number; height: number; svg: string };
 
   nextIndex: number;
   totalOps: number;
@@ -318,26 +319,50 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
 
     plan = out;
   }
+ 
 
-  function applyRunResultToCaches(result: PipelineRunResult): void {
-    opState = {};
-    stageState = {};
-    opOutput = {};
-    stageOutput = {};
+function pickLastAvailableOutput(result: PipelineRunResult): Artifact | null {
+  // If pipeline finished successfully, prefer the declared final output.
+  if (result.output) return result.output;
 
-    for (const st of result.stages) {
-      stageState[st.stageId] = st.status === "ok" ? "ok" : "error";
-      if (st.output) stageOutput[st.stageId] = st.output;
+  // If pipeline ended with error, still show the last successful artifact (stage output preferred).
+  for (let i = result.stages.length - 1; i >= 0; i--) {
+    const st = result.stages[i];
+    if (st.output) return st.output;
 
-      for (const op of st.ops) {
-        opState[op.instanceId] = op.status === "ok" ? "ok" : "error";
-        if (op.output) opOutput[op.instanceId] = op.output;
-      }
+    // Fallback: last op that produced an output
+    for (let j = st.ops.length - 1; j >= 0; j--) {
+      const op = st.ops[j];
+      if (op.output) return op.output;
     }
-
-    lastOutput = result.output ?? null;
-    statusText = result.status === "ok" ? "Done" : result.error ?? "Error";
   }
+
+  return null;
+}
+
+function applyRunResultToCaches(result: PipelineRunResult): void {
+  opState = {};
+  stageState = {};
+  opOutput = {};
+  stageOutput = {};
+
+  for (const st of result.stages) {
+    stageState[st.stageId] = st.status === "ok" ? "ok" : "error";
+    if (st.output) stageOutput[st.stageId] = st.output;
+
+    for (const op of st.ops) {
+      opState[op.instanceId] = op.status === "ok" ? "ok" : "error";
+      if (op.output) opOutput[op.instanceId] = op.output;
+    }
+  }
+
+  // Critical: if pipeline ended in error, result.output may be missing.
+  // Keep the last available successful output so Current output + Download still work.
+  lastOutput = pickLastAvailableOutput(result);
+
+  statusText = result.status === "ok" ? "Done" : result.error ?? "Error";
+}
+
 
   async function runAll(): Promise<void> {
     const spec = getSpec();
@@ -435,21 +460,15 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
 
           if (step.opOutput === "image") {
             const outImg = raw as ImageData;
-            out = {
-              type: "image",
-              width: outImg.width,
-              height: outImg.height,
-              image: outImg,
-            };
+            out = { type: "image", width: outImg.width, height: outImg.height, image: outImg };
+          } else if (step.opOutput === "mask") {
+            out = { type: "mask", width, height, mask: raw as Uint8Array };
+          } else if (step.opOutput === "svg") {
+            out = { type: "svg", width, height, svg: raw as string };
           } else {
-            out = {
-              type: "mask",
-              width,
-              height,
-              mask: raw as Uint8Array,
-            };
+            throw new Error(`Unsupported op output kind: ${step.opOutput}`);
           }
-        } else {
+        } else if (currentArtifact.type === "mask") {
           const raw = await runOp(step.dispatchId as any, {
             mask: currentArtifact.mask,
             width,
@@ -457,12 +476,16 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
             params,
           } as any);
 
-          out = {
-            type: "mask",
-            width,
-            height,
-            mask: raw as Uint8Array,
-          };
+          if (step.opOutput === "mask") {
+            out = { type: "mask", width, height, mask: raw as Uint8Array };
+          } else if (step.opOutput === "svg") {
+            out = { type: "svg", width, height, svg: raw as string };
+          } else {
+            throw new Error(`IO mismatch: mask input cannot produce ${step.opOutput} (yet)`);
+          }
+        } else {
+          // currentArtifact.type === "svg"
+          throw new Error(`Dispatch op cannot run on svg input (opInput=${step.opInput})`);
         }
       } else {
         if (!step.runJs) throw new Error("Missing js op implementation");
@@ -501,6 +524,7 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
       });
     }
   }
+
 
   function getVm(): PipelineVm {
     const spec = getSpec();
@@ -567,7 +591,10 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
       vm.outputImage = { width: lastOutput.width, height: lastOutput.height, data: lastOutput.image };
     } else if (lastOutput?.type === "mask") {
       vm.outputMask = { width: lastOutput.width, height: lastOutput.height, data: lastOutput.mask };
+    } else if (lastOutput?.type === "svg") {
+      vm.outputSvg = { width: lastOutput.width, height: lastOutput.height, svg: lastOutput.svg };
     }
+
 
     return vm;
   }

@@ -55,7 +55,183 @@ export function createComponentRegistry(): ComponentRegistry {
     "native",
     {},
     [
+
       // -----------------------------
+      // Edge (pipeline)
+      // -----------------------------
+      n(
+        "edge",
+        "Edge",
+        ["native", "opencv"],
+        "auto",
+        {},
+        [
+          n(
+            "edge.resize",
+            "Resize",
+            ["native", "opencv"],
+            "auto",
+            {
+              resizeAlgo: { kind: "number", label: "Resize algo", min: 0, max: 3, step: 1, default: 1 },
+              targetMaxW: { kind: "number", label: "Target max width", min: 100, max: 4000, step: 50, default: 1200 },
+            },
+            undefined,
+            "Prepare image for stable downstream processing.",
+          ),
+
+          n(
+            "edge.threshold",
+            "Threshold",
+            ["native", "opencv"],
+            "auto",
+            {
+              manualT: { kind: "number", label: "Manual threshold", min: 0, max: 255, step: 1, default: 128 },
+            },
+            undefined,
+            "Convert image into a binary mask before edge extraction.",
+          ),
+
+          n(
+            "edge.morphology",
+            "Morphology cleanup",
+            ["native", "opencv"],
+            "auto",
+            {
+              morphAlgo: { kind: "number", label: "Morph algo", min: 0, max: 3, step: 1, default: 2 },
+              morphK: { kind: "number", label: "Kernel size", min: 1, max: 31, step: 2, default: 3 },
+              morphIters: { kind: "number", label: "Iterations", min: 1, max: 5, step: 1, default: 1 },
+            },
+            undefined,
+            "Clean the mask before extracting edges.",
+          ),
+
+          n(
+            "edge.extract",
+            "Edge extract",
+            ["native", "opencv"],
+            "auto",
+            {},
+            undefined,
+            "Extract a 1px outline from the cleaned mask.",
+          ),
+        ],
+        "Fixed-order edge pipeline (image -> mask -> edges). Presets configure each step.",
+      ),
+
+
+      // -----------------------------
+      // SVG (pipeline)
+      // -----------------------------
+      n(
+        "svg",
+        "SVG",
+        ["native", "opencv"],
+        "auto",
+        {},
+        [
+          n(
+            "svg.create",
+            "Create SVG",
+            ["native", "opencv"],
+            "auto",
+            {
+              scale: { kind: "number", label: "Scale", min: 1, max: 10, step: 1, default: 1 },
+              transparentBg: { kind: "number", label: "Transparent bg (0/1)", min: 0, max: 1, step: 1, default: 1 },
+              // NOTE: if your ParamSchema does NOT support string yet, keep this out for now.
+              // If it does support string, use kind: "string".
+              // If not, we’ll store a numeric color index instead.
+              color: { kind: "string" as any, label: "Color", default: "#000" as any },
+            } as any,
+            undefined,
+            "Convert the edge mask into an SVG.",
+          ),
+        ],
+        "SVG generation parameters.",
+      ),
+
+
+      // -----------------------------
+      // Segmentation (pipeline)
+      // -----------------------------
+      n(
+        "segmentation",
+        "Segmentation",
+        ["native", "opencv"],
+        "auto",
+        {},
+        [
+          n(
+            "segmentation.resize",
+            "Resize",
+            ["native", "opencv"],
+            "auto",
+            {
+              resizeAlgo: { kind: "number", label: "Resize algo", min: 0, max: 3, step: 1, default: 1 },
+              targetMaxW: { kind: "number", label: "Target max width", min: 100, max: 4000, step: 50, default: 1200 },
+            },
+            undefined,
+            "Prepare image for stable downstream processing.",
+          ),
+
+          n(
+            "segmentation.denoise",
+            "Denoise",
+            ["native", "opencv"],
+            "auto",
+            {
+              denoiseAlgo: { kind: "number", label: "Denoise algo", min: 0, max: 2, step: 1, default: 1 },
+              blurK: { kind: "number", label: "Blur kernel", min: 1, max: 21, step: 2, default: 3 },
+              bilateralSigma: { kind: "number", label: "Bilateral sigma", min: 1, max: 150, step: 1, default: 35 },
+            },
+            undefined,
+            "Reduce noise before thresholding.",
+          ),
+
+          n(
+            "segmentation.color",
+            "Color / Gray",
+            ["native", "opencv"],
+            "auto",
+            {
+              colorMode: { kind: "number", label: "Color mode", min: 0, max: 3, step: 1, default: 1 },
+              hsvChannel: { kind: "number", label: "HSV channel", min: 0, max: 2, step: 1, default: 2 },
+            },
+            undefined,
+            "Select color space / channel features for thresholding.",
+          ),
+
+          n(
+            "segmentation.threshold",
+            "Threshold",
+            ["native", "opencv"],
+            "auto",
+            {
+              thresholdAlgo: { kind: "number", label: "Threshold algo", min: 0, max: 3, step: 1, default: 1 },
+              manualT: { kind: "number", label: "Manual threshold", min: 0, max: 255, step: 1, default: 128 },
+              adaptBlock: { kind: "number", label: "Adaptive block", min: 3, max: 101, step: 2, default: 31 },
+              adaptC: { kind: "number", label: "Adaptive C", min: -50, max: 50, step: 1, default: 3 },
+            },
+            undefined,
+            "Convert features into a binary mask.",
+          ),
+
+          n(
+            "segmentation.morphology",
+            "Morphology cleanup",
+            ["native", "opencv"],
+            "auto",
+            {
+              morphAlgo: { kind: "number", label: "Morph algo", min: 0, max: 3, step: 1, default: 2 },
+              morphK: { kind: "number", label: "Kernel size", min: 1, max: 31, step: 2, default: 5 },
+              morphIters: { kind: "number", label: "Iterations", min: 1, max: 5, step: 1, default: 1 },
+            },
+            undefined,
+            "Remove specks, fill holes, and stabilize regions.",
+          ),
+        ],
+        "Fixed-order segmentation pipeline. Presets configure each step.",
+      ),
+       // -----------------------------
       // Contour
       // -----------------------------
       n(
@@ -146,89 +322,6 @@ export function createComponentRegistry(): ComponentRegistry {
           ),
         ],
       ),
-
-      // -----------------------------
-      // Segmentation (pipeline)
-      // -----------------------------
-      n(
-        "segmentation",
-        "Segmentation",
-        ["native", "opencv"],
-        "auto",
-        {},
-        [
-          n(
-            "segmentation.resize",
-            "Resize",
-            ["native", "opencv"],
-            "auto",
-            {
-              resizeAlgo: { kind: "number", label: "Resize algo", min: 0, max: 3, step: 1, default: 1 },
-              targetMaxW: { kind: "number", label: "Target max width", min: 100, max: 4000, step: 50, default: 1200 },
-            },
-            undefined,
-            "Prepare image for stable downstream processing.",
-          ),
-
-          n(
-            "segmentation.denoise",
-            "Denoise",
-            ["native", "opencv"],
-            "auto",
-            {
-              denoiseAlgo: { kind: "number", label: "Denoise algo", min: 0, max: 2, step: 1, default: 1 },
-              blurK: { kind: "number", label: "Blur kernel", min: 1, max: 21, step: 2, default: 3 },
-              bilateralSigma: { kind: "number", label: "Bilateral sigma", min: 1, max: 150, step: 1, default: 35 },
-            },
-            undefined,
-            "Reduce noise before thresholding.",
-          ),
-
-          n(
-            "segmentation.color",
-            "Color / Gray",
-            ["native", "opencv"],
-            "auto",
-            {
-              colorMode: { kind: "number", label: "Color mode", min: 0, max: 3, step: 1, default: 1 },
-              hsvChannel: { kind: "number", label: "HSV channel", min: 0, max: 2, step: 1, default: 2 },
-            },
-            undefined,
-            "Select color space / channel features for thresholding.",
-          ),
-
-          n(
-            "segmentation.threshold",
-            "Threshold",
-            ["native", "opencv"],
-            "auto",
-            {
-              thresholdAlgo: { kind: "number", label: "Threshold algo", min: 0, max: 3, step: 1, default: 1 },
-              manualT: { kind: "number", label: "Manual threshold", min: 0, max: 255, step: 1, default: 128 },
-              adaptBlock: { kind: "number", label: "Adaptive block", min: 3, max: 101, step: 2, default: 31 },
-              adaptC: { kind: "number", label: "Adaptive C", min: -50, max: 50, step: 1, default: 3 },
-            },
-            undefined,
-            "Convert features into a binary mask.",
-          ),
-
-          n(
-            "segmentation.morphology",
-            "Morphology cleanup",
-            ["native", "opencv"],
-            "auto",
-            {
-              morphAlgo: { kind: "number", label: "Morph algo", min: 0, max: 3, step: 1, default: 2 },
-              morphK: { kind: "number", label: "Kernel size", min: 1, max: 31, step: 2, default: 5 },
-              morphIters: { kind: "number", label: "Iterations", min: 1, max: 5, step: 1, default: 1 },
-            },
-            undefined,
-            "Remove specks, fill holes, and stabilize regions.",
-          ),
-        ],
-        "Fixed-order segmentation pipeline. Presets configure each step.",
-      ),
- 
       // -----------------------------
       // Pipeline (generic runner) — UI state only
       // -----------------------------

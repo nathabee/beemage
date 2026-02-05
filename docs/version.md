@@ -27,6 +27,15 @@ Conventions:
 
  
  
+ 
+#### v0.1.1 — Epic: add new pipelines SVG and EDGE
+
+* add new SVGartefact
+* add 2 new process edge and svg
+* add new EDGE pipeline with ....
+* add new SVG pipeline with .... (svg preset with color...)
+* add download pushbutton to download the final result
+ 
 #### v0.1.0 — Epic: Universal pipeline runner foundation
 
 * Introduce the universal pipeline runner (`panel/app/pipeline`) with catalogue-driven stages/ops and IO validation

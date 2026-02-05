@@ -346,7 +346,7 @@ No dispatcher changes needed if no new op ids are introduced.
 ### Checklist: add a new pipeline that introduces new ops (new process)
 
 If the pipeline introduces a new operation (a new `OpId`), you currently must update **four** areas:
-
+ 
 1. **Pipeline catalogue**
 
    * `src/panel/app/pipeline/catalogue.ts`
@@ -470,6 +470,71 @@ Right now, adding a new op is not only “add an OpSpec”:
   * param coercion defaults per op
 
 This is deliberate for strict typing, but it means every new op is a multi-file change.
+
+---
+ ##########################
+
+Below are three structured “impact maps” you can paste into your markdown. They focus on **where code changes happen** (file + function/object) for each kind of extension.
+
+## 1) Add a new artifact type (a new format flowing between stages)
+
+### Impact map (what must change)
+
+| Area                                            | File                                    | Function / object                                                                                     | What changes                                                                                                                    | Typical failure if missed                                                    |                                                                              |
+| ----------------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Core pipeline types                             | `src/panel/app/pipeline/type.ts`        | `ArtifactType`, `Artifact` union (+ new `XArtifact` type)                                             | Add `"newtype"` to `ArtifactType`, define `NewArtifact`, extend `Artifact = ...                                                 | NewArtifact`                                                                 | TS errors: missing type narrowing, `Property ... does not exist on type ...` |
+| Runner execution                                | `src/panel/app/pipeline/runner.ts`      | `execDispatchOp()`, `execOp()`, `isImage/isMask` guards, new `isNewType()` guard, `makeNewArtifact()` | Teach the runner how to pass the new artifact into dispatch/js ops and how to wrap dispatch results into the correct `Artifact` | Runtime: “IO mismatch expected X got Y” or “Invalid op spec … not supported” |                                                                              |
+| Model step-run (Next)                           | `src/panel/tabs/pipeline/model.ts`      | `runNext()` dispatch branch + VM mapping in `getVm()`                                                 | Add branch to build `out = { type:"newtype", ... }` and map `lastOutput` into `vm.outputNewType` (optional)                     | TS errors / runtime: output never shown, or crashes on artifact access       |                                                                              |
+| View rendering (preview + download)             | `src/panel/tabs/pipeline/view.ts`       | `renderArtifactPreview()`, `drawCurrent()`, `downloadCurrentOutput()`                                 | Add type guard + preview strategy (canvas/img/text) + download strategy (Blob, PNG, etc.)                                       | Output blank, wrong element used, download disabled or wrong format          |                                                                              |
+| Pipeline catalogue IO contracts                 | `src/panel/app/pipeline/catalogue.ts`   | `ops` definitions (`OpSpec.io`) and stage specs (`StageSpec.io`)                                      | Allow stages/ops to declare the new type in `io.input` / `io.output`                                                            | Runner validation fails: “IO mismatch …”                                     |                                                                              |
+| Any dispatch typing (if new type is dispatched) | `src/panel/platform/opsDispatchCore.ts` | `OpInputsByOp`, `OpOutputsByOp` types                                                                 | If the dispatcher needs to carry this artifact, add the right input/output typings                                              | TS errors: impl signatures not assignable                                    |                                                                              |
+
+### Notes (recommended pattern)
+
+* Add the artifact type first (`type.ts`), then teach **runner + model + view** to handle it.
+* Decide whether the new artifact is **dispatcher-visible** (goes through `opsDispatch`) or **JS-only** (only through `JsOpSpec.run`).
+
+---
+
+## 2) Add a new process (an “op”)
+
+### Impact map (what must change)
+
+| Area                                 | File                                                     | Function / object                                             | What changes                                                                                  | Typical failure if missed                                                        |
+| ------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Dispatch op typing                   | `src/panel/platform/opsDispatchCore.ts`                  | `OpId` union, `OpInputsByOp`, `OpOutputsByOp`, `OpParamsByOp` | Add `"your.op.id"` and define its input/output/params types                                   | TS: op not assignable, missing keys in `OpImpls`, params type mismatch           |
+| Dispatch implementations (extension) | `src/panel/platform/opsDispatchImpl.ts`                  | `export const opImpls: OpImpls`                               | Add the new key with `native` + `opencv` implementation (even if opencv falls back to native) | Build error: “Property 'your.op.id' is missing … but required in type 'OpImpls'” |
+| Dispatch implementations (demo)      | `demo/src/mocks/engine/opsDispatchImpl.ts`               | `export const opImpls: OpImpls`                               | Same as extension, but demo variant (can call same native function)                           | Demo build fails (tsc)                                                           |
+| Engine param resolution              | `src/panel/platform/opsDispatchCore.ts`                  | `resolveEngineAndParams(op)`                                  | Add a case that returns typed params with defaults for the new op                             | Runtime: “Unknown op” or wrong defaults; TS may force a new branch               |
+| Pipeline catalogue op card           | `src/panel/app/pipeline/catalogue.ts`                    | `ops: ReadonlyArray<OpSpec>`                                  | Add an `OpSpec` (usually `DispatchOpSpec`) with `io`, `dispatchId`, `tuningId`                | Op not available in UI / not installable                                         |
+| Tuning registry (if op is tunable)   | `src/panel/app/tuning/registry.ts` (and presets if used) | Node definition for the op’s `tuningId`                       | Add params schema + defaults + engine policy as needed                                        | Params never change / missing UI controls                                        |
+| Implementation library code          | Usually in `src/panel/tabs/pipeline/lib/...`             | Function you call from opImpls                                | Add the actual algorithm / transformer                                                        | Op exists but does nothing useful                                                |
+
+### Notes (recommended pattern)
+
+* **Dispatch op** = lives in `opsDispatchCore.ts` + both impl files.
+* **JS op** (no dispatch) = skip `opsDispatchCore.ts` and `opsDispatchImpl.ts`; only add in `catalogue.ts` as `kind:"js"` and implement `run()`.
+
+---
+
+## 3) Add a new pipeline
+
+### Impact map (what must change)
+
+| Area                                 | File                                  | Function / object                                       | What changes                                                                             | Typical failure if missed                                 |
+| ------------------------------------ | ------------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Pipeline spec (stages + allowed ops) | `src/panel/app/pipeline/catalogue.ts` | `pipelines: ReadonlyArray<PipelineSpec>`                | Add a `PipelineSpec` with ordered stages, each with `io`, `allowedOps`, and `defaultOps` | Pipeline not selectable / runner refuses execution        |
+| Ops required by the pipeline         | `src/panel/app/pipeline/catalogue.ts` | `ops: ReadonlyArray<OpSpec>`                            | Ensure every `opId` used by `allowedOps/defaultOps` exists in catalogue ops list         | Runner validation: “Unknown opId …” or “Op not allowed …” |
+| Runner support for pipeline IO       | `src/panel/app/pipeline/runner.ts`    | `validateChainIO()`, `execDispatchOp()`                 | Usually none unless pipeline introduces new IO combos (e.g. mask→svg, image→svg, svg→…)  | Run all fails at runtime with “not supported here”        |
+| Model recipes (optional)             | `src/panel/tabs/pipeline/model.ts`    | `makeRecipesForPipeline(spec)`                          | Add recipe presets if you want “fast/strong/…” variants for this pipeline                | Only “Default” appears                                    |
+| Tuning “pipeline selection”          | `src/panel/app/tuning/registry.ts`    | The node that holds `pipeline.mode` / `pipeline.recipe` | Add the pipeline id as a selectable mode (if the UI uses tuning-driven selection)        | Pipeline exists but cannot be selected / selection resets |
+| Pipeline tuning subtree (optional)   | `src/panel/app/tuning/registry.ts`    | Root node for `scopeRootId = <pipelineId>`              | Create tuning nodes for ops used by the pipeline (or rely on existing ones)              | No tuning panel for that pipeline                         |
+| View (usually none)                  | `src/panel/tabs/pipeline/view.ts`     | Select rendering                                        | Usually no change; it renders whatever pipelines the model exposes                       | N/A                                                       |
+
+### Notes (recommended pattern)
+
+* Pipeline creation is mostly **catalogue + (optional) tuning + (optional) recipes**.
+* The runner is generic, but it must support the IO patterns you introduce (e.g. mask→svg required code changes earlier).
 
 ---
  

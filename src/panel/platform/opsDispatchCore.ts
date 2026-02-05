@@ -22,13 +22,22 @@ export type ImageOpInputs = {
   height: number;
 };
 
+// -----------------------------
+// Dispatch op ids (must match opImpls keys and pipeline dispatchId)
+// -----------------------------
 export type OpId =
   | "contour.clean.removeSmallComponents"
   | "segmentation.resize"
   | "segmentation.denoise"
   | "segmentation.color"
   | "segmentation.threshold"
-  | "segmentation.morphology";
+  | "segmentation.morphology"
+  | "edge.resize"
+  | "edge.threshold"
+  | "edge.morphology"
+  | "edge.extract"
+  | "svg.create";
+;
 
 export type OpInputsByOp = {
   "contour.clean.removeSmallComponents": MaskOpInputs;
@@ -37,8 +46,14 @@ export type OpInputsByOp = {
   "segmentation.denoise": ImageOpInputs;
   "segmentation.color": ImageOpInputs;
   "segmentation.threshold": ImageOpInputs;
-
   "segmentation.morphology": MaskOpInputs;
+
+  "edge.resize": ImageOpInputs;
+  "edge.threshold": ImageOpInputs;
+  "edge.morphology": MaskOpInputs;
+  "edge.extract": MaskOpInputs;
+  "svg.create": MaskOpInputs;
+
 };
 
 export type OpOutputsByOp = {
@@ -48,8 +63,14 @@ export type OpOutputsByOp = {
   "segmentation.denoise": ImageData;
   "segmentation.color": ImageData;
   "segmentation.threshold": Uint8Array;
-
   "segmentation.morphology": Uint8Array;
+
+  "edge.resize": ImageData;
+  "edge.threshold": Uint8Array;
+  "edge.morphology": Uint8Array;
+  "edge.extract": Uint8Array;
+  "svg.create": string;
+
 };
 
 export type OpParamsByOp = {
@@ -62,6 +83,13 @@ export type OpParamsByOp = {
   "segmentation.color": { colorMode: number; hsvChannel: number };
   "segmentation.threshold": { thresholdAlgo: number; manualT: number; adaptBlock: number; adaptC: number };
   "segmentation.morphology": { morphAlgo: number; morphK: number; morphIters: number };
+
+  "edge.resize": { resizeAlgo: number; targetMaxW: number };
+  "edge.threshold": { manualT: number };
+  "edge.morphology": { morphAlgo: number; morphK: number; morphIters: number };
+  "edge.extract": {};
+  "svg.create": { scale: number; transparentBg: number; color: string };
+
 };
 
 export type OpImpls = {
@@ -103,6 +131,9 @@ async function resolveEngineAndParams<K extends OpId>(op: K): Promise<{
     };
   }
 
+  // -----------------------------
+  // Segmentation params
+  // -----------------------------
   if (op === "segmentation.resize") {
     const resizeAlgo = Number((resolved.params as any).resizeAlgo ?? 1);
     const targetMaxW = Number((resolved.params as any).targetMaxW ?? 900);
@@ -161,6 +192,64 @@ async function resolveEngineAndParams<K extends OpId>(op: K): Promise<{
       opencvReady: !!runtime.opencvReady,
     };
   }
+
+  // -----------------------------
+  // Edge params
+  // -----------------------------
+  if (op === "edge.resize") {
+    const resizeAlgo = Number((resolved.params as any).resizeAlgo ?? 1);
+    const targetMaxW = Number((resolved.params as any).targetMaxW ?? 1200);
+    return {
+      engine: resolved.engine,
+      params: { resizeAlgo, targetMaxW } as OpParamsByOp[K],
+      fallbackReason: resolved.fallbackReason,
+      opencvReady: !!runtime.opencvReady,
+    };
+  }
+
+  if (op === "edge.threshold") {
+    const manualT = Number((resolved.params as any).manualT ?? 128);
+    return {
+      engine: resolved.engine,
+      params: { manualT } as OpParamsByOp[K],
+      fallbackReason: resolved.fallbackReason,
+      opencvReady: !!runtime.opencvReady,
+    };
+  }
+
+  if (op === "edge.morphology") {
+    const morphAlgo = Number((resolved.params as any).morphAlgo ?? 2);
+    const morphK = Number((resolved.params as any).morphK ?? 3);
+    const morphIters = Number((resolved.params as any).morphIters ?? 1);
+    return {
+      engine: resolved.engine,
+      params: { morphAlgo, morphK, morphIters } as OpParamsByOp[K],
+      fallbackReason: resolved.fallbackReason,
+      opencvReady: !!runtime.opencvReady,
+    };
+  }
+
+  if (op === "edge.extract") {
+    return {
+      engine: resolved.engine,
+      params: {} as OpParamsByOp[K],
+      fallbackReason: resolved.fallbackReason,
+      opencvReady: !!runtime.opencvReady,
+    };
+  }
+
+  if (op === "svg.create") {
+    const scale = Number((resolved.params as any).scale ?? 1);
+    const transparentBg = Number((resolved.params as any).transparentBg ?? 1); // 1=true default
+    const color = String((resolved.params as any).color ?? "#000");
+    return {
+      engine: resolved.engine,
+      params: { scale, transparentBg, color } as OpParamsByOp[K],
+      fallbackReason: resolved.fallbackReason,
+      opencvReady: !!runtime.opencvReady,
+    };
+  }
+
 
   throw new Error(`[opsDispatch] Unknown op: ${op}`);
 }

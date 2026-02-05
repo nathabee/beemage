@@ -4,6 +4,7 @@ import type {
   Artifact,
   ImageArtifact,
   MaskArtifact,
+  SvgArtifact,
   InstalledPipeline,
   PipelineCatalogue,
   PipelineRunnerDeps,
@@ -13,6 +14,7 @@ import type {
   OpSpec,
   OpIO,
 } from "./type";
+
 import { artifactDims } from "./type";
 
 function isImage(a: Artifact): a is ImageArtifact {
@@ -28,6 +30,10 @@ function makeImageArtifact(img: ImageData): ImageArtifact {
 
 function makeMaskArtifact(mask: Uint8Array, width: number, height: number): MaskArtifact {
   return { type: "mask", width, height, mask };
+}
+
+function makeSvgArtifact(svg: string, width: number, height: number): SvgArtifact {
+  return { type: "svg", width, height, svg };
 }
 
 function ioMismatch(expected: string, got: string): string {
@@ -77,22 +83,36 @@ async function execDispatchOp(
       return makeImageArtifact(out as ImageData);
     }
 
-    // image -> mask
-    const out = await runOp(spec.dispatchId as any, { image: input.image, width, height } as any);
-    return makeMaskArtifact(out as Uint8Array, width, height);
+    if (spec.io.output === "mask") {
+      const out = await runOp(spec.dispatchId as any, { image: input.image, width, height } as any);
+      return makeMaskArtifact(out as Uint8Array, width, height);
+    }
+
+    if (spec.io.output === "svg") {
+      const out = await runOp(spec.dispatchId as any, { image: input.image, width, height } as any);
+      return makeSvgArtifact(out as string, width, height);
+    }
+
+    throw new Error(`Unsupported dispatch output: ${spec.io.output}`);
   }
 
   // mask input
   if (!isMask(input)) throw new Error(ioMismatch("mask", input.type));
   const { width, height } = input;
 
-  if (spec.io.output !== "mask") {
-    throw new Error("Invalid op spec: mask input cannot produce image (not supported here)");
+  if (spec.io.output === "mask") {
+    const out = await runOp(spec.dispatchId as any, { mask: input.mask, width, height } as any);
+    return makeMaskArtifact(out as Uint8Array, width, height);
   }
 
-  const out = await runOp(spec.dispatchId as any, { mask: input.mask, width, height } as any);
-  return makeMaskArtifact(out as Uint8Array, width, height);
+  if (spec.io.output === "svg") {
+    const out = await runOp(spec.dispatchId as any, { mask: input.mask, width, height } as any);
+    return makeSvgArtifact(out as string, width, height);
+  }
+
+  throw new Error(`Invalid op spec: mask input cannot produce ${spec.io.output} (not supported here)`);
 }
+
 
 async function execOp(spec: OpSpec, input: Artifact, deps: PipelineRunnerDeps): Promise<Artifact> {
   if (spec.kind === "dispatch") {

@@ -6,7 +6,7 @@ export type StageId = string;
 export type OpId = string;
 export type OpInstanceId = string;
 
-export type ArtifactType = "image" | "mask";
+export type ArtifactType = "image" | "mask" | "svg";
 
 export type ImageArtifact = {
   type: "image";
@@ -23,7 +23,15 @@ export type MaskArtifact = {
   mask: Uint8Array;
 };
 
-export type Artifact = ImageArtifact | MaskArtifact;
+export type SvgArtifact = {
+  type: "svg";
+  width: number;
+  height: number;
+  // Full SVG markup (including <svg ...> root)
+  svg: string;
+};
+
+export type Artifact = ImageArtifact | MaskArtifact | SvgArtifact;
 
 export type OpIO = {
   input: ArtifactType;

@@ -1,6 +1,6 @@
-// src/panel/tabs/pipeline/view.ts
-import { createPipelineCatalogue } from "../../app/pipeline/catalogue";
-import type { Artifact, ImageArtifact, MaskArtifact, PipelineRunResult, StageRunResult } from "../../app/pipeline/type";
+// src/panel/tabs/pipeline/view.ts 
+import type { Artifact, ImageArtifact, MaskArtifact, SvgArtifact} from "../../app/pipeline/type";
+ 
 
 export type PipelineViewHandlers = {
   onSelectPipeline: (id: string) => void;
@@ -34,6 +34,74 @@ function isImage(a: Artifact): a is ImageArtifact {
 function isMask(a: Artifact): a is MaskArtifact {
   return a.type === "mask";
 }
+
+function isSvg(a: Artifact): a is SvgArtifact {
+  return a.type === "svg";
+}
+
+function svgToDataUrl(svg: string): string {
+  // Works well for MVP. For huge SVGs you may switch to Blob URLs.
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function renderArtifactPreview(a: Artifact, maxHeightPx: number): HTMLElement {
+  if (isImage(a)) {
+    const canvas = el("canvas", {
+      class: "canvas",
+      style:
+        `margin-top:8px; display:block; margin-left:auto; margin-right:auto; ` +
+        `max-width:100%; max-height:${maxHeightPx}px; width:auto; height:auto;`,
+    }) as HTMLCanvasElement;
+    drawImageToCanvas(canvas, a.image);
+    return canvas;
+  }
+
+  if (isMask(a)) {
+    const canvas = el("canvas", {
+      class: "canvas",
+      style:
+        `margin-top:8px; display:block; margin-left:auto; margin-right:auto; ` +
+        `max-width:100%; max-height:${maxHeightPx}px; width:auto; height:auto;`,
+    }) as HTMLCanvasElement;
+    drawMaskToCanvas(canvas, a.mask, a.width, a.height);
+    return canvas;
+  }
+
+  if (!isSvg(a)) {
+    // Defensive: if you add more Artifact types later, don’t silently mis-render.
+    return el("div", { class: "muted", style: "margin-top:8px; font-size:12px;" }, `Unsupported output: ${String((a as any).type)}`);
+  }
+
+  const img = el("img", {
+    class: "canvas",
+    style:
+      `margin-top:8px; display:block; margin-left:auto; margin-right:auto; ` +
+      `max-width:100%; max-height:${maxHeightPx}px; width:auto; height:auto;`,
+    "aria-label": "SVG preview",
+  }) as HTMLImageElement;
+
+  img.src = svgToDataUrl(a.svg);
+  return img;
+}
+
+
+function downloadBlob(filename: string, blob: Blob): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noopener";
+  a.click();
+  // Revoke a bit later to avoid race with navigation
+  setTimeout(() => URL.revokeObjectURL(url), 500);
+}
+
+async function downloadCanvasPng(filename: string, canvas: HTMLCanvasElement): Promise<void> {
+  const blob: Blob | null = await new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+  if (!blob) throw new Error("Failed to create PNG blob.");
+  downloadBlob(filename, blob);
+}
+
 
 function drawImageToCanvas(canvas: HTMLCanvasElement, img: ImageData): void {
   canvas.width = img.width;
@@ -113,16 +181,58 @@ export function createPipelineView(args: {
   let btnRunAll: HTMLButtonElement | null = null;
   let btnNext: HTMLButtonElement | null = null;
   let btnReset: HTMLButtonElement | null = null;
+  let btnDownload: HTMLButtonElement | null = null;
 
   let descEl: HTMLParagraphElement | null = null;
 
   let inputCanvas: HTMLCanvasElement | null = null;
+
+  // Current output can be either:
+  // - canvas (image/mask)
+  // - img (svg)
   let currentCanvas: HTMLCanvasElement | null = null;
+  let currentSvgImg: HTMLImageElement | null = null;
 
   let stagesHost: HTMLDivElement | null = null;
 
+  // Keep the last rendered vm so download can access the current output.
+  let lastVm: any = null;
+
   function clearHost(): void {
     while (hostEl.firstChild) hostEl.removeChild(hostEl.firstChild);
+  }
+
+  async function downloadCurrentOutput(vm: any): Promise<void> {
+    const pipelineId = typeof vm?.activePipelineId === "string" ? vm.activePipelineId : "pipeline";
+    const safeId = pipelineId.replace(/[^a-z0-9_-]+/gi, "_").slice(0, 40) || "pipeline";
+
+    // Prefer svg if present, else image, else mask.
+    const outSvg = vm?.outputSvg?.svg as string | undefined;
+    if (typeof outSvg === "string" && outSvg.length > 0) {
+      const blob = new Blob([outSvg], { type: "image/svg+xml;charset=utf-8" });
+      downloadBlob(`beecontour-${safeId}.svg`, blob);
+      return;
+    }
+
+    const outImg = vm?.outputImage?.data as ImageData | undefined;
+    if (outImg) {
+      const c = document.createElement("canvas");
+      drawImageToCanvas(c, outImg);
+      await downloadCanvasPng(`beecontour-${safeId}.png`, c);
+      return;
+    }
+
+    const outMask = vm?.outputMask?.data as Uint8Array | undefined;
+    const w = vm?.outputMask?.width as number | undefined;
+    const h = vm?.outputMask?.height as number | undefined;
+    if (outMask && typeof w === "number" && typeof h === "number") {
+      const c = document.createElement("canvas");
+      drawMaskToCanvas(c, outMask, w, h);
+      await downloadCanvasPng(`beecontour-${safeId}-mask.png`, c);
+      return;
+    }
+
+    throw new Error("No output to download.");
   }
 
   function ensureMounted(): void {
@@ -154,12 +264,14 @@ export function createPipelineView(args: {
     btnRunAll = el("button", { type: "button" }, "Run all") as HTMLButtonElement;
     btnNext = el("button", { type: "button" }, "Next step") as HTMLButtonElement;
     btnReset = el("button", { type: "button" }, "Reset") as HTMLButtonElement;
+    btnDownload = el("button", { type: "button" }, "Download") as HTMLButtonElement;
 
     controls.appendChild(lblPipeline);
     controls.appendChild(lblRecipe);
     controls.appendChild(btnRunAll);
     controls.appendChild(btnNext);
     controls.appendChild(btnReset);
+    controls.appendChild(btnDownload);
 
     const grid = el("div", { class: "grid4", style: "margin-top:12px;" });
 
@@ -170,8 +282,16 @@ export function createPipelineView(args: {
 
     const currentCard = el("div", { class: "card" });
     currentCard.appendChild(el("div", { class: "cardTitle" }, "Current output"));
+
     currentCanvas = el("canvas", { class: "canvas", "aria-label": "Pipeline current output preview" }) as HTMLCanvasElement;
+    currentSvgImg = el("img", {
+      class: "canvas",
+      "aria-label": "Pipeline SVG output preview",
+      style: "display:none;",
+    }) as HTMLImageElement;
+
     currentCard.appendChild(currentCanvas);
+    currentCard.appendChild(currentSvgImg);
 
     const stagesCard = el("div", { class: "card", style: "grid-column:1 / -1;" });
     stagesCard.appendChild(el("div", { class: "cardTitle" }, "Stages"));
@@ -201,6 +321,16 @@ export function createPipelineView(args: {
     btnRunAll.addEventListener("click", () => handlers.onRunAll());
     btnNext.addEventListener("click", () => handlers.onNext());
     btnReset.addEventListener("click", () => handlers.onReset());
+
+    btnDownload.addEventListener("click", async () => {
+      try {
+        await downloadCurrentOutput(lastVm);
+      } catch (e) {
+        // Keep it simple: surface as status text.
+        const msg = e instanceof Error ? e.message : String(e);
+        statusEl.textContent = `Download failed: ${msg}`;
+      }
+    });
   }
 
   function renderSelects(vm: any): void {
@@ -245,7 +375,21 @@ export function createPipelineView(args: {
   }
 
   function drawCurrent(vm: any): void {
-    if (!currentCanvas) return;
+    if (!currentCanvas || !currentSvgImg) return;
+
+    // SVG takes precedence if present.
+    const outSvg = vm?.outputSvg?.svg as string | undefined;
+    if (typeof outSvg === "string" && outSvg.length > 0) {
+      currentCanvas.style.display = "none";
+      currentSvgImg.style.display = "block";
+      currentSvgImg.src = svgToDataUrl(outSvg);
+      return;
+    }
+
+    // Otherwise fallback to image/mask.
+    currentCanvas.style.display = "block";
+    currentSvgImg.style.display = "none";
+    currentSvgImg.src = "";
 
     const outImg = vm?.outputImage?.data as ImageData | undefined;
     if (outImg) {
@@ -299,19 +443,9 @@ export function createPipelineView(args: {
 
     const stageOut = st.outputArtifact as Artifact | undefined;
 
-    // Stage output once (top-level), constrained height, no forced full-width stretch.
+    // Stage output once (top-level)
     if (stageOut) {
-      const canvas = el("canvas", {
-        class: "canvas",
-        style:
-          "margin-top:8px; display:block; margin-left:auto; margin-right:auto; " +
-          "max-width:100%; max-height:260px; width:auto; height:auto;",
-      }) as HTMLCanvasElement;
-
-      if (isImage(stageOut)) drawImageToCanvas(canvas, stageOut.image);
-      if (isMask(stageOut)) drawMaskToCanvas(canvas, stageOut.mask, stageOut.width, stageOut.height);
-
-      row.appendChild(canvas);
+      row.appendChild(renderArtifactPreview(stageOut, 260));
     }
 
     const ops = Array.isArray(st.ops) ? st.ops : [];
@@ -332,20 +466,10 @@ export function createPipelineView(args: {
         opRow.appendChild(el("div", { class: "muted", style: "font-size:12px;" }, `${op.input} -> ${op.output}`));
 
         // Avoid duplicate: if we already showed stageOut, skip the last op preview.
-        const opOut = (stageOut && isLast) ? undefined : (op.outputArtifact as Artifact | undefined);
+        const opOut = stageOut && isLast ? undefined : (op.outputArtifact as Artifact | undefined);
 
         if (opOut) {
-          const canvas = el("canvas", {
-            class: "canvas",
-            style:
-              "margin-top:8px; display:block; margin-left:auto; margin-right:auto; " +
-              "max-width:100%; max-height:200px; width:auto; height:auto;",
-          }) as HTMLCanvasElement;
-
-          if (isImage(opOut)) drawImageToCanvas(canvas, opOut.image);
-          if (isMask(opOut)) drawMaskToCanvas(canvas, opOut.mask, opOut.width, opOut.height);
-
-          opRow.appendChild(canvas);
+          opRow.appendChild(renderArtifactPreview(opOut, 200));
         }
 
         opsWrap.appendChild(opRow);
@@ -357,8 +481,6 @@ export function createPipelineView(args: {
     return row;
   }
 
-
-
   return {
     mount(): void {
       ensureMounted();
@@ -367,6 +489,8 @@ export function createPipelineView(args: {
     render(vm: any): void {
       ensureMounted();
 
+      lastVm = vm;
+
       renderSelects(vm);
 
       statusEl.textContent = typeof vm?.statusText === "string" ? vm.statusText : "Idle";
@@ -374,6 +498,14 @@ export function createPipelineView(args: {
       if (descEl) {
         const desc = typeof vm?.description === "string" ? vm.description : "Universal pipeline runner.";
         descEl.textContent = desc;
+      }
+
+      // Download enabled only if something exists
+      if (btnDownload) {
+        const hasSvg = typeof vm?.outputSvg?.svg === "string" && vm.outputSvg.svg.length > 0;
+        const hasImg = !!vm?.outputImage?.data;
+        const hasMask = !!vm?.outputMask?.data;
+        btnDownload.disabled = !(hasSvg || hasImg || hasMask);
       }
 
       drawInput(vm);
@@ -392,13 +524,17 @@ export function createPipelineView(args: {
       btnRunAll = null;
       btnNext = null;
       btnReset = null;
+      btnDownload = null;
 
       descEl = null;
 
       inputCanvas = null;
       currentCanvas = null;
+      currentSvgImg = null;
 
       stagesHost = null;
+
+      lastVm = null;
 
       clearHost();
     },
