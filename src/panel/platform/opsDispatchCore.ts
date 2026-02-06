@@ -4,6 +4,7 @@ import { createComponentRegistry } from "../app/tuning/registry";
 import { loadComponentConfigs } from "../app/tuning/store";
 import { isOpenCvInjected } from "../app/engine/engineAvailability";
 import { logWarn } from "../app/log";
+import type { EnginePolicy } from "../app/tuning/types";
 
 export type EngineId = "native" | "opencv";
 
@@ -25,8 +26,6 @@ export type ImageOpInputs = {
 // -----------------------------
 // Dispatch op ids (must match opImpls keys and pipeline dispatchId)
 // -----------------------------
-// src/panel/platform/opsDispatchCore.ts
-
 export type OpId =
   | "mage.clean.removeSmallComponents"
   | "segmentation.resize"
@@ -91,12 +90,19 @@ export type OpParamsByOp = {
   "svg.create": { scale: number; transparentBg: number; color: string };
 };
 
-
 export type OpImpls = {
   [K in OpId]: {
     native: (input: OpInputsByOp[K], params: OpParamsByOp[K]) => OpOutputsByOp[K] | Promise<OpOutputsByOp[K]>;
     opencv: (input: OpInputsByOp[K], params: OpParamsByOp[K]) => OpOutputsByOp[K] | Promise<OpOutputsByOp[K]>;
   };
+};
+
+// -----------------------------
+// NEW: per-run override (used by pipeline op instances)
+// -----------------------------
+export type RunOpOverride<K extends OpId = OpId> = {
+  enginePolicy?: EnginePolicy;
+  params?: Partial<OpParamsByOp[K]>;
 };
 
 // -----------------------------
@@ -109,9 +115,45 @@ const registry = createComponentRegistry();
 function getRuntime() {
   return { opencvReady: isOpenCvInjected() };
 }
- 
 
-async function resolveEngineAndParams<K extends OpId>(op: K): Promise<{
+function pickEngineForPolicy(args: {
+  implemented: ReadonlyArray<EngineId>;
+  policy: EnginePolicy;
+  runtimeOpenCvReady: boolean;
+}): { engine: EngineId; fallbackReason?: string } {
+  const { implemented, policy, runtimeOpenCvReady } = args;
+
+  const canUseOpenCv = runtimeOpenCvReady && implemented.includes("opencv");
+  const canUseNative = implemented.includes("native") || implemented.length === 0;
+
+  // Defensive: if native isn't implemented, still return native but it will fail at runtime (better than lying).
+  void canUseNative;
+
+  if (policy === "native") return { engine: "native" };
+
+  if (policy === "opencv") {
+    if (canUseOpenCv) return { engine: "opencv" };
+    return {
+      engine: "native",
+      fallbackReason: runtimeOpenCvReady
+        ? "Override policy=opencv, but this op has no OpenCV implementation."
+        : "Override policy=opencv, but OpenCV is not available at runtime.",
+    };
+  }
+
+  if (policy === "auto") {
+    if (canUseOpenCv) return { engine: "opencv" };
+    return { engine: "native" };
+  }
+
+  // "inherit" makes no sense as an explicit per-op override; treat as "no override"
+  return { engine: "native" };
+}
+
+async function resolveEngineAndParams<K extends OpId>(
+  op: K,
+  override?: RunOpOverride<K>,
+): Promise<{
   engine: EngineId;
   params: OpParamsByOp[K];
   fallbackReason?: string;
@@ -122,167 +164,52 @@ async function resolveEngineAndParams<K extends OpId>(op: K): Promise<{
 
   const resolved = resolveComponent(op, registry, stored, runtime);
 
+  const node = registry.byId.get(op);
+  if (!node) throw new Error(`[opsDispatch] Unknown op in registry: ${op}`);
+
+  // Base = tuning resolved (defaults + stored overrides)
+  const baseParams = resolved.params as OpParamsByOp[K];
+
+  // Merge instance params on top (instance wins)
+  const mergedParams = {
+    ...(baseParams as any),
+    ...((override?.params ?? {}) as any),
+  } as OpParamsByOp[K];
+
+  // Policy: instance override wins; otherwise tuning policy wins
+  const effectivePolicy: EnginePolicy =
+    (override?.enginePolicy && override.enginePolicy !== "inherit" ? override.enginePolicy : resolved.policy) as EnginePolicy;
+
+  // Engine: if instance policy differs, recompute engine for this op
+  // Otherwise we can trust resolved.engine (already computed)
+  let engine: EngineId = resolved.engine;
+  let fallbackReason: string | undefined = resolved.fallbackReason;
+
+  if (override?.enginePolicy && override.enginePolicy !== "inherit") {
+    const picked = pickEngineForPolicy({
+      implemented: node.implementedEngines,
+      policy: effectivePolicy,
+      runtimeOpenCvReady: !!runtime.opencvReady,
+    });
+    engine = picked.engine;
+    fallbackReason = picked.fallbackReason;
+  }
+
   return {
-    engine: resolved.engine,
-    params: resolved.params as OpParamsByOp[K],
-    fallbackReason: resolved.fallbackReason,
+    engine,
+    params: mergedParams,
+    fallbackReason,
     opencvReady: !!runtime.opencvReady,
   };
 }
-
-
-/*
-async function resolveEngineAndParams<K extends OpId>(op: K): Promise<{
-  engine: EngineId;
-  params: OpParamsByOp[K];
-  fallbackReason?: string;
-  opencvReady: boolean;
-}> {
-  const stored = await loadComponentConfigs();
-  const runtime = getRuntime();
-
-  const resolved = resolveComponent(op, registry, stored, runtime);
-
-  if (op === "mage.clean.removeSmallComponents") {
-    const cleanMinArea = Number((resolved.params as any).cleanMinArea ?? 12);
-    return {
-      engine: resolved.engine,
-      params: { cleanMinArea } as OpParamsByOp[K],
-      fallbackReason: resolved.fallbackReason,
-      opencvReady: !!runtime.opencvReady,
-    };
-  }
-
-  // -----------------------------
-  // Segmentation params
-  // -----------------------------
-  if (op === "segmentation.resize") {
-    const resizeAlgo = Number((resolved.params as any).resizeAlgo ?? 1);
-    const targetMaxW = Number((resolved.params as any).targetMaxW ?? 900);
-    return {
-      engine: resolved.engine,
-      params: { resizeAlgo, targetMaxW } as OpParamsByOp[K],
-      fallbackReason: resolved.fallbackReason,
-      opencvReady: !!runtime.opencvReady,
-    };
-  }
-
-  if (op === "segmentation.denoise") {
-    const denoiseAlgo = Number((resolved.params as any).denoiseAlgo ?? 1);
-    const blurK = Number((resolved.params as any).blurK ?? 5);
-    const bilateralSigma = Number((resolved.params as any).bilateralSigma ?? 35);
-    return {
-      engine: resolved.engine,
-      params: { denoiseAlgo, blurK, bilateralSigma } as OpParamsByOp[K],
-      fallbackReason: resolved.fallbackReason,
-      opencvReady: !!runtime.opencvReady,
-    };
-  }
-
-  if (op === "segmentation.color") {
-    const colorMode = Number((resolved.params as any).colorMode ?? 1);
-    const hsvChannel = Number((resolved.params as any).hsvChannel ?? 2);
-    return {
-      engine: resolved.engine,
-      params: { colorMode, hsvChannel } as OpParamsByOp[K],
-      fallbackReason: resolved.fallbackReason,
-      opencvReady: !!runtime.opencvReady,
-    };
-  }
-
-  if (op === "segmentation.threshold") {
-    const thresholdAlgo = Number((resolved.params as any).thresholdAlgo ?? 1);
-    const manualT = Number((resolved.params as any).manualT ?? 128);
-    const adaptBlock = Number((resolved.params as any).adaptBlock ?? 21);
-    const adaptC = Number((resolved.params as any).adaptC ?? 2);
-    return {
-      engine: resolved.engine,
-      params: { thresholdAlgo, manualT, adaptBlock, adaptC } as OpParamsByOp[K],
-      fallbackReason: resolved.fallbackReason,
-      opencvReady: !!runtime.opencvReady,
-    };
-  }
-
-  if (op === "segmentation.morphology") {
-    const morphAlgo = Number((resolved.params as any).morphAlgo ?? 2);
-    const morphK = Number((resolved.params as any).morphK ?? 7);
-    const morphIters = Number((resolved.params as any).morphIters ?? 1);
-    return {
-      engine: resolved.engine,
-      params: { morphAlgo, morphK, morphIters } as OpParamsByOp[K],
-      fallbackReason: resolved.fallbackReason,
-      opencvReady: !!runtime.opencvReady,
-    };
-  }
-
-  // -----------------------------
-  // Edge params
-  // -----------------------------
-  if (op === "edge.resize") {
-    const resizeAlgo = Number((resolved.params as any).resizeAlgo ?? 1);
-    const targetMaxW = Number((resolved.params as any).targetMaxW ?? 1200);
-    return {
-      engine: resolved.engine,
-      params: { resizeAlgo, targetMaxW } as OpParamsByOp[K],
-      fallbackReason: resolved.fallbackReason,
-      opencvReady: !!runtime.opencvReady,
-    };
-  }
-
-  if (op === "edge.threshold") {
-    const manualT = Number((resolved.params as any).manualT ?? 128);
-    return {
-      engine: resolved.engine,
-      params: { manualT } as OpParamsByOp[K],
-      fallbackReason: resolved.fallbackReason,
-      opencvReady: !!runtime.opencvReady,
-    };
-  }
-
-  if (op === "edge.morphology") {
-    const morphAlgo = Number((resolved.params as any).morphAlgo ?? 2);
-    const morphK = Number((resolved.params as any).morphK ?? 3);
-    const morphIters = Number((resolved.params as any).morphIters ?? 1);
-    return {
-      engine: resolved.engine,
-      params: { morphAlgo, morphK, morphIters } as OpParamsByOp[K],
-      fallbackReason: resolved.fallbackReason,
-      opencvReady: !!runtime.opencvReady,
-    };
-  }
-
-  if (op === "edge.extract") {
-    return {
-      engine: resolved.engine,
-      params: {} as OpParamsByOp[K],
-      fallbackReason: resolved.fallbackReason,
-      opencvReady: !!runtime.opencvReady,
-    };
-  }
-
-  if (op === "svg.create") {
-    const scale = Number((resolved.params as any).scale ?? 1);
-    const transparentBg = Number((resolved.params as any).transparentBg ?? 1); // 1=true default
-    const color = String((resolved.params as any).color ?? "#000");
-    return {
-      engine: resolved.engine,
-      params: { scale, transparentBg, color } as OpParamsByOp[K],
-      fallbackReason: resolved.fallbackReason,
-      opencvReady: !!runtime.opencvReady,
-    };
-  }
-
-
-  throw new Error(`[opsDispatch] Unknown op: ${op}`);
-}
-*/
 
 export async function runOpCore<K extends OpId>(
   op: K,
   input: OpInputsByOp[K],
   impls: OpImpls,
+  override?: RunOpOverride<K>,
 ): Promise<OpOutputsByOp[K]> {
-  const { engine, params, fallbackReason, opencvReady } = await resolveEngineAndParams(op);
+  const { engine, params, fallbackReason, opencvReady } = await resolveEngineAndParams(op, override);
 
   if (engine === "opencv" && !opencvReady) {
     logWarn(`OpenCV selected for ${op} but not ready; falling back to native. ${fallbackReason ?? ""}`.trim());

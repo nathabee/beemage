@@ -13,24 +13,27 @@ export function getDom() {
   // -----------------------------
   // Tabs + views
   // -----------------------------
-  const  tabImage = must(document.getElementById(" tabImage") as HTMLButtonElement | null, " tabImage");
+  const tabImage = must(document.getElementById("tabImage") as HTMLButtonElement | null, "tabImage");
   const tabColors = must(document.getElementById("tabColors") as HTMLButtonElement | null, "tabColors");
   const tabSettings = must(document.getElementById("tabSettings") as HTMLButtonElement | null, "tabSettings");
   const tabLogs = must(document.getElementById("tabLogs") as HTMLButtonElement | null, "tabLogs");
   const tabPipeline = must(document.getElementById("tabPipeline") as HTMLButtonElement | null, "tabPipeline");
+  const tabBuilder = must(document.getElementById("tabBuilder") as HTMLButtonElement | null, "tabBuilder");
 
-  const viewMage = must(document.getElementById("viewMage") as HTMLElement | null, "viewMage");
+
+  const viewImage = must(document.getElementById("viewImage") as HTMLElement | null, "viewImage");
   const viewColors = must(document.getElementById("viewColors") as HTMLElement | null, "viewColors");
   const viewSettings = must(document.getElementById("viewSettings") as HTMLElement | null, "viewSettings");
   const viewLogs = must(document.getElementById("viewLogs") as HTMLElement | null, "viewLogs");
   const viewPipeline = must(document.getElementById("viewPipeline") as HTMLElement | null, "viewPipeline");
+  const viewBuilder = must(document.getElementById("viewBuilder") as HTMLElement | null, "viewBuilder");
 
   // -----------------------------
   // image tab 
   // -----------------------------
   const dropZoneEl = must(document.getElementById("dropZone") as HTMLDivElement | null, "dropZone");
   const fileInputEl = must(document.getElementById("fileInput") as HTMLInputElement | null, "fileInput");
-  const srcCanvasEl = must(document.getElementById("srcCanvas") as HTMLCanvasElement | null, "srcCanvas"); 
+  const srcCanvasEl = must(document.getElementById("srcCanvas") as HTMLCanvasElement | null, "srcCanvas");
 
 
 
@@ -53,7 +56,24 @@ export function getDom() {
   );
 
 
+  // -----------------------------
+  // Builder tab
+  // -----------------------------
 
+  const builderImportFileEl = must(
+    document.getElementById("builderImportFile") as HTMLInputElement | null,
+    "builderImportFile",
+  );
+
+  const btnBuilderExportEl = must(
+    document.getElementById("btnBuilderExport") as HTMLButtonElement | null,
+    "btnBuilderExport",
+  );
+
+  const builderStatusEl = must(
+    document.getElementById("builderStatus") as HTMLSpanElement | null,
+    "builderStatus",
+  );
 
 
   // -----------------------------
@@ -196,31 +216,35 @@ export function getDom() {
     rootEl,
 
     // Tabs + views
-     tabImage,
+    tabImage,
     tabColors,
     tabSettings,
     tabLogs,
     tabPipeline,
+    tabBuilder,
 
 
-    viewMage,
+    viewImage,
     viewColors,
     viewSettings,
     viewLogs,
     viewPipeline,
+    viewBuilder,
 
-    // image
+    // image tab
     dropZoneEl,
     fileInputEl,
-    srcCanvasEl, 
+    srcCanvasEl,
 
     // Pipeline
     pipelineStatusEl,
     pipelineTuningMountEl,
     pipelineViewMountEl,
 
-
-
+    // Builder
+    builderImportFileEl,
+    btnBuilderExportEl,
+    builderStatusEl,
 
     // Colors 
     colorsCanvasEl,

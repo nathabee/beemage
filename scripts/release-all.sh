@@ -70,7 +70,7 @@ rsync -a --delete --checksum \
   "$DOCS_DEMO"/
 
 # Assets must live in /docs/assets, not /docs/demo/assets
-mkdir -p "$DOCS/assets" "$DOCS/assets/opencv"
+mkdir -p  "$DOCS/assets/opencv"
 
 # Sync OpenCV assets (diff-aware)
 rsync -a --delete --checksum \

@@ -10,6 +10,7 @@ import * as actionLog from "../../../shared/actionLog";
 import type { TuningController } from "../../app/tuning/controller";
 import type { ParamValue } from "../../app/tuning/types";
 import { setLastPipelineOutputFromVm } from "../../app/pipeline/outputStore";
+import { loadUserPipelines } from "../../app/pipeline/userPipelineStore";
 
 
 export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController) {
@@ -277,13 +278,17 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
     // view binds its own internal UI
   }
 
+  // inside src/panel/tabs/pipeline/tab.ts
+
   async function mount(): Promise<void> {
     mounted = true;
 
     actionLog.append({ scope: "panel", kind: "info", message: "Pipeline tab: mount()" });
 
-    // Always pull the latest source image on first entry to the tab.
     refreshInputForRun();
+
+    // NEW: load user pipelines into catalogue
+    await model.reloadCatalogue().catch(() => null);
 
     await syncPipelineFromTuning();
 
@@ -296,12 +301,16 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
 
     actionLog.append({ scope: "panel", kind: "info", message: "Pipeline tab: refresh()" });
 
-    // When user comes back to Pipeline tab, keep it in sync with the source canvas.
     refreshInputForRun();
+
+    // NEW: refresh catalogue from storage (covers builder imports)
+    await model.reloadCatalogue().catch(() => null);
 
     await syncPipelineFromTuning();
     render();
   }
+
+
 
 
   function unmount(): void {

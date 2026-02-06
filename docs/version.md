@@ -25,11 +25,24 @@ Conventions:
 
 ---
 
+### v0.1.4 — Epic: User Pipelines in Builder
+
+* Add new **Builder** tab to manage user-defined pipelines
+* Implement Builder MVP: **import/export** pipeline JSON via UI (`builderImportFile`, `btnBuilderExport`)
+* Split storage into `userPipelineStore.ts` (load/save/upsert/delete user pipelines)
+* Extend pipeline catalogue to **merge built-ins + user pipelines** (`listPipelines()`, `getPipeline()`, user overrides win on ID collision)
+* Update Pipeline model to **reload catalogue from storage** (`reloadCatalogue()`), so imported pipelines can appear in Pipeline tab
+* Fix Pipeline “Next step” regression caused by placeholder `runNext()`; restore full step-mode execution
+* Add JSON example pipeline file: `/docs/assets/pipelines/beemage-pipelines.json` (“iconize” resize pipeline)
+
+---
+
 ### v0.1.3 — Epic: Rename project from BeeContour to BeeMage
 
-* Rename code (files, path, recreate icones) recompile
-* renamed github repository
----
+* Rename project across codebase: identifiers, paths, UI strings, and artifacts
+* Rebuild icons/assets and ensure packaging still compiles
+* Rename GitHub repository and align docs/release references accordingly
+
 
 ### v0.1.2 — Epic: Remove non-universal UI
 

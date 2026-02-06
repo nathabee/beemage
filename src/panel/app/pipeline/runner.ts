@@ -5,16 +5,14 @@ import type {
   ImageArtifact,
   MaskArtifact,
   SvgArtifact,
-  InstalledPipeline,
+  OpSpec,
   PipelineCatalogue,
+  PipelineDef,
   PipelineRunnerDeps,
   PipelineRunResult,
-  StageRunResult,
   OpRunResult,
-  OpSpec,
-  OpIO,
+  PipelineOpInstance,
 } from "./type";
-
 import { artifactDims } from "./type";
 
 function isImage(a: Artifact): a is ImageArtifact {
@@ -40,27 +38,16 @@ function ioMismatch(expected: string, got: string): string {
   return `IO mismatch: expected ${expected}, got ${got}`;
 }
 
-function validateChainIO(stageIo: OpIO, ops: OpSpec[]): string | null {
-  if (ops.length === 0) return "Stage has no installed ops";
+function validateLinearChain(specs: OpSpec[], startType: Artifact["type"]): string | null {
+  if (specs.length === 0) return "Pipeline has no ops";
 
-  // First op must accept stage input
-  if (ops[0]!.io.input !== stageIo.input) {
-    return ioMismatch(stageIo.input, ops[0]!.io.input);
-  }
+  let cur: Artifact["type"] = startType;
 
-  // Op-to-op chaining
-  for (let i = 0; i < ops.length - 1; i++) {
-    const a = ops[i]!;
-    const b = ops[i + 1]!;
-    if (a.io.output !== b.io.input) {
-      return `Chain IO mismatch between "${a.title}" (${a.io.output}) -> "${b.title}" (${b.io.input})`;
+  for (const op of specs) {
+    if (op.io.input !== cur) {
+      return `Chain IO mismatch at "${op.title}": needs ${op.io.input} but current is ${cur}`;
     }
-  }
-
-  // Last op must produce stage output
-  const last = ops[ops.length - 1]!;
-  if (last.io.output !== stageIo.output) {
-    return ioMismatch(stageIo.output, last.io.output);
+    cur = op.io.output;
   }
 
   return null;
@@ -68,28 +55,39 @@ function validateChainIO(stageIo: OpIO, ops: OpSpec[]): string | null {
 
 async function execDispatchOp(
   spec: Extract<OpSpec, { kind: "dispatch" }>,
+  inst: PipelineOpInstance,
   input: Artifact,
-  deps: PipelineRunnerDeps,
 ): Promise<Artifact> {
-  // NOTE: params are resolved inside opsDispatchCore via registry + stored configs.
-  // deps.getEffectiveParams is not used for dispatch ops in this architecture.
+  const override = inst.override;
 
   if (spec.io.input === "image") {
     if (!isImage(input)) throw new Error(ioMismatch("image", input.type));
     const { width, height } = input;
 
     if (spec.io.output === "image") {
-      const out = await runOp(spec.dispatchId as any, { image: input.image, width, height } as any);
+      const out = await runOp(
+        spec.dispatchId,
+        { image: input.image, width, height } as any,
+        override ? { enginePolicy: override.enginePolicy, params: override.params } : undefined,
+      );
       return makeImageArtifact(out as ImageData);
     }
 
     if (spec.io.output === "mask") {
-      const out = await runOp(spec.dispatchId as any, { image: input.image, width, height } as any);
+      const out = await runOp(
+        spec.dispatchId,
+        { image: input.image, width, height } as any,
+        override ? { enginePolicy: override.enginePolicy, params: override.params } : undefined,
+      );
       return makeMaskArtifact(out as Uint8Array, width, height);
     }
 
     if (spec.io.output === "svg") {
-      const out = await runOp(spec.dispatchId as any, { image: input.image, width, height } as any);
+      const out = await runOp(
+        spec.dispatchId,
+        { image: input.image, width, height } as any,
+        override ? { enginePolicy: override.enginePolicy, params: override.params } : undefined,
+      );
       return makeSvgArtifact(out as string, width, height);
     }
 
@@ -101,231 +99,172 @@ async function execDispatchOp(
   const { width, height } = input;
 
   if (spec.io.output === "mask") {
-    const out = await runOp(spec.dispatchId as any, { mask: input.mask, width, height } as any);
+    const out = await runOp(
+      spec.dispatchId,
+      { mask: input.mask, width, height } as any,
+      override ? { enginePolicy: override.enginePolicy, params: override.params } : undefined,
+    );
     return makeMaskArtifact(out as Uint8Array, width, height);
   }
 
   if (spec.io.output === "svg") {
-    const out = await runOp(spec.dispatchId as any, { mask: input.mask, width, height } as any);
+    const out = await runOp(
+      spec.dispatchId,
+      { mask: input.mask, width, height } as any,
+      override ? { enginePolicy: override.enginePolicy, params: override.params } : undefined,
+    );
     return makeSvgArtifact(out as string, width, height);
   }
 
-  throw new Error(`Invalid op spec: mask input cannot produce ${spec.io.output} (not supported here)`);
+  throw new Error(`Invalid op spec: mask input cannot produce ${spec.io.output} (unsupported here)`);
 }
 
-
-async function execOp(spec: OpSpec, input: Artifact, deps: PipelineRunnerDeps): Promise<Artifact> {
+async function execOp(spec: OpSpec, inst: PipelineOpInstance, input: Artifact, deps: PipelineRunnerDeps): Promise<Artifact> {
   if (spec.kind === "dispatch") {
-    return await execDispatchOp(spec, input, deps);
+    return await execDispatchOp(spec, inst, input);
   }
 
-  // JS ops still use deps.getEffectiveParams (because they have no dispatcher-resolved params)
-  const params = spec.tuningId ? await deps.getEffectiveParams(spec.tuningId).catch(() => ({})) : {};
-  const out = await spec.run({ input, params });
+  // JS op: global effective params + instance override.params (if any)
+  const baseParams =
+    spec.tuningId ? await deps.getEffectiveParams(spec.tuningId).catch(() => ({})) : {};
+  const mergedParams = {
+    ...baseParams,
+    ...(inst.override?.params ?? {}),
+  };
+
+  const out = await spec.run({ input, params: mergedParams });
   return out;
 }
 
- 
-
 /**
- * Executes an InstalledPipeline using the catalogue for:
- * - topology and stage contracts
- * - allowed ops
- * - op definitions (dispatch ids)
+ * Universal runner: executes a PipelineDef (linear) using the global process library in catalogue.
  */
-export async function runInstalledPipeline(args: {
+export async function runPipelineDef(args: {
   catalogue: PipelineCatalogue;
-  installed: InstalledPipeline;
+  pipeline: PipelineDef;
   inputImage: ImageData;
   deps: PipelineRunnerDeps;
 }): Promise<PipelineRunResult> {
-  const { catalogue, installed, inputImage, deps } = args;
+  const { catalogue, pipeline, inputImage, deps } = args;
 
-  const spec = catalogue.getPipeline(installed.pipelineId);
-  if (!spec) {
-    return {
-      pipelineId: installed.pipelineId,
-      title: installed.pipelineId,
-      status: "error",
-      error: `Unknown pipelineId: ${installed.pipelineId}`,
-      input: makeImageArtifact(inputImage),
-      stages: [],
-    };
-  }
+  const inputArtifact = makeImageArtifact(inputImage);
 
-  if (!spec.implemented) {
+  if (!pipeline.implemented) {
     return {
-      pipelineId: spec.id,
-      title: spec.title,
+      pipelineId: pipeline.id,
+      title: pipeline.title,
       status: "error",
       error: "Not implemented yet",
-      input: makeImageArtifact(inputImage),
-      stages: [],
+      input: inputArtifact,
+      ops: [],
     };
   }
 
-  // Build a stage map from installed config for quick lookup
-  const installedByStage = new Map<string, { stageId: string; ops: { instanceId: string; opId: string }[] }>();
-  for (const st of installed.stages) installedByStage.set(st.stageId, st);
+  // Resolve enabled op specs
+  const enabledInstances = pipeline.ops.filter((x) => x.enabled !== false);
 
-  const stagesOut: StageRunResult[] = [];
-  let current: Artifact = makeImageArtifact(inputImage);
-
-  for (const stage of spec.stages) {
-    const installedStage = installedByStage.get(stage.id);
-
-    // If user didn't configure this stage, use defaults from spec
-    const opInstances = installedStage?.ops?.length
-      ? installedStage.ops
-      : (stage.defaultOps ?? []).map((opId, i) => ({ instanceId: `${stage.id}.${i + 1}`, opId }));
-
-    const resolvedOps: OpSpec[] = [];
-    const opRuns: OpRunResult[] = [];
-
-    // Resolve + validate allowed ops
-    let stageError: string | null = null;
-
-    for (const inst of opInstances) {
-      const opSpec = catalogue.getOp(inst.opId);
-      if (!opSpec) {
-        stageError = `Unknown opId: ${inst.opId}`;
-        break;
-      }
-      if (!stage.allowedOps.includes(opSpec.id)) {
-        stageError = `Op not allowed in this stage: ${opSpec.title} (${opSpec.id})`;
-        break;
-      }
-      resolvedOps.push(opSpec);
-    }
-
-    if (!stageError) {
-      const chainErr = validateChainIO(stage.io, resolvedOps);
-      if (chainErr) stageError = chainErr;
-    }
-
-    if (stageError) {
-      const sres: StageRunResult = {
-        stageId: stage.id,
-        title: stage.title,
-        io: stage.io,
+  const resolvedSpecs: OpSpec[] = [];
+  for (const inst of enabledInstances) {
+    const s = catalogue.getOp(inst.opId);
+    if (!s) {
+      return {
+        pipelineId: pipeline.id,
+        title: pipeline.title,
         status: "error",
-        error: stageError,
-        ops: opInstances.map((inst) => ({
-          instanceId: inst.instanceId,
-          opId: inst.opId,
-          title: inst.opId,
-          io: { input: stage.io.input, output: stage.io.output },
-          status: "error",
-          error: stageError,
-        })),
+        error: `Unknown opId in pipeline: ${inst.opId}`,
+        input: inputArtifact,
+        ops: [],
       };
-      stagesOut.push(sres);
+    }
+    resolvedSpecs.push(s);
+  }
 
-      deps.debug("pipeline stage failed (validation)", {
-        pipelineId: spec.id,
-        stageId: stage.id,
-        error: stageError,
+  const chainErr = validateLinearChain(resolvedSpecs, "image");
+  if (chainErr) {
+    deps.debug("pipeline validation failed (linear)", { pipelineId: pipeline.id, error: chainErr });
+    return {
+      pipelineId: pipeline.id,
+      title: pipeline.title,
+      status: "error",
+      error: chainErr,
+      input: inputArtifact,
+      ops: enabledInstances.map((inst, i): OpRunResult => ({
+        instanceId: inst.instanceId,
+        opId: inst.opId,
+        title: resolvedSpecs[i]?.title ?? inst.opId,
+        io: resolvedSpecs[i]?.io ?? { input: "image", output: "image" },
+        status: "error",
+        error: chainErr,
+      })),
+    };
+  }
+
+  const runs: OpRunResult[] = [];
+  let current: Artifact = inputArtifact;
+
+  for (let i = 0; i < resolvedSpecs.length; i++) {
+    const inst = enabledInstances[i]!;
+    const spec = resolvedSpecs[i]!;
+
+    try {
+      // Runtime IO enforcement (input)
+      if (spec.io.input !== current.type) {
+        throw new Error(ioMismatch(spec.io.input, current.type));
+      }
+
+      const out = await execOp(spec, inst, current, deps);
+
+      // Runtime IO enforcement (output)
+      if (out.type !== spec.io.output) {
+        throw new Error(ioMismatch(spec.io.output, out.type));
+      }
+
+      runs.push({
+        instanceId: inst.instanceId,
+        opId: spec.id,
+        title: spec.title,
+        io: spec.io,
+        status: "ok",
+        output: out,
+      });
+
+      current = out;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+
+      runs.push({
+        instanceId: inst.instanceId,
+        opId: spec.id,
+        title: spec.title,
+        io: spec.io,
+        status: "error",
+        error: msg,
+      });
+
+      deps.debug("pipeline op failed (linear)", {
+        pipelineId: pipeline.id,
+        opId: spec.id,
+        error: msg,
+        ...artifactDims(current),
       });
 
       return {
-        pipelineId: spec.id,
-        title: spec.title,
+        pipelineId: pipeline.id,
+        title: pipeline.title,
         status: "error",
-        error: `Stage "${stage.title}" failed: ${stageError}`,
-        input: makeImageArtifact(inputImage),
-        stages: stagesOut,
+        error: `Op "${spec.title}" failed: ${msg}`,
+        input: inputArtifact,
+        ops: runs,
       };
     }
-
-    // Execute the stage op chain
-    let stageArtifact: Artifact = current;
-    let stageOk = true;
-    let stageErrMsg: string | undefined;
-
-    for (let i = 0; i < resolvedOps.length; i++) {
-      const inst = opInstances[i]!;
-      const opSpec = resolvedOps[i]!;
-
-      try {
-        // Enforce runtime IO
-        if (opSpec.io.input !== stageArtifact.type) {
-          throw new Error(ioMismatch(opSpec.io.input, stageArtifact.type));
-        }
-
-        const out = await execOp(opSpec, stageArtifact, deps);
-
-        // Enforce declared output
-        if (out.type !== opSpec.io.output) {
-          throw new Error(ioMismatch(opSpec.io.output, out.type));
-        }
-
-        opRuns.push({
-          instanceId: inst.instanceId,
-          opId: opSpec.id,
-          title: opSpec.title,
-          io: opSpec.io,
-          status: "ok",
-          output: out,
-        });
-
-        stageArtifact = out;
-      } catch (e) {
-        stageOk = false;
-        stageErrMsg = e instanceof Error ? e.message : String(e);
-
-        opRuns.push({
-          instanceId: inst.instanceId,
-          opId: opSpec.id,
-          title: opSpec.title,
-          io: opSpec.io,
-          status: "error",
-          error: stageErrMsg,
-        });
-
-        deps.debug("pipeline op failed", {
-          pipelineId: spec.id,
-          stageId: stage.id,
-          opId: opSpec.id,
-          error: stageErrMsg,
-          ...artifactDims(stageArtifact),
-        });
-        break;
-      }
-    }
-
-    const stageResult: StageRunResult = {
-      stageId: stage.id,
-      title: stage.title,
-      io: stage.io,
-      status: stageOk ? "ok" : "error",
-      error: stageOk ? undefined : stageErrMsg,
-      ops: opRuns,
-      output: stageOk ? stageArtifact : undefined,
-    };
-
-    stagesOut.push(stageResult);
-
-    if (!stageOk) {
-      return {
-        pipelineId: spec.id,
-        title: spec.title,
-        status: "error",
-        error: `Stage "${stage.title}" failed: ${stageErrMsg ?? "unknown error"}`,
-        input: makeImageArtifact(inputImage),
-        stages: stagesOut,
-      };
-    }
-
-    // Stage succeeded; advance artifact
-    current = stageArtifact;
   }
 
   return {
-    pipelineId: spec.id,
-    title: spec.title,
+    pipelineId: pipeline.id,
+    title: pipeline.title,
     status: "ok",
-    input: makeImageArtifact(inputImage),
+    input: inputArtifact,
     output: current,
-    stages: stagesOut,
+    ops: runs,
   };
 }

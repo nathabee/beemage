@@ -2,7 +2,10 @@
 import type { Dom } from "./dom";
 import { getDevConfigSnapshot } from "../../shared/devConfigStore";
 
-type TabKey =  "pipeline" | "image" | "colors" | "settings" | "logs";
+
+type TabKey = "pipeline" | "builder" | "image" | "colors" | "settings" | "logs";
+
+
 
 type TabApi = {
   bind(): void;
@@ -22,17 +25,19 @@ type TabApi = {
 type TabsMap = Record<TabKey, TabApi>;
 
 export function createTabs(dom: Dom, tabs: TabsMap) {
-  const tabButtons: Record<TabKey, HTMLButtonElement> = { 
+  const tabButtons: Record<TabKey, HTMLButtonElement> = {
     pipeline: dom.tabPipeline,
     image: dom.tabImage,
+    builder: dom.tabBuilder,
     colors: dom.tabColors,
     settings: dom.tabSettings,
     logs: dom.tabLogs,
   };
 
-  const views: Record<TabKey, HTMLElement> = { 
+  const views: Record<TabKey, HTMLElement> = {
     pipeline: dom.viewPipeline,
-    image: dom.viewMage,
+    image: dom.viewImage,
+    builder: dom.viewBuilder,
     colors: dom.viewColors,
     settings: dom.viewSettings,
     logs: dom.viewLogs,
@@ -120,7 +125,7 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
       e.preventDefault?.();
       activate("image");
     });
- 
+
 
     tabButtons.pipeline.addEventListener("click", (e) => {
       e.preventDefault?.();
@@ -141,6 +146,11 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
       e.preventDefault?.();
       activate("logs");
     });
+    tabButtons.builder.addEventListener("click", (e) => {
+      e.preventDefault?.();
+      activate("builder");
+    });
+
   }
 
   function boot() {

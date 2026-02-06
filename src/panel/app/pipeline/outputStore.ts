@@ -17,33 +17,6 @@ export function getLastPipelineOutput(): PipelineLastOutput {
   return last;
 }
 
-// Convenience: accept your model VM shape (outputImage/outputMask/outputSvg).
-export function setLastPipelineOutputFromVm(vm: any): void {
-  const outSvg = vm?.outputSvg?.svg as string | undefined;
-  if (typeof outSvg === "string" && outSvg.length > 0) {
-    setLastPipelineOutput({ type: "svg", svg: outSvg });
-    return;
-  }
-
-  const outImg = vm?.outputImage?.data as ImageData | undefined;
-  if (outImg) {
-    setLastPipelineOutput({ type: "image", image: outImg });
-    return;
-  }
-
-  const outMask = vm?.outputMask?.data as Uint8Array | undefined;
-  const w = vm?.outputMask?.width as number | undefined;
-  const h = vm?.outputMask?.height as number | undefined;
-
-  if (outMask && typeof w === "number" && typeof h === "number") {
-    setLastPipelineOutput({ type: "mask", mask: outMask, width: w, height: h });
-    return;
-  }
-
-  setLastPipelineOutput({ type: "none" });
-}
-
-// If you want to consume Artifact objects directly later:
 export function setLastPipelineOutputFromArtifact(a: Artifact | null | undefined): void {
   if (!a) {
     setLastPipelineOutput({ type: "none" });
@@ -61,6 +34,43 @@ export function setLastPipelineOutputFromArtifact(a: Artifact | null | undefined
   }
   if (a.type === "svg") {
     setLastPipelineOutput({ type: "svg", svg: (a as SvgArtifact).svg });
+    return;
+  }
+
+  setLastPipelineOutput({ type: "none" });
+}
+
+/**
+ * Convenience adapter for the Pipeline tab VM.
+ * Keeps tabs decoupled from Artifact internals.
+ */
+export function setLastPipelineOutputFromVm(vm: {
+  outputImage?: { data: ImageData };
+  outputMask?: { data: Uint8Array; width: number; height: number };
+  outputSvg?: { svg: string };
+} | null | undefined): void {
+  if (!vm) {
+    setLastPipelineOutput({ type: "none" });
+    return;
+  }
+
+  const svg = vm.outputSvg?.svg;
+  if (typeof svg === "string" && svg.length > 0) {
+    setLastPipelineOutput({ type: "svg", svg });
+    return;
+  }
+
+  const img = vm.outputImage?.data;
+  if (img) {
+    setLastPipelineOutput({ type: "image", image: img });
+    return;
+  }
+
+  const mask = vm.outputMask?.data;
+  const w = vm.outputMask?.width;
+  const h = vm.outputMask?.height;
+  if (mask && typeof w === "number" && typeof h === "number") {
+    setLastPipelineOutput({ type: "mask", mask, width: w, height: h });
     return;
   }
 

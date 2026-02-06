@@ -1,9 +1,9 @@
 // src/panel/app/pipeline/type.ts
-import type { ParamValue } from "../tuning/types";
+import type { ParamValue, EnginePolicy } from "../tuning/types";
+import type { OpId as DispatchOpId } from "../../platform/opsDispatchCore";
 
 export type PipelineId = string;
-export type StageId = string;
-export type OpId = string;
+export type OpSpecId = string;
 export type OpInstanceId = string;
 
 export type ArtifactType = "image" | "mask" | "svg";
@@ -38,82 +38,39 @@ export type OpIO = {
   output: ArtifactType;
 };
 
-export type StageSpec = {
-  id: StageId;
-  title: string;
-  description?: string;
-
-  io: OpIO;
-
-  /**
-   * Which operations are allowed to be installed in this stage.
-   * UI can use this to filter draggable cards.
-   */
-  allowedOps: ReadonlyArray<OpId>;
-
-  /**
-   * Default installed ops for this stage (when creating a new pipeline instance).
-   * Can be empty, but most stages should have at least one default op.
-   */
-  defaultOps: ReadonlyArray<OpId>;
-};
-
-export type PipelineSpec = {
-  id: PipelineId;
-  title: string;
-  description?: string;
-
-  /**
-   * If false, runner should refuse to execute (but UI can still display it).
-   */
-  implemented: boolean;
-
-  stages: ReadonlyArray<StageSpec>;
-};
-
-export type InstalledOp = {
-  instanceId: OpInstanceId;
-  opId: OpId;
-};
-
-export type InstalledStage = {
-  stageId: StageId;
-  ops: InstalledOp[]; // multiple ops per stage, sequential
-};
-
-export type InstalledPipeline = {
-  pipelineId: PipelineId;
-  stages: InstalledStage[];
-};
-
+// -----------------------------
+// Process library (global)
+// -----------------------------
 export type DispatchOpSpec = {
   kind: "dispatch";
-  id: OpId;
+  id: OpSpecId;
   title: string;
   description?: string;
 
-  /**
-   * IO contract for this op.
-   * The runner enforces compatibility.
-   */
   io: OpIO;
 
   /**
-   * The id used by opsDispatch (e.g. "segmentation.resize").
-   * This is what ultimately gets executed.
+   * Typed dispatcher op id.
+   * Must match opsDispatchCore.OpId union.
    */
-  dispatchId: string;
+  dispatchId: DispatchOpId;
 
   /**
-   * Tuning component id used for param lookup. Often same as dispatchId.
-   * Example: dispatchId="segmentation.resize", tuningId="segmentation.resize"
+   * Tuning component id used for param lookup & policy.
+   * Usually equals dispatchId (but kept explicit).
    */
   tuningId: string;
+
+  /**
+   * Optional UX grouping metadata (never used for legality).
+   */
+  group?: string;
+  tags?: ReadonlyArray<string>;
 };
 
 export type JsOpSpec = {
   kind: "js";
-  id: OpId;
+  id: OpSpecId;
   title: string;
   description?: string;
 
@@ -125,6 +82,9 @@ export type JsOpSpec = {
    */
   tuningId?: string;
 
+  group?: string;
+  tags?: ReadonlyArray<string>;
+
   run: (args: {
     input: Artifact;
     params: Record<string, ParamValue>;
@@ -133,25 +93,78 @@ export type JsOpSpec = {
 
 export type OpSpec = DispatchOpSpec | JsOpSpec;
 
-export type PipelineCatalogue = {
-  pipelines: ReadonlyArray<PipelineSpec>;
-  ops: ReadonlyArray<OpSpec>;
-
-  getPipeline(id: PipelineId): PipelineSpec | null;
-  getOp(id: OpId): OpSpec | null;
+// -----------------------------
+// Universal pipeline model (linear)
+// -----------------------------
+export type PipelineOpInstanceOverride = {
+  /**
+   * Per-step engine policy override.
+   * If omitted, global tuning resolution applies.
+   */
+  enginePolicy?: EnginePolicy;
 
   /**
-   * Creates a runnable InstalledPipeline using defaults from the PipelineSpec.
-   * Stages are emitted in spec order.
+   * Per-step params override (merged on top of global effective params).
    */
-  makeDefaultInstalled(pipelineId: PipelineId): InstalledPipeline | null;
+  params?: Record<string, ParamValue>;
 };
 
-export type RunStepStatus = "ok" | "error";
+export type PipelineOpInstance = {
+  instanceId: OpInstanceId;
+  opId: OpSpecId;
+  enabled?: boolean;
+
+  /**
+   * Optional per-step override (instance-level), enabling truly dynamic pipelines.
+   */
+  override?: PipelineOpInstanceOverride;
+};
+
+export type PipelineDef = {
+  id: PipelineId;
+  title: string;
+  description?: string;
+
+  /**
+   * If false, runner should refuse to execute (but UI can still display).
+   */
+  implemented: boolean;
+
+  /**
+   * Linear sequence of op instances.
+   * IO validity is derived from OpSpec.io chaining.
+   */
+  ops: ReadonlyArray<PipelineOpInstance>;
+};
+ 
+// -----------------------------
+// Catalogue (built-ins + process library + optional user pipelines)
+// -----------------------------
+export type PipelineCatalogue = {
+  // Global process library
+  ops: ReadonlyArray<OpSpec>;
+  getOp(id: OpSpecId): OpSpec | null;
+
+  // Built-in pipelines (shipped)
+  builtIns: ReadonlyArray<PipelineDef>;
+  getBuiltIn(id: PipelineId): PipelineDef | null;
+
+  // Merged pipelines (built-in + user)
+  listPipelines(): ReadonlyArray<PipelineDef>;
+  getPipeline(id: PipelineId): PipelineDef | null;
+
+  // Helpers
+  createInstanceId(prefix: string, index0: number): OpInstanceId;
+};
+
+// -----------------------------
+// Run results (linear)
+// -----------------------------
+export type RunStepStatus = "ok" | "error" | "skipped";
 
 export type OpRunResult = {
   instanceId: OpInstanceId;
-  opId: OpId;
+  opId: OpSpecId;
   title: string;
 
   io: OpIO;
@@ -159,23 +172,6 @@ export type OpRunResult = {
   status: RunStepStatus;
   error?: string;
 
-  output?: Artifact;
-};
-
-export type StageRunResult = {
-  stageId: StageId;
-  title: string;
-  io: OpIO;
-
-  status: RunStepStatus;
-  error?: string;
-
-  ops: OpRunResult[];
-
-  /**
-   * Output after the full stage chain.
-   * Present only if stage status is ok.
-   */
   output?: Artifact;
 };
 
@@ -183,19 +179,23 @@ export type PipelineRunResult = {
   pipelineId: PipelineId;
   title: string;
 
-  status: RunStepStatus;
+  status: "ok" | "error";
   error?: string;
 
   input: Artifact;
+
+  /**
+   * Output after last enabled op.
+   * Present only when status=ok.
+   */
   output?: Artifact;
 
-  stages: StageRunResult[];
+  ops: OpRunResult[];
 };
 
 export type PipelineRunnerDeps = {
   /**
    * Resolve effective params for a tuning node (defaults + overrides + inheritance).
-   * If you don't care yet, implement as: async () => ({})
    */
   getEffectiveParams: (tuningId: string) => Promise<Record<string, ParamValue>>;
 
@@ -204,10 +204,6 @@ export type PipelineRunnerDeps = {
    */
   debug: (message: string, meta?: Record<string, unknown>) => void;
 };
-
-export function makeInstanceId(prefix: string, i: number): OpInstanceId {
-  return `${prefix}.${i + 1}`;
-}
 
 export function artifactDims(a: Artifact): { width: number; height: number } {
   return { width: a.width, height: a.height };
