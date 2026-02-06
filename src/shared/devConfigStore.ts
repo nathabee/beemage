@@ -2,7 +2,7 @@
 import { storageGet, storageSet } from "./platform/storage";
 import { clampInt } from "../panel/app/format";
 
-const STORAGE_KEY = "beecontour.devConfig";
+const STORAGE_KEY = "beemage.devConfig";
 
 export type DevConfig = {
   traceConsole: boolean;

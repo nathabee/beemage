@@ -1,15 +1,15 @@
-// src/panel/tabs/contour/model.ts
-export type ContourTabState = {
+// src/panel/tabs/image/model.ts
+export type imageTabState = {
   loadedImageName: string | null;
   hasImage: boolean;
   lastError?: string;
 };
 
-export function createInitialContourTabState(): ContourTabState {
+export function createInitialMageTabState(): imageTabState {
   return { loadedImageName: null, hasImage: false, lastError: undefined };
 }
 
-export function resetContourTabState(state: ContourTabState): void {
+export function resetMageTabState(state: imageTabState): void {
   state.loadedImageName = null;
   state.hasImage = false;
   state.lastError = undefined;

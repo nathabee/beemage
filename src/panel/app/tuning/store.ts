@@ -3,13 +3,13 @@
 import { storageGet, storageSet } from "../../../shared/platform/storage";
 import type { ComponentConfig, ComponentId } from "./types";
 
-const KEY = "beecontour.tuning.components.v1";
+const KEY = "beemage.tuning.components.v1";
 
 /**
  * Stored as:
  * {
- *   "contour.clean": { enginePolicy: "opencv", params: { cleanRadius: 2 } },
- *   "contour.clean.removeSmallComponents": { enginePolicy: "native" }
+ *   "mage.clean": { enginePolicy: "opencv", params: { cleanRadius: 2 } },
+ *   "mage.clean.removeSmallComponents": { enginePolicy: "native" }
  * }
  */
 export type StoredComponentConfigs = Record<ComponentId, ComponentConfig>;

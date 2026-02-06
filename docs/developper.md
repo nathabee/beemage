@@ -1,6 +1,6 @@
 # Developer Guide
 
-This document is intended for developers working on **BeeContour — Extract the main outline**.
+This document is intended for developers working on **BeeMage — Extract the main outline**.
 
 ## Project Structure
 

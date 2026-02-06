@@ -1,6 +1,6 @@
 # Installation
 
-This document explains how to install **BeeContour — Extract the main outline** locally for development.
+This document explains how to install **BeeMage — Extract the main outline** locally for development.
 
 ## Requirements
 

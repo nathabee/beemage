@@ -2,8 +2,8 @@
 
 function getBasePath(): string {
   // Vite injects this based on `base` in vite.config.ts
-  // - "./" becomes something like "/beecontour-demo/" at runtime when served from that folder
-  // - on GitHub pages it becomes "/repo/beecontour-demo/"
+  // - "./" becomes something like "/beemage-demo/" at runtime when served from that folder
+  // - on GitHub pages it becomes "/repo/beemage-demo/"
   let b = import.meta.env.BASE_URL || "/";
   if (!b.endsWith("/")) b += "/";
   return b;
@@ -24,8 +24,8 @@ function ensureCss(href: string) {
 }
 
 async function boot() {
-  const root = document.getElementById("beecontour-demo-root");
-  if (!root) throw new Error("Missing #beecontour-demo-root");
+  const root = document.getElementById("beemage-demo-root");
+  if (!root) throw new Error("Missing #beemage-demo-root");
 
   const base = getBasePath();
 

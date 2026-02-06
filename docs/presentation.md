@@ -1,24 +1,24 @@
-# BeeContour — Extract the main outline
+# BeeMage — Extract the main outline
 
-**BeeContour extracts clean contour outlines from images directly in your browser and lets you optionally color regions inside those contours.**
+**BeeMage extracts clean image outlines from images directly in your browser and lets you optionally color regions inside those contours.**
 It works best with **high-contrast subjects** such as trees, drawings, silhouettes, or scanned artwork.
 
-BeeContour is a **Chrome Extension built on Manifest V3**.
+BeeMage is a **Chrome Extension built on Manifest V3**.
 All processing happens **locally in the browser**, with no backend and no external data transfer.
 
-* Project code: `beecontour`
+* Project code: `beemage`
 * Current version: `0.0.3`
-* Homepage: [https://nathabee.github.io/beecontour/](https://nathabee.github.io/beecontour/)
-* Support / Issues: [https://github.com/nathabee/beecontour/issues](https://github.com/nathabee/beecontour/issues)
+* Homepage: [https://nathabee.github.io/beemage/](https://nathabee.github.io/beemage/)
+* Support / Issues: [https://github.com/nathabee/beemage/issues](https://github.com/nathabee/beemage/issues)
 
 ---
 
-## What BeeContour does
+## What BeeMage does
 
-BeeContour provides a simple, explicit workflow:
+BeeMage provides a simple, explicit workflow:
 
 1. Load an image
-2. Extract its main contour outline
+2. Extract its main image outline
 3. (Optional) Color regions inside the detected contours
 4. Download the result as a PNG
 
@@ -28,7 +28,7 @@ The extension is designed for **visual exploration and manual refinement**, not 
 
 ## Key Features
 
-### Contour extraction
+### image extraction
 
 * Drag & drop or file input
 * Live preview of the source image
@@ -38,7 +38,7 @@ The extension is designed for **visual exploration and manual refinement**, not 
 
 ### Region-based coloring
 
-* Interactive coloring inside closed contour regions
+* Interactive coloring inside closed image regions
 * Click-to-preview region detection with visual outline
 * Predefined color palette
 * Noise and gap handling controls to prevent accidental large fills
@@ -55,7 +55,7 @@ The extension is designed for **visual exploration and manual refinement**, not 
 
 ## Typical Use Cases
 
-BeeContour is useful for:
+BeeMage is useful for:
 
 * Preparing outlines for illustration or graphic design
 * Extracting tree branches, silhouettes, or line art
@@ -69,7 +69,7 @@ It is **not** intended as a replacement for full image editing software, but as 
 
 ## Project Philosophy
 
-BeeContour follows a few clear principles:
+BeeMage follows a few clear principles:
 
 * **Explicit actions over automation**
   Nothing happens without user intent (process, apply, reset).
@@ -89,7 +89,7 @@ BeeContour follows a few clear principles:
 * Canvas-based image processing
 * Modular tab architecture:
 
-  * Contour
+  * image
   * Colors
   * Settings
   * Logs
@@ -99,9 +99,9 @@ BeeContour follows a few clear principles:
 
 ## Current Status
 
-BeeContour is in an **early development phase**.
+BeeMage is in an **early development phase**.
 
-* Core contour extraction is functional
+* Core image extraction is functional
 * Region coloring workflow is implemented
 * API and UI are still evolving
 * Feedback and testing are welcome

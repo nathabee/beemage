@@ -1,7 +1,7 @@
 # Logging, Tracing, and History
 
 This document defines the **logging and tracing architecture** used by
-**BeeContour — Extract the main outline**.
+**BeeMage — Extract the main outline**.
 
 It is intended as:
 
@@ -230,14 +230,14 @@ const result = await processImage(...);
 if (result.ok) {
   actionLog.append({
     kind: "info",
-    scope: "contour",
+    scope: "image",
     message: "Image processed successfully",
     ok: true
   });
 } else {
   actionLog.append({
     kind: "error",
-    scope: "contour",
+    scope: "image",
     message: "Image processing failed",
     ok: false,
     error: result.error

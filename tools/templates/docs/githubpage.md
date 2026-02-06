@@ -16,7 +16,7 @@ GitHub Pages must be explicitly enabled in the repository settings.
 
 ### Configuration steps
 
-1. Open the GitHub repository for **beecontour**
+1. Open the GitHub repository for **beemage**
 2. Go to **Settings → Pages**
 3. Under **Build and deployment**:
    - **Source**: `Deploy from a branch`

@@ -1,15 +1,15 @@
-// src/panel/tabs/contour/view.ts
+// src/panel/tabs/image/view.ts
 import type { Dom } from "../../app/dom";
-import type { ContourTabState } from "./model";
+import type { imageTabState } from "./model";
 
-export type ContourTabView = {
+export type imageTabView = {
   setHover: (on: boolean) => void;
   drawImageToSource: (img: HTMLImageElement) => void;
   showLoadOk: (filename: string) => void;
   showLoadError: (message: string) => void;
 };
 
-export function createContourTabView(dom: Dom, state: ContourTabState): ContourTabView {
+export function createMageTabView(dom: Dom, state: imageTabState): imageTabView {
   function setHover(on: boolean): void {
     dom.dropZoneEl.classList.toggle("is-hover", on);
   }

@@ -1,6 +1,6 @@
 # Installation
 
-This document explains how to install **BeeContour — Extract the main outline** locally for development.
+This document explains how to install **BeeMage — Extract the main outline** locally for development.
 
 ## Requirements
 
@@ -18,7 +18,7 @@ npm install
 
 ## Prepare OpenCV runtime (optional, required for Segmentation/OpenCV engine)
 
-BeeContour can run without OpenCV, but the Segmentation tab can optionally use OpenCV (WASM) for comparison.
+BeeMage can run without OpenCV, but the Segmentation tab can optionally use OpenCV (WASM) for comparison.
 
 ```bash
 chmod +x assets/opencv/get-opencv.sh

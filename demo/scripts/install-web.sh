@@ -4,12 +4,12 @@ set -euo pipefail
 # install this script in ~beelab/delivery (or similar)
 # expects the demo zip in current directory
 
-beecontour="beecontour"
-ZIP_NAME="${beecontour}-demo.zip"
+beemage="beemage"
+ZIP_NAME="${beemage}-demo.zip"
 
-STAGE_DIR="./${beecontour}-demo"
+STAGE_DIR="./${beemage}-demo"
 WEB_PUBLIC="../beelab/web/public"
-TARGET_DIR="${WEB_PUBLIC}/${beecontour}-demo"
+TARGET_DIR="${WEB_PUBLIC}/${beemage}-demo"
 
 # 1) Unzip into a staging folder
 rm -rf "$STAGE_DIR"

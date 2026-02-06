@@ -1,16 +1,16 @@
-// src/panel/tabs/contour/tab.ts
+// src/panel/tabs/image/tab.ts
 import type { Dom } from "../../app/dom";
 import type { Bus } from "../../app/bus";
 
-import { createContourTabView } from "./view";
-import { createInitialContourTabState } from "./model";
+import { createMageTabView } from "./view";
+import { createInitialMageTabState } from "./model";
 
 import * as actionLog from "../../../shared/actionLog";
 import * as debugTrace from "../../../shared/debugTrace";
 
-export function createContourTab(dom: Dom, _bus: Bus) {
-  const state = createInitialContourTabState();
-  const view = createContourTabView(dom, state);
+export function createMageTab(dom: Dom, _bus: Bus) {
+  const state = createInitialMageTabState();
+  const view = createMageTabView(dom, state);
 
   async function decodeImageFromFile(file: File): Promise<HTMLImageElement> {
     if (!file.type.startsWith("image/")) {
@@ -49,7 +49,7 @@ export function createContourTab(dom: Dom, _bus: Bus) {
     debugTrace.append({
       scope: "panel",
       kind: "info",
-      message: "Contour input loaded into srcCanvas",
+      message: "Mage input loaded into srcCanvas",
       meta: {
         name: file.name,
         type: file.type,
@@ -111,5 +111,5 @@ export function createContourTab(dom: Dom, _bus: Bus) {
   function mount(): void {}
   function unmount(): void {}
 
-  return { id: "contour" as const, bind, mount, unmount };
+  return { id: "image" as const, bind, mount, unmount };
 }

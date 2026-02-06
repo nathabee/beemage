@@ -28,7 +28,7 @@ export type ImageOpInputs = {
 // src/panel/platform/opsDispatchCore.ts
 
 export type OpId =
-  | "contour.clean.removeSmallComponents"
+  | "mage.clean.removeSmallComponents"
   | "segmentation.resize"
   | "segmentation.denoise"
   | "segmentation.color"
@@ -41,7 +41,7 @@ export type OpId =
   | "svg.create";
 
 export type OpInputsByOp = {
-  "contour.clean.removeSmallComponents": MaskOpInputs;
+  "mage.clean.removeSmallComponents": MaskOpInputs;
 
   "segmentation.resize": ImageOpInputs;
   "segmentation.denoise": ImageOpInputs;
@@ -58,7 +58,7 @@ export type OpInputsByOp = {
 };
 
 export type OpOutputsByOp = {
-  "contour.clean.removeSmallComponents": Uint8Array;
+  "mage.clean.removeSmallComponents": Uint8Array;
 
   "segmentation.resize": ImageData;
   "segmentation.denoise": ImageData;
@@ -75,7 +75,7 @@ export type OpOutputsByOp = {
 };
 
 export type OpParamsByOp = {
-  "contour.clean.removeSmallComponents": { cleanMinArea: number };
+  "mage.clean.removeSmallComponents": { cleanMinArea: number };
 
   "segmentation.resize": { resizeAlgo: number; targetMaxW: number };
   "segmentation.denoise": { denoiseAlgo: number; blurK: number; bilateralSigma: number };
@@ -100,9 +100,9 @@ export type OpImpls = {
 };
 
 // -----------------------------
-// Back-compat alias (contour code unchanged)
+// Back-compat alias (mage code unchanged)
 // -----------------------------
-export type MaskOpId = "contour.clean.removeSmallComponents";
+export type MaskOpId = "mage.clean.removeSmallComponents";
 
 const registry = createComponentRegistry();
 
@@ -143,7 +143,7 @@ async function resolveEngineAndParams<K extends OpId>(op: K): Promise<{
 
   const resolved = resolveComponent(op, registry, stored, runtime);
 
-  if (op === "contour.clean.removeSmallComponents") {
+  if (op === "mage.clean.removeSmallComponents") {
     const cleanMinArea = Number((resolved.params as any).cleanMinArea ?? 12);
     return {
       engine: resolved.engine,

@@ -5,7 +5,7 @@ import { storageGet, storageSet, storageRemove } from "./platform/storage";
 export type DebugTraceScope =
   | "background"
   | "panel"
-  | "contour"
+  | "image"
   | "colors"
   | "settings"
   | "logs"
@@ -32,8 +32,8 @@ export type DebugTraceEntry = {
 };
 
 // Template-safe keys. Will be replaced by change-name.sh.
-const TRACE_KEY = "beecontour.debugTrace";
-const ENABLED_KEY = "beecontour.debugTrace.enabled";
+const TRACE_KEY = "beemage.debugTrace";
+const ENABLED_KEY = "beemage.debugTrace.enabled";
 
 // Default retention if not specified by caller.
 const DEFAULT_MAX = 2000;

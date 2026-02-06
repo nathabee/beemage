@@ -17,7 +17,7 @@ export type SvgCreateParams = {
  * for every "on" pixel, scaled by params.scale.
  *
  * Pros: trivial, robust, no complex tracing.
- * Cons: many tiny shapes (large SVG). Next step is contour tracing.
+ * Cons: many tiny shapes (large SVG). Next step is image tracing.
  */
 export function edgeMaskToSvg(
   edgeMask: Uint8Array,

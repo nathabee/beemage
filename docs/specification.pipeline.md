@@ -72,7 +72,7 @@ flowchart TD
 
 * creates the tuning controller
 * mounts tuning UIs (including `pipelineTuningMountEl`)
-* creates the tabs (contour/segmentation/pipeline/…)
+* creates the tabs (mage/segmentation/pipeline/…)
 * registers tab objects into `createTabs(dom, {...})`
 
 The Pipeline tab lifecycle is driven by `createTabs`, not by the view.

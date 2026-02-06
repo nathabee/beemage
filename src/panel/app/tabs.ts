@@ -2,7 +2,7 @@
 import type { Dom } from "./dom";
 import { getDevConfigSnapshot } from "../../shared/devConfigStore";
 
-type TabKey =  "pipeline" | "contour" | "colors" | "settings" | "logs";
+type TabKey =  "pipeline" | "image" | "colors" | "settings" | "logs";
 
 type TabApi = {
   bind(): void;
@@ -24,7 +24,7 @@ type TabsMap = Record<TabKey, TabApi>;
 export function createTabs(dom: Dom, tabs: TabsMap) {
   const tabButtons: Record<TabKey, HTMLButtonElement> = { 
     pipeline: dom.tabPipeline,
-    contour: dom.tabContour,
+    image: dom.tabImage,
     colors: dom.tabColors,
     settings: dom.tabSettings,
     logs: dom.tabLogs,
@@ -32,13 +32,13 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
 
   const views: Record<TabKey, HTMLElement> = { 
     pipeline: dom.viewPipeline,
-    contour: dom.viewContour,
+    image: dom.viewMage,
     colors: dom.viewColors,
     settings: dom.viewSettings,
     logs: dom.viewLogs,
   };
 
-  let active: TabKey = "contour";
+  let active: TabKey = "image";
   const mounted = new Set<TabKey>();
 
   function shouldInstallGlobalErrorHooks(): boolean {
@@ -116,9 +116,9 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
   }
 
   function bind() {
-    tabButtons.contour.addEventListener("click", (e) => {
+    tabButtons.image.addEventListener("click", (e) => {
       e.preventDefault?.();
-      activate("contour");
+      activate("image");
     });
  
 
@@ -145,7 +145,7 @@ export function createTabs(dom: Dom, tabs: TabsMap) {
 
   function boot() {
     // Default tab
-    active = "contour";
+    active = "image";
     setActiveView(active);
 
     // Keep legacy "boot" hook for any tab that expects it

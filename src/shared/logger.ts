@@ -14,7 +14,7 @@ function prefix(level: string) {
 }
 
 export function createLogger(opts: {
-  scope: "background" | "panel" | "colors" | "contour" | "settings"  | "logs" | "ui";
+  scope: "background" | "panel" | "colors" | "image" | "settings"  | "logs" | "ui";
   traceOn: () => boolean; // reads the right dev config snapshot for that runtime
 }) {
   function logTrace(...args: any[]) {

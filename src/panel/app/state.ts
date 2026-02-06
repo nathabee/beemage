@@ -3,7 +3,7 @@
 Why radius should NOT live in state
 state is for derived artifacts and workflow flags (hasImage/hasOutput). Parameters belong to:
 DOM inputs (current approach), or later
-a ContourSettings object you persist.
+a Settings object you persist.
 If you store radius in state, you’ll create two sources of truth (DOM + state), and they will drift.
 */
 
@@ -87,7 +87,7 @@ function applyBusy(dom: Dom, next: boolean): void {
   dom.cfgShowDevToolsEl.disabled = false;
 
   // -----------------------------
-  // Contour tab controls
+  // image tab controls
   // -----------------------------
   dom.fileInputEl.disabled = next; 
   // -----------------------------

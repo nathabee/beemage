@@ -15,7 +15,7 @@ export async function runOp<K extends OpId>(op: K, input: OpInputsByOp[K]): Prom
   return runOpCore(op, input, opImpls);
 }
 
-// Backwards-compatible wrapper for contour code
+// Backwards-compatible wrapper for image code
 export async function runMaskOp(op: MaskOpId, input: MaskOpInputs): Promise<Uint8Array> {
   return runOp(op, input);
 }

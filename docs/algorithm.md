@@ -125,7 +125,7 @@ Reason:
 
 ---
 
-### ❌ Contour tracing → polylines (Stage 4)
+### ❌ image tracing → polylines (Stage 4)
 
 Not done yet:
 
@@ -205,7 +205,7 @@ Not skeleton yet.
 
 Next step should be:
 
-> **Stage 4a — Marching squares contour tracing from Clean2**
+> **Stage 4a — Marching squares image tracing from Clean2**
 
 That will:
 

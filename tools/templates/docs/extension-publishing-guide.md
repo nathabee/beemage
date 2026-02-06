@@ -1,6 +1,6 @@
 # Extension Publishing Guide (Chrome Web Store)
 
-This guide describes how to publish **BeeContour — Extract the main outline** to the **Chrome Web Store**.
+This guide describes how to publish **BeeMage — Extract the main outline** to the **Chrome Web Store**.
 
 It covers:
 
@@ -83,8 +83,8 @@ Field names may change slightly over time, but typically include:
 
 ### Links
 
-* Homepage URL (for example: `https://nathabee.github.io/beecontour/`)
-* Support URL (for example: `https://github.com/nathabee/beecontour/issues`)
+* Homepage URL (for example: `https://nathabee.github.io/beemage/`)
+* Support URL (for example: `https://github.com/nathabee/beemage/issues`)
 
 ---
 

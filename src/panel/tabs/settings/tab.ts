@@ -37,7 +37,7 @@ type Bus = ReturnType<typeof createBus>;
 
 const SHOW_DEV_TOOLS_KEY = "template.settings.showDevTools"; // boolean in storage
 
-const USE_OPENCV_KEY = "beecontour.settings.engine.useOpenCv"; // boolean
+const USE_OPENCV_KEY = "beemage.settings.engine.useOpenCv"; // boolean
 
 
 

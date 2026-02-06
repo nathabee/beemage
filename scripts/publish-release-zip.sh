@@ -14,7 +14,7 @@ need gh
 ver="$(tr -d ' \t\r\n' < VERSION)"
 tag="v${ver}"
 
-ZIP="release/beecontour-${ver}.zip"
+ZIP="release/beemage-${ver}.zip"
 
 [[ -f "$ZIP" ]] || die "Missing $ZIP. Run: ./scripts/build-zip.sh"
 

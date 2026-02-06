@@ -13,20 +13,20 @@ export function getDom() {
   // -----------------------------
   // Tabs + views
   // -----------------------------
-  const tabContour = must(document.getElementById("tabContour") as HTMLButtonElement | null, "tabContour");
+  const  tabImage = must(document.getElementById(" tabImage") as HTMLButtonElement | null, " tabImage");
   const tabColors = must(document.getElementById("tabColors") as HTMLButtonElement | null, "tabColors");
   const tabSettings = must(document.getElementById("tabSettings") as HTMLButtonElement | null, "tabSettings");
   const tabLogs = must(document.getElementById("tabLogs") as HTMLButtonElement | null, "tabLogs");
   const tabPipeline = must(document.getElementById("tabPipeline") as HTMLButtonElement | null, "tabPipeline");
 
-  const viewContour = must(document.getElementById("viewContour") as HTMLElement | null, "viewContour");
+  const viewMage = must(document.getElementById("viewMage") as HTMLElement | null, "viewMage");
   const viewColors = must(document.getElementById("viewColors") as HTMLElement | null, "viewColors");
   const viewSettings = must(document.getElementById("viewSettings") as HTMLElement | null, "viewSettings");
   const viewLogs = must(document.getElementById("viewLogs") as HTMLElement | null, "viewLogs");
   const viewPipeline = must(document.getElementById("viewPipeline") as HTMLElement | null, "viewPipeline");
 
   // -----------------------------
-  // Contour tab 
+  // image tab 
   // -----------------------------
   const dropZoneEl = must(document.getElementById("dropZone") as HTMLDivElement | null, "dropZone");
   const fileInputEl = must(document.getElementById("fileInput") as HTMLInputElement | null, "fileInput");
@@ -196,20 +196,20 @@ export function getDom() {
     rootEl,
 
     // Tabs + views
-    tabContour,
+     tabImage,
     tabColors,
     tabSettings,
     tabLogs,
     tabPipeline,
 
 
-    viewContour,
+    viewMage,
     viewColors,
     viewSettings,
     viewLogs,
     viewPipeline,
 
-    // Contour
+    // image
     dropZoneEl,
     fileInputEl,
     srcCanvasEl, 

@@ -16,9 +16,9 @@ import { edgeMaskToSvg } from "../tabs/pipeline/lib/svg";
 export const OPS_IMPL_SOURCE = "extension" as const;
 
 export const opImpls: OpImpls = {
-  "contour.clean.removeSmallComponents": {
+  "mage.clean.removeSmallComponents": {
     native: (input, params) => {
-      logTrace("[op] contour.clean.removeSmallComponents native", {
+      logTrace("[op] image.clean.removeSmallComponents native", {
         width: input.width,
         height: input.height,
         cleanMinArea: params.cleanMinArea,
@@ -26,8 +26,8 @@ export const opImpls: OpImpls = {
       return removeSmallComponents(input.mask, input.width, input.height, params.cleanMinArea);
     },
     opencv: (input, params) => {
-      logWarn("OpenCV contour.clean.removeSmallComponents requested, falling back to native (extension build).");
-      logTrace("[op] contour.clean.removeSmallComponents opencv->native", {
+      logWarn("OpenCV image.clean.removeSmallComponents requested, falling back to native (extension build).");
+      logTrace("[op] image.clean.removeSmallComponents opencv->native", {
         width: input.width,
         height: input.height,
         cleanMinArea: params.cleanMinArea,

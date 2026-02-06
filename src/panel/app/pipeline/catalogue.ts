@@ -113,11 +113,11 @@ export function createPipelineCatalogue(): PipelineCatalogue {
 
     {
   kind: "dispatch",
-  id: "op.contour.clean.removeSmallComponents",
+  id: "op.mage.clean.removeSmallComponents",
   title: "Remove small components",
   io: { input: "mask", output: "mask" },
-  dispatchId: "contour.clean.removeSmallComponents",
-  tuningId: "contour.clean.removeSmallComponents",
+  dispatchId: "mage.clean.removeSmallComponents",
+  tuningId: "mage.clean.removeSmallComponents",
 },
 
     // Useful generic ops (JS) for testing / wiring (optional)
@@ -282,8 +282,8 @@ export function createPipelineCatalogue(): PipelineCatalogue {
       id: "stage.cleanup.morph",
       title: "Mask cleanup",
       io: { input: "mask", output: "mask" },
-      allowedOps: ["op.seg.morphology", "op.contour.clean.removeSmallComponents"],
-      defaultOps: ["op.seg.morphology", "op.contour.clean.removeSmallComponents"],
+      allowedOps: ["op.seg.morphology", "op.mage.clean.removeSmallComponents"],
+      defaultOps: ["op.seg.morphology", "op.mage.clean.removeSmallComponents"],
     },
   ],
 },

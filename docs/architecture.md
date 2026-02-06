@@ -1,14 +1,14 @@
 # Architecture
 
-**BeeContour — Extract the main outline**
+**BeeMage — Extract the main outline**
 
-This document describes the high-level architecture of **BeeContour — Extract the main outline**.
+This document describes the high-level architecture of **BeeMage — Extract the main outline**.
 
 ---
 
 ## Overview
 
-BeeContour is a **Chrome Extension built on Manifest V3**.
+BeeMage is a **Chrome Extension built on Manifest V3**.
 
 Its architecture is intentionally simple:
 
@@ -29,7 +29,7 @@ There is **no backend** and **no network dependency**.
 │  (Extension Panel)          │
 │                             │
 │  ┌─────────────┐            │
-│  │ Contour Tab │            │
+│  │ image Tab │            │
 │  │ Colors Tab  │            │
 │  │ Settings    │            │
 │  │ Logs        │            │
@@ -87,10 +87,10 @@ The service worker remains idle most of the time.
 
 The primary user interface is a **panel-based UI**, composed of:
 
-* **Contour tab**
-  Image loading, contour extraction, and output generation
+* **Mage tab**
+  Image loading, image extraction, and output generation
 * **Colors tab**
-  Region-based coloring on top of the contour output
+  Region-based coloring on top of the image output
 * **Settings tab**
   Configuration and developer-oriented options
 * **Logs tab**
@@ -132,7 +132,7 @@ There is:
 
 ## Permissions
 
-BeeContour follows a **minimal-permissions** strategy.
+BeeMage follows a **minimal-permissions** strategy.
 
 ### Declared permissions
 
@@ -143,7 +143,7 @@ No other permissions are required.
 
 ### Not used
 
-BeeContour explicitly does **not** use:
+BeeMage explicitly does **not** use:
 
 * `host_permissions`
 * network access
@@ -155,7 +155,7 @@ BeeContour explicitly does **not** use:
 
 ## Libraries and Dependencies
 
-BeeContour intentionally avoids external libraries.
+BeeMage intentionally avoids external libraries.
 
 * No frameworks (React, Vue, etc.)
 * No image processing libraries
@@ -179,7 +179,7 @@ This keeps the extension:
 ## Data Flow
 
 * User loads an image → processed in-memory
-* Contour output is stored only in UI state
+* image output is stored only in UI state
 * Colors tab reads output **explicitly** when requested
 * No implicit state synchronization across tabs
 * No persistent image storage unless the user downloads a file
@@ -199,7 +199,7 @@ The extension can be fully inspected using standard Chrome developer tools.
 
 ## Architectural Goals
 
-BeeContour is designed to remain:
+BeeMage is designed to remain:
 
 * **Understandable** — small, explicit modules
 * **Predictable** — no implicit automation

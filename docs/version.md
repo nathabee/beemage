@@ -1,7 +1,7 @@
-# Version History — BeeContour — Extract the main outline
+# Version History — BeeMage — Extract the main outline
 
 This document tracks functional and architectural changes of  
-**BeeContour — Extract the main outline**.
+**BeeMage — Extract the main outline**.
 
 Conventions:
 
@@ -25,12 +25,18 @@ Conventions:
 
 ---
 
+### v0.1.3 — Epic: Rename project from BeeContour to BeeMage
+
+* Rename code (files, path, recreate icones) recompile
+* renamed github repository
+---
+
 ### v0.1.2 — Epic: Remove non-universal UI
 
 * Remove Segmentation tab (all segmentation workflows run via Pipeline tab)
-* Remove Contour-tab “clean / vectorize / svg / download” workflows (run via Pipeline tab)
-* Reduce Contour tab to **Input only**: load image into `#srcCanvas` (drag-drop + file picker)
-* Remove legacy DOM + TS wiring for removed controls, keep tabs: Contour, Pipeline, Colors, Settings, Logs
+* Remove image-tab “clean / vectorize / svg / download” workflows (run via Pipeline tab)
+* Reduce image tab to **Input only**: load image into `#srcCanvas` (drag-drop + file picker)
+* Remove legacy DOM + TS wiring for removed controls, keep tabs: image, Pipeline, Colors, Settings, Logs
 * Ensure **all runtime errors** are surfaced to `actionLog` + `debugTrace` (no silent failures)
 
 ---
@@ -153,7 +159,7 @@ Conventions:
   * engine resolution decisions
   * step timings and failures
 * Keep OpenCV loading strictly **demo-only** (CSP: not supported in extension).
-* in this version the opencv is just possible for the contour.clean.removeSmallComponents
+* in this version the opencv is just possible for the image.clean.removeSmallComponents
 
 ---
 
@@ -206,9 +212,9 @@ Conventions:
 
 ---
 
-#### **v0.0.4 — Epic: Full contour pipeline (clean → vectorize) + diagnostics**
+#### **v0.0.4 — Epic: Full image pipeline (clean → vectorize) + diagnostics**
 
-* Expanded **Contour workflow** into a multi-stage pipeline:
+* Expanded **Mage workflow** into a multi-stage pipeline:
 
   * edge detection
   * morphological cleaning (radius, min area, threshold)
@@ -236,13 +242,13 @@ Conventions:
 * Added **Colors** tab with region-based fill workflow
 * Implemented palette selection, preview, apply/reset
 * Added edge/noise controls for region detection
-* Updated documentation to reflect **Contour → Colors** workflow
+* Updated documentation to reflect **Mage → Colors** workflow
 
 ---
 
-#### **v0.0.2 — Epic: Contour extraction prototype**
+#### **v0.0.2 — Epic: image extraction prototype**
 
-* Added **Contour** tab with drag & drop / file input
+* Added **Mage** tab with drag & drop / file input
 * Implemented preview + processing pipeline
 * Added output controls (process, PNG download)
 * Introduced basic processing parameters
@@ -251,7 +257,7 @@ Conventions:
 
 #### **v0.0.1 — Epic: Project bootstrap**
 
-* Initialized BeeContour from extension-generic template
+* Initialized BeeMage from extension-generic template
 * Established panel scaffold (tabs, views, DOM binding)
 * Set up build, demo, and documentation structure
 

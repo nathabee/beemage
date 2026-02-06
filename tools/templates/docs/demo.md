@@ -1,6 +1,6 @@
 # Demo Overview
 
-Alongside **BeeContour — Extract the main outline**, this project provides a **Demo version**.
+Alongside **BeeMage — Extract the main outline**, this project provides a **Demo version**.
 
 The demo is intended for preview, documentation, and presentation purposes only.
 
@@ -43,7 +43,7 @@ The demo is distributed **separately** from the extension.
 
 It is typically provided as a ZIP file in the same GitHub Release as the extension:
 
-- `beecontour-demo-0.0.1.zip`
+- `beemage-demo-0.0.1.zip`
 
 The demo ZIP is **not** installed as an extension.
 
@@ -63,7 +63,7 @@ Instead, it can be:
 | Extension package | Real usage inside the browser                |
 | Demo package      | UI preview and documentation                 |
 
-If you want to **use BeeContour — Extract the main outline** → install the **extension**.  
+If you want to **use BeeMage — Extract the main outline** → install the **extension**.  
 If you want to **see how it works** → open the **demo**.
 
 ---

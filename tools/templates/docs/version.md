@@ -1,7 +1,7 @@
-# Version History — BeeContour — Extract the main outline
+# Version History — BeeMage — Extract the main outline
 
 This document tracks functional and architectural changes of  
-**BeeContour — Extract the main outline**.
+**BeeMage — Extract the main outline**.
 
 Conventions:
 

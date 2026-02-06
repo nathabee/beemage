@@ -50,7 +50,7 @@ function buildIndex(root: ComponentNode): ComponentRegistry {
 export function createComponentRegistry(): ComponentRegistry {
   const root = n(
     "app",
-    "BeeContour",
+    "BeeMage",
     ["native", "opencv"],
     "native",
     {},
@@ -230,29 +230,29 @@ export function createComponentRegistry(): ComponentRegistry {
         "Fixed-order segmentation pipeline. Presets configure each step.",
       ),
       // -----------------------------
-      // Contour
+      // image
       // -----------------------------
       n(
-        "contour",
-        "Contour",
+        "image",
+        "iMage",
         ["native", "opencv"],
         "auto",
         {},
         [
           n(
-            "contour.process",
+            "mage.process",
             "Process",
             ["native"], // later: add "opencv" if you implement it
             "auto",
             {
-              contourScale: { kind: "number", label: "Processing scale", min: 25, max: 100, step: 5, default: 100 },
+              imageScale: { kind: "number", label: "Processing scale", min: 25, max: 100, step: 5, default: 100 },
               edgeThreshold: { kind: "number", label: "Edge threshold", min: 1, max: 255, step: 1, default: 70 },
               invertOutput: { kind: "boolean", label: "White background", default: true },
             },
           ),
 
           n(
-            "contour.clean",
+            "mage.clean",
             "Clean & Smooth",
             ["native", "opencv"], // parent clean is a container; you can keep it native-only
             "auto",
@@ -269,9 +269,9 @@ export function createComponentRegistry(): ComponentRegistry {
               },
             },
             [
-              n("contour.clean.threshold", "Threshold", ["native"], "auto", {}),
+              n("mage.clean.threshold", "Threshold", ["native"], "auto", {}),
               n(
-                "contour.clean.removeSmallComponents",
+                "mage.clean.removeSmallComponents",
                 "Remove small components",
                 ["native", "opencv"],
                 "auto",
@@ -282,14 +282,14 @@ export function createComponentRegistry(): ComponentRegistry {
                 "Remove connected components smaller than the minimum area.",
               ),
 
-              n("contour.clean.repair", "Repair gaps", ["native"], "auto", {}),
-              n("contour.clean.smooth", "Smooth mask", ["native"], "auto", {}),
-              n("contour.clean.quality", "Quality metrics", ["native"], "auto", {}),
+              n("mage.clean.repair", "Repair gaps", ["native"], "auto", {}),
+              n("mage.clean.smooth", "Smooth mask", ["native"], "auto", {}),
+              n("mage.clean.quality", "Quality metrics", ["native"], "auto", {}),
             ],
           ),
 
           n(
-            "contour.vectorize",
+            "mage.vectorize",
             "Vectorize (SVG)",
             ["native"],
             "native",

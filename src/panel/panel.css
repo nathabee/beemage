@@ -408,7 +408,7 @@ button.danger:hover {
 }
 
 
-/* BeeContour: Contour tab UI */
+/* BeeMage: image tab UI */
 .dropZone {
   border: 2px dashed rgba(255,255,255,0.25);
   border-radius: 12px;
@@ -491,7 +491,7 @@ button.danger:hover {
 }
 
 
-/* BeeContour: Colors tab UI */
+/* BeeMage: Colors tab UI */
 .colorGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(200px, 1fr));

@@ -18,7 +18,7 @@ import { edgeMaskToSvg } from "../../../../src/panel/tabs/pipeline/lib/svg";
 
 
 export const opImpls: OpImpls = {
-  "contour.clean.removeSmallComponents": {
+  "mage.clean.removeSmallComponents": {
     native: (input, params) => {
       return nativeRemoveSmallComponents(input.mask, input.width, input.height, params.cleanMinArea);
     },

@@ -40,7 +40,7 @@ fi
 OUT_DIR="release"
 mkdir -p "$OUT_DIR"
 
-ZIP_NAME="beecontour-${ver}.zip"
+ZIP_NAME="beemage-${ver}.zip"
 ZIP_PATH="${OUT_DIR}/${ZIP_NAME}"
 
 rm -f "$ZIP_PATH"

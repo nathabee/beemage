@@ -4,7 +4,7 @@ import { createBus } from "./app/bus";
 import { createTabs } from "./app/tabs";
 import { createPanelCache } from "./app/cache";
 
-import { createContourTab } from "./tabs/contour/tab"; 
+import { createMageTab } from "./tabs/image/tab"; 
 import { createColorsTab } from "./tabs/colors/tab";
 import { createSettingsTab } from "./tabs/settings/tab";
 import { createLogsTab } from "./tabs/logs/tab";
@@ -51,20 +51,20 @@ async function boot(): Promise<void> {
 
   tuning.mount({ mountEl: dom.tuningMountEl, scopeRootId: "app" }); 
 
-  const contourTab = createContourTab(dom, bus);
+  const imageTab = createMageTab(dom, bus);
   const colorsTab = createColorsTab(dom, bus); 
   const pipelineTab = createPipelineTab(dom, bus, tuning);
   const settingsTab = createSettingsTab(dom, bus);
   const logsTab = createLogsTab(dom, bus);
 
-  contourTab.bind(); 
+  imageTab.bind(); 
   pipelineTab.bind();
   colorsTab.bind();
   settingsTab.bind();
   logsTab.bind();
 
   const tabs = createTabs(dom, {
-    contour: contourTab, 
+    image: imageTab, 
     pipeline: pipelineTab,
     colors: colorsTab,
     settings: settingsTab,

@@ -1,14 +1,14 @@
-# BeeContour — Extract the main outline
+# BeeMage — Extract the main outline
 
-**BeeContour extracts the main outline from an image directly in your browser. Works best with high-contrast subjects such as winter trees.**
+**BeeMage extracts the main outline from an image directly in your browser. Works best with high-contrast subjects such as winter trees.**
 
 This project is a Chrome Extension built on **Manifest V3**.  
 It is designed as a clean, minimal starting point for building browser extensions with a modern structure and clear separation of concerns.
 
-- Project code: `beecontour`
+- Project code: `beemage`
 - Version: `0.0.1`
-- Homepage: https://nathabee.github.io/beecontour/
-- Support: https://github.com/nathabee/beecontour/issues
+- Homepage: https://nathabee.github.io/beemage/
+- Support: https://github.com/nathabee/beemage/issues
 
 ## Scope
 

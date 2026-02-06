@@ -7,7 +7,7 @@ export type ActionLogKind = "run" | "info" | "error";
 export type ActionLogScope =
   | "background"
   | "panel"
-  | "contour"
+  | "image"
   | "colors"
   | "settings"
   | "logs"
@@ -31,7 +31,7 @@ export type ActionLogEntry = {
 };
  
 // Template-safe storage key. This will be replaced by change-name.sh.
-const STORAGE_KEY = "beecontour.actionLog";
+const STORAGE_KEY = "beemage.actionLog";
 
 // Default retention if not specified by caller.
 const DEFAULT_MAX = 5000;

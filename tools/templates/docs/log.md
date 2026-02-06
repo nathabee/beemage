@@ -1,7 +1,7 @@
 # Logging, Tracing, and History
 
 This document defines the **logging and tracing architecture** used by  
-**BeeContour — Extract the main outline**.
+**BeeMage — Extract the main outline**.
 
 It is intended as:
 

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in BeeContour — Extract the main outline.
+Thanks for your interest in BeeMage — Extract the main outline.
 
 This project is currently maintained by a single author.
 Bug reports, feature suggestions, and feedback are welcome.
@@ -24,7 +24,7 @@ There is no formal roadmap at this time.
 
 All user, developer, and testing documentation is available on the project documentation site:
 
-https://nathabee.github.io/beecontour/
+https://nathabee.github.io/beemage/
 
 This includes:
 - User manual

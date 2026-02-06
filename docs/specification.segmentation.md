@@ -61,7 +61,7 @@ If you want the palette to feel powerful but not overwhelming, these are the mos
 
 * Convert color: BGR→Gray, BGR→HSV
 * Channel extract (HSV S/V, etc.)
-* Edge detect (Canny) — more contour-oriented than segmentation
+* Edge detect (Canny) — more image-oriented than segmentation
 
 ### Segmentation / mask creation
 

@@ -14,7 +14,7 @@ import * as debugTrace from "../../../shared/debugTrace";
 type Bus = ReturnType<typeof createBus>;
 
 // Template download prefix (kept generic; can be replaced by change-name script later)
-const DOWNLOAD_PREFIX = "beecontour";
+const DOWNLOAD_PREFIX = "beemage";
 
 export function createLogsTab(dom: Dom, _bus: Bus) {
   const model = createLogsModel();

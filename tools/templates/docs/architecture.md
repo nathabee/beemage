@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the high-level architecture of **BeeContour — Extract the main outline**.
+This document describes the high-level architecture of **BeeMage — Extract the main outline**.
 
 ## Overview
 

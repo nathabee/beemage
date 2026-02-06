@@ -1,10 +1,10 @@
 # User Manual
 
-This document explains how to use **BeeContour — Extract the main outline** from an end-user perspective.
+This document explains how to use **BeeMage — Extract the main outline** from an end-user perspective.
 
 ## Purpose
 
-**BeeContour — Extract the main outline** provides browser functionality directly inside Chrome.  
+**BeeMage — Extract the main outline** provides browser functionality directly inside Chrome.  
 All processing happens locally in the browser.
 
 ## Installation

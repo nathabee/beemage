@@ -210,7 +210,7 @@ export function createPipelineView(args: {
     const outSvg = vm?.outputSvg?.svg as string | undefined;
     if (typeof outSvg === "string" && outSvg.length > 0) {
       const blob = new Blob([outSvg], { type: "image/svg+xml;charset=utf-8" });
-      downloadBlob(`beecontour-${safeId}.svg`, blob);
+      downloadBlob(`beemage-${safeId}.svg`, blob);
       return;
     }
 
@@ -218,7 +218,7 @@ export function createPipelineView(args: {
     if (outImg) {
       const c = document.createElement("canvas");
       drawImageToCanvas(c, outImg);
-      await downloadCanvasPng(`beecontour-${safeId}.png`, c);
+      await downloadCanvasPng(`beemage-${safeId}.png`, c);
       return;
     }
 
@@ -228,7 +228,7 @@ export function createPipelineView(args: {
     if (outMask && typeof w === "number" && typeof h === "number") {
       const c = document.createElement("canvas");
       drawMaskToCanvas(c, outMask, w, h);
-      await downloadCanvasPng(`beecontour-${safeId}-mask.png`, c);
+      await downloadCanvasPng(`beemage-${safeId}-mask.png`, c);
       return;
     }
 

@@ -6,7 +6,7 @@ import type { TuningPreset } from "./presets/types";
 
 type Mount = {
   mountEl: HTMLElement;
-  scopeRootId: ComponentId; // "app" for Settings, "contour" for Contour
+  scopeRootId: ComponentId; // "app" for Settings, "image" for image
   view: TuningView;
 };
 
