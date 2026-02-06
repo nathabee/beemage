@@ -18,6 +18,7 @@
       <div class="tabs" role="tablist" aria-label="Panel tabs">
         <button id="tabImage" class="tab is-active" role="tab" aria-selected="true" type="button">Image</button>
         <button id="tabPipeline" class="tab" role="tab" aria-selected="false" type="button">Pipeline</button>
+        <button id="tabBuilder" class="tab" role="tab" aria-selected="false" type="button">Builder</button>
         <button id="tabColors" class="tab" role="tab" aria-selected="false" type="button">Colors</button>
         <button id="tabSettings" class="tab" role="tab" aria-selected="false" type="button">Settings</button>
         <button id="tabLogs" class="tab" role="tab" aria-selected="false" type="button">Logs</button>
@@ -81,6 +82,25 @@
         </details>
       </section>
 
+      <!-- =========================
+ BUILDER VIEW
+ ========================= -->
+      <section id="viewBuilder" class="view" role="tabpanel" aria-labelledby="tabBuilder" hidden>
+        <p class="muted">
+          Import / export pipeline configurations (JSON). Editing will come later.
+        </p>
+
+        <div class="row" style="align-items:center; gap: 10px;">
+          <label class="fieldInline">
+            <span>Import</span>
+            <input id="builderImportFile" type="file" accept="application/json,.json" />
+          </label>
+
+          <button id="btnBuilderExport" type="button">Export JSON</button>
+
+          <span id="builderStatus" class="status">Idle</span>
+        </div>
+      </section>
 
 
 
@@ -282,8 +302,8 @@
               Version: <strong id="settingsVersion">—</strong>
             </div>
 
-            <a id="settingsGitHubLink" class="subtle" href="https://github.com/nathabee/beemage/issues"
-              target="_blank" rel="noreferrer">GitHub</a>
+            <a id="settingsGitHubLink" class="subtle" href="https://github.com/nathabee/beemage/issues" target="_blank"
+              rel="noreferrer">GitHub</a>
           </div>
         </details>
       </section>
