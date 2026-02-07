@@ -1,6 +1,8 @@
 // src/panel/tabs/builder/model.ts
-import type { PipelineDef } from "../../app/pipeline/type";
+
+import type { PipelineDef, OpSpec } from "../../app/pipeline/type";
 import { loadUserPipelines, saveUserPipelines } from "../../app/pipeline/userPipelineStore";
+import { createPipelineCatalogue } from "../../app/pipeline/catalogue";
 
 export type BuilderExportFile = {
   format: "beemage.pipeline.userPipelines.v1";
@@ -16,6 +18,7 @@ export type BuilderImportResult = {
 
 export type BuilderModel = {
   listUserPipelines(): Promise<PipelineDef[]>;
+  listOperations(): ReadonlyArray<OpSpec>;
   importFromJsonText(jsonText: string): Promise<BuilderImportResult>;
   exportToJsonText(): Promise<string>;
 };
@@ -43,8 +46,16 @@ function isPipelineDef(x: unknown): x is PipelineDef {
 }
 
 export function createBuilderModel(): BuilderModel {
+  // Ops are the global library shipped in the catalogue.
+  // User pipelines do not define ops; they only reference opIds.
+  const catalogue = createPipelineCatalogue({ userPipelines: [] });
+
   async function listUserPipelines(): Promise<PipelineDef[]> {
     return await loadUserPipelines().catch(() => []);
+  }
+
+  function listOperations(): ReadonlyArray<OpSpec> {
+    return catalogue.ops;
   }
 
   async function importFromJsonText(jsonText: string): Promise<BuilderImportResult> {
@@ -107,5 +118,7 @@ export function createBuilderModel(): BuilderModel {
     return JSON.stringify(file, null, 2);
   }
 
-  return { listUserPipelines, importFromJsonText, exportToJsonText };
+  return { listUserPipelines, listOperations, importFromJsonText, exportToJsonText };
 }
+
+ 

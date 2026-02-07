@@ -23,10 +23,11 @@ export function createBuilderTab(dom: Dom, _bus: Bus) {
   const model = createBuilderModel();
 
   let mounted = false;
-
+ 
   // Cached VM source
   let statusText = "Idle";
-  let cached = [] as Array<{ id: string; title: string; implemented: boolean; ops: unknown[] }>;
+  let cachedPipes = [] as Array<{ id: string; title: string; implemented: boolean; ops: unknown[] }>;
+  let cachedOps = model.listOperations();
 
   const view = createBuilderView({
     dom,
@@ -110,23 +111,35 @@ export function createBuilderTab(dom: Dom, _bus: Bus) {
 
   async function refreshList(): Promise<void> {
     const pipes = await model.listUserPipelines().catch(() => []);
-    cached = pipes as any;
+    cachedPipes = pipes as any;
 
-    statusText = `Ready. User pipelines: ${pipes.length}`;
+    // ops come from the global catalogue; stable, but we refresh anyway (cheap + future-proof)
+    cachedOps = model.listOperations();
+
+    statusText = `Ready. User pipelines: ${pipes.length} · Operations: ${cachedOps.length}`;
     render();
   }
 
+
   function getVm() {
+    const raw = (cachedPipes ?? []) as any[];
+
     return {
       statusText,
-      pipelines: (cached ?? []).map((p: any) => ({
+      pipelines: raw.map((p: any) => ({
         id: String(p.id),
         title: String(p.title),
         implemented: !!p.implemented,
         opCount: Array.isArray(p.ops) ? p.ops.length : 0,
       })),
+      // NEW: full defs for pipelineCard
+      userPipelinesRaw: raw,
+      // already added earlier:
+      ops: cachedOps,
     };
   }
+
+
 
   function render(): void {
     view.mount();

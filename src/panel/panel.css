@@ -795,3 +795,171 @@ input[type="color"] {
   opacity: 0.65;
   background-color: rgba(255,255,255,0.03);
 }
+
+
+
+/* =========================================
+   Operation cards (shared UI)
+   ========================================= */
+
+.opCard {
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.opCard--compact {
+  padding: 8px;
+}
+
+.opCard--clickable {
+  cursor: pointer;
+}
+
+.opCard--clickable:hover {
+  border-color: rgba(0, 0, 0, 0.35);
+}
+
+.opCard__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.opCard__title {
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.opCard__meta {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.opBadge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+}
+
+.opBadge--id {
+  opacity: 0.85;
+}
+
+.opBadge--group {
+  opacity: 0.95;
+}
+
+.opCard__body {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.opCard__portsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.opCard__portsLabel {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.85;
+  width: 38px;
+}
+
+.opCard__ports {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.opPort {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+}
+
+/* Type coloring (input/output both use same color coding) */
+.opPort--image {
+  background: rgba(70, 130, 180, 0.18);
+}
+
+.opPort--mask {
+  background: rgba(34, 139, 34, 0.18);
+}
+
+.opPort--svg {
+  background: rgba(186, 85, 211, 0.18);
+}
+
+.opPort--unknown {
+  background: rgba(128, 128, 128, 0.18);
+}
+
+/* Builder grid helper */
+.opsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+
+/* Pipeline card (reuses opCard inside) */
+.pipelineCard {
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.pipelineCardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pipelineCardTitle {
+  font-weight: 700;
+}
+
+.pipelineOps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pipelineConnector {
+  height: 14px;
+  margin: -2px 0 -2px 0;
+  position: relative;
+}
+
+.pipelineConnector::before {
+  content: "";
+  position: absolute;
+  left: 22px; /* visually lines up with opCard content */
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 2px;
+}
+
+.opCard.is-disabled {
+  opacity: 0.5;
+}

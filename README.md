@@ -1,7 +1,8 @@
  # <img src="./docs/icon.svg" alt="Icon" width="60" style="vertical-align:middle; margin-right:20px;"> BeeMage — Extract the main outline
 
-**BeeMage extracts clean image outlines from images directly in your browser.**
+**BeeMage is a client-side image-processing playground that lets you build and run visual pipelines directly in your browser.**
 It works best with **high-contrast subjects** such as drawings, silhouettes, winter trees, scanned artwork, or simple photos with clear edges.
+
 
 BeeMage runs **entirely client-side** and is available as:
 
@@ -25,9 +26,10 @@ The demo runs the same panel UI as the extension, without requiring any installa
 
 ## What BeeMage does 
 
-BeeMage focuses on a single, well-defined task:
+BeeMage focuses on a clear goal:
 
-> Turning an image into a clean, reusable outline — while **making the processing steps visible and understandable**.
+> Turning an image into clean intermediate representations (edges, masks, regions, SVG) — while **making each processing step visible and understandable**.
+
 
 BeeMage is designed as a **hands-on image processing playground**.
 
@@ -38,8 +40,12 @@ With BeeMage, you can:
 * Observe intermediate representations (edges, masks, cleaned results)
 * Adjust parameters and immediately see their effect
 * Export the result as raster images or SVG paths
+* Build and import custom image-processing pipelines (Builder tab)
+
 
 The workflow is **manual, visual, and iterative by design**.
+Pipelines can be predefined, imported, or extended step by step.
+
 BeeMage deliberately avoids “one-click magic” in favor of **understanding how parameters influence results**.
 
 ---

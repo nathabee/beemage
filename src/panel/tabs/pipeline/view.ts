@@ -1,5 +1,7 @@
 // src/panel/tabs/pipeline/view.ts 
 import type { Artifact, ImageArtifact, MaskArtifact, SvgArtifact } from "../../app/pipeline/type";
+import { createOperationCard } from "../../app/pipeline/ui/operationCard";
+
 
 
 export type PipelineViewHandlers = {
@@ -462,12 +464,29 @@ export function createPipelineView(args: {
 
         const opRow = el("div", { class: "card", style: "padding:8px;" });
 
-        const opHead = el("div", { class: "row", style: "align-items:center; justify-content:space-between;" });
-        opHead.appendChild(el("div", { style: "font-weight:bold; font-size:12px;" }, String(op.title ?? op.opId)));
-        opHead.appendChild(el("div", { class: "status" }, String(op.state ?? "idle")));
-        opRow.appendChild(opHead);
+        const opHead = el("div", { class: "row", style: "align-items:center; justify-content:space-between; gap:10px;" });
 
-        opRow.appendChild(el("div", { class: "muted", style: "font-size:12px;" }, `${op.input} -> ${op.output}`));
+        // Left: shared operation card
+        const fakeSpec = {
+          id: String(op.opId ?? ""),
+          title: String(op.title ?? op.opId ?? "Operation"),
+          io: { input: op.input, output: op.output },
+          // optional metadata for badge display
+          group: (op as any).group,
+        } as any;
+
+        const opCard = createOperationCard(fakeSpec, {
+          compact: true,
+          showGroup: true,
+          showId: true,
+        });
+
+        opHead.appendChild(opCard);
+
+        // Right: run status
+        opHead.appendChild(el("div", { class: "status" }, String(op.state ?? "idle")));
+
+        opRow.appendChild(opHead);
 
         if (typeof op.error === "string" && op.error.length > 0) {
           opRow.appendChild(
@@ -481,6 +500,7 @@ export function createPipelineView(args: {
         }
 
         opsWrap.appendChild(opRow);
+
       }
 
       row.appendChild(opsWrap);

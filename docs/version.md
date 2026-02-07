@@ -24,6 +24,16 @@ Conventions:
 * Internal testing and demos
 
 ---
+### v0.1.5 — Epic: User Pipelines in Builder, PipelineCard, and OperationCard
+
+* Add shared UI components: **OperationCard** (for operations) and **PipelineCard** (pipeline preview built from OperationCards), reusable across Builder + Pipeline tabs
+* Builder tab: list **all operations** from the global catalogue and add **filtering by input/output type** (defaults to “All”; combined when both are set)
+* Builder tab: enable **selecting a stored user pipeline** and render it via **PipelineCard** (optional connector lines between steps if present)
+* Update `docs/assets/pipelines/beemage-pipelines.json` to include **two user pipeline examples** (single-op + multi-op) for testing import + UI
+* Update README to mention the **Pipeline tab** (universal runner) and **Builder tab** (import/export user pipelines + future visual pipeline construction) while keeping existing links unchanged
+* Small UI/CSS updates to support the new cards (layout, IO badges/colors, compact pipeline display)
+
+---
 
 ### v0.1.4 — Epic: User Pipelines in Builder
 
