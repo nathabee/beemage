@@ -116,7 +116,8 @@ echo
 echo "== 4) Commit + push docs demo =="
 
 # Stage docs output (force add in case a .gitignore rule matches)
-git add -f -A -- docs/demo docs/index.html 2>/dev/null || true
+git add -f -A -- docs/demo docs/index.html docs/assets/opencv docs/assets/pipelines 2>/dev/null || true
+
 
 # If staging produced changes, commit + push
 if ! git diff --cached --quiet; then
