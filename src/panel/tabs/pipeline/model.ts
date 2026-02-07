@@ -2,6 +2,8 @@
 import { createPipelineCatalogue } from "../../app/pipeline/catalogue";
 import { runPipelineDef } from "../../app/pipeline/runner";
 import { loadUserPipelines } from "../../app/pipeline/userPipelineStore";
+import type { AllRecipes } from "../../app/pipeline/recipeStore";
+import { loadAllRecipes } from "../../app/pipeline/recipeStore";
 
 import type {
   Artifact,
@@ -108,6 +110,7 @@ function isSvg(a: Artifact): a is Extract<Artifact, { type: "svg" }> {
 export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
   // IMPORTANT: catalogue is no longer const. We rebuild it when user pipelines change.
   let catalogue: PipelineCatalogue = createPipelineCatalogue({ userPipelines: [] });
+  let allRecipes: AllRecipes = {} as any;
 
   const firstPipelineId: PipelineId =
     ((catalogue.listPipelines?.()?.[0]?.id ?? catalogue.builtIns[0]?.id) ?? "segmentation") as PipelineId;
@@ -129,6 +132,9 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
     const userPipelines = await loadUserPipelines().catch(() => []);
     catalogue = createPipelineCatalogue({ userPipelines });
 
+    // Load all stored recipes (created/imported via Builder)
+    allRecipes = await loadAllRecipes().catch(() => ({} as any));
+
     // If the currently selected pipeline id no longer exists, fall back to first available.
     const all = catalogue.listPipelines?.() ?? catalogue.builtIns;
     const exists = all.some((p) => p.id === activePipelineId);
@@ -137,9 +143,20 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
       activeRecipeId = "default";
     }
 
+    // If current recipe doesn't exist for current pipeline, fall back to default
+    const base = catalogue.getPipeline?.(activePipelineId) ?? catalogue.listPipelines?.()?.[0];
+    if (base) {
+      const recipes = makeRecipesForPipeline(base);
+      const ok = recipes.some((r) => r.id === activeRecipeId);
+      if (!ok) activeRecipeId = "default";
+    } else {
+      activeRecipeId = "default";
+    }
+
     // Changing catalogue can invalidate the plan
     resetRunState();
   }
+
 
   function getBasePipeline(): PipelineDef {
     const p = catalogue.getPipeline?.(activePipelineId) ?? catalogue.listPipelines?.()?.[0];
@@ -147,13 +164,58 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
     return p;
   }
 
-  function makeRecipesForPipeline(_pipeline: PipelineDef): RecipeDef[] {
+  function makeRecipesForPipeline(pipeline: PipelineDef): RecipeDef[] {
     const defDefault: RecipeDef = {
       id: "default",
       title: "Default",
       buildPipeline: (base) => base,
     };
-    return [defDefault];
+
+    // AllRecipes shape in your project (from builder):
+    // { [pipelineId]: { selectedRecipeId?: string; recipesById: { [rid]: { id, title, ops } } } }
+    const st = (allRecipes as any)?.[pipeline.id];
+    const recipesById = st?.recipesById ?? {};
+
+    const defs: RecipeDef[] = [defDefault];
+
+    for (const rid of Object.keys(recipesById)) {
+      const r = recipesById[rid];
+      if (!r || typeof r.id !== "string") continue;
+
+      defs.push({
+        id: String(r.id),
+        title: typeof r.title === "string" && r.title.trim().length ? r.title : String(r.id),
+        buildPipeline: (base) => {
+          // Recipe ops should be compatible with PipelineDef.ops.
+          const opsRaw = Array.isArray(r.ops) ? r.ops : null;
+          if (!opsRaw) return base;
+
+          // Defensive normalization: keep only fields your runner expects.
+          const ops = opsRaw
+            .filter((x: any) => x && typeof x === "object")
+            .map((x: any) => ({
+              instanceId: typeof x.instanceId === "string" ? x.instanceId : String(x.instanceId ?? ""),
+              opId: typeof x.opId === "string" ? x.opId : String(x.opId ?? ""),
+              enabled: x.enabled === undefined ? true : !!x.enabled,
+            }))
+            .filter((x: any) => x.instanceId && x.opId);
+
+          if (!ops.length) return base;
+
+          return {
+            ...base,
+            ops,
+          };
+        },
+      });
+    }
+
+    // Stable ordering: Default first, then by title
+    return defs.slice(0, 1).concat(
+      defs
+        .slice(1)
+        .sort((a, b) => String(a.title).localeCompare(String(b.title))),
+    );
   }
 
   function getActivePipelineDef(): PipelineDef {
@@ -190,7 +252,13 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
 
   function setActiveRecipe(id: PipelineRecipeId): void {
     if (id === activeRecipeId) return;
-    activeRecipeId = id;
+
+    const base = getBasePipeline();
+    const recipes = makeRecipesForPipeline(base);
+
+    const exists = recipes.some((r) => r.id === id);
+    activeRecipeId = exists ? id : "default";
+
     reset();
   }
 

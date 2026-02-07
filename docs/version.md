@@ -23,8 +23,23 @@ Conventions:
 * Architecture exploration and refinement
 * Internal testing and demos
 
+--- 
+
+#### v0.1.6 — Epic: User pipeline recipes (JSON import/export)
+
+* Add **v2 import/export format** bundling user pipelines **and recipes**
+* Extend **recipeStore** to persist, load, and select recipes per pipeline
+* Builder tab: **import/export v2**, pipeline CRUD, recipe CRUD
+* Builder UI: **pipeline search filter** and **operation IO filters**
+* Ensure recipe arrays are always present (optional but array-only)
+* Pipeline tab loads recipes from store
+* Recipe selector shows **user recipes + Default**
+* Selected recipe builds the effective pipeline
+* Safe fallback to **Default** when recipe is missing
+
 ---
-### v0.1.5 — Epic: User Pipelines in Builder, PipelineCard, and OperationCard
+
+#### v0.1.5 — Epic: User Pipelines in Builder, PipelineCard, and OperationCard
 
 * Add shared UI components: **OperationCard** (for operations) and **PipelineCard** (pipeline preview built from OperationCards), reusable across Builder + Pipeline tabs
 * Builder tab: list **all operations** from the global catalogue and add **filtering by input/output type** (defaults to “All”; combined when both are set)
@@ -35,7 +50,7 @@ Conventions:
 
 ---
 
-### v0.1.4 — Epic: User Pipelines in Builder
+#### v0.1.4 — Epic: User Pipelines in Builder
 
 * Add new **Builder** tab to manage user-defined pipelines
 * Implement Builder MVP: **import/export** pipeline JSON via UI (`builderImportFile`, `btnBuilderExport`)
@@ -47,7 +62,7 @@ Conventions:
 
 ---
 
-### v0.1.3 — Epic: Rename project from BeeContour to BeeMage
+#### v0.1.3 — Epic: Rename project from BeeContour to BeeMage
 
 * Rename project across codebase: identifiers, paths, UI strings, and artifacts
 * Rebuild icons/assets and ensure packaging still compiles

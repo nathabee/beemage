@@ -1,8 +1,8 @@
 // src/panel/tabs/builder/view.ts 
 import type { Dom } from "../../app/dom";
 import type { OpSpec, PipelineDef, ArtifactType } from "../../app/pipeline/type";
-import { createOperationCard } from "../../app/pipeline/ui/operationCard";
-import { createPipelineCard } from "../../app/pipeline/ui/pipelineCard";
+import { createOperationCard } from "../../app/pipeline/ui/operationCard"; 
+import { createPipelineManagementCard } from "../../app/pipeline/ui/pipelineManagementCard";
 
 
 export type BuilderRowVm = {
@@ -15,22 +15,31 @@ export type BuilderRowVm = {
 export type BuilderVm = {
   statusText: string;
 
-  // existing summary list
   pipelines: BuilderRowVm[];
 
-  // NEW: ops library to display/filter
   ops: ReadonlyArray<OpSpec>;
 
-  // NEW: full pipeline defs for selection + pipelineCard
   userPipelinesRaw: ReadonlyArray<PipelineDef>;
-};
 
+  // NEW: all recipes keyed by pipelineId
+  recipesAll: Record<string, any>;
+};
 
 
 export type BuilderViewHandlers = {
   onImportFile: (file: File) => Promise<void>;
   onExport: () => Promise<void>;
+
+  // NEW: pipeline management
+  onDeletePipeline: (pipelineId: string) => Promise<void>;
+  onUpsertPipeline: (p: PipelineDef) => Promise<void>;
+
+  // NEW: recipe management
+  onSelectRecipe: (pipelineId: string, recipeId: string) => Promise<void>;
+  onUpsertRecipe: (pipelineId: string, recipe: any) => Promise<void>;
+  onDeleteRecipe: (pipelineId: string, recipeId: string) => Promise<void>;
 };
+
 
 export type BuilderView = {
   bind(): void;
@@ -56,20 +65,20 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
   let mounted = false;
   let bound = false;
 
-  let pipelineMountEl: HTMLDivElement | null = null;
 
   // Filters (default = all)
   let filterInput: ArtifactType | "all" = "all";
   let filterOutput: ArtifactType | "all" = "all";
 
-  // Selected pipeline id (for pipelineCard)
-  let selectedPipelineId: string | null = null;
 
   // Filter controls
   let selFilterInput: HTMLSelectElement | null = null;
   let selFilterOutput: HTMLSelectElement | null = null;
-  let selPipeline: HTMLSelectElement | null = null;
 
+
+  // Pipeline name/id filter (stored pipelines board)
+  let pipelineQuery = "";
+  let inpPipelineQuery: HTMLInputElement | null = null;
 
   // We render into this mount (created once inside viewBuilder).
   let listMountEl: HTMLDivElement | null = null;
@@ -95,18 +104,8 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
     listMountEl.innerHTML = "";
   }
 
-  function ensurePipelineMount(): HTMLDivElement {
-    if (pipelineMountEl) return pipelineMountEl;
-    const m = el("div", { "data-role": "builderPipelineMount", style: "margin-top:12px;" }) as HTMLDivElement;
-    dom.viewBuilder.appendChild(m);
-    pipelineMountEl = m;
-    return m;
-  }
 
-  function clearPipelineMount(): void {
-    if (!pipelineMountEl) return;
-    pipelineMountEl.innerHTML = "";
-  }
+
 
   function ensureOpsMount(): HTMLDivElement {
     if (opsMountEl) return opsMountEl;
@@ -143,57 +142,59 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
     return s;
   }
 
- 
 
- 
 
-    function passesFilter(op: OpSpec): boolean {
+
+
+  function passesFilter(op: OpSpec): boolean {
     const inOk = filterInput === "all" ? true : op.io.input === filterInput;
     const outOk = filterOutput === "all" ? true : op.io.output === filterOutput;
     return inOk && outOk;
   }
 
-  function renderPipelinePreview(vm: BuilderVm): void {
-    const m = ensurePipelineMount();
-    m.innerHTML = "";
 
-    if (!selectedPipelineId) {
-      // no preview
-      return;
-    }
 
-    const pipes = Array.isArray(vm.userPipelinesRaw) ? vm.userPipelinesRaw : [];
-    const p = pipes.find((x) => x.id === selectedPipelineId);
-    if (!p) return;
-
-    const card = el("div", { class: "card", style: "padding:10px;" });
-    card.appendChild(el("div", { class: "cardTitle" }, "Pipeline preview"));
-
-    card.appendChild(
-      createPipelineCard(p, vm.ops ?? [], {
-        showId: true,
-        showDescription: true,
-        showImplementationFlag: true,
-        showConnectors: true,
-        showDisabledOps: true,
-        compactOps: true,
-      }),
-    );
-
-    m.appendChild(card);
-  }
-
-  function renderOps(ops: ReadonlyArray<OpSpec>): void {
+  function renderOps(ops: ReadonlyArray<OpSpec>, vm?: BuilderVm): void {
     const m = ensureOpsMount();
     m.innerHTML = "";
 
     const card = el("div", { class: "card", style: "padding:10px;" });
     card.appendChild(el("div", { class: "cardTitle" }, "All operations"));
 
+    // Controls row: IO filters (ONLY for operations)
+    const controls = el("div", {
+      class: "row",
+      style: "align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;",
+    });
+
+    const lblIn = el("label", { class: "fieldInline" });
+    lblIn.appendChild(el("span", {}, "Filter input"));
+    selFilterInput = buildTypeSelect(String(filterInput), (v) => {
+      filterInput = (v === "all" ? "all" : (v as any));
+      // re-render ops only
+      renderOps(ops, vm);
+    });
+    lblIn.appendChild(selFilterInput);
+
+    const lblOut = el("label", { class: "fieldInline" });
+    lblOut.appendChild(el("span", {}, "Filter output"));
+    selFilterOutput = buildTypeSelect(String(filterOutput), (v) => {
+      filterOutput = (v === "all" ? "all" : (v as any));
+      // re-render ops only
+      renderOps(ops, vm);
+    });
+    lblOut.appendChild(selFilterOutput);
+
+    controls.appendChild(lblIn);
+    controls.appendChild(lblOut);
+    card.appendChild(controls);
+
     const filtered = ops.filter(passesFilter);
 
     if (!filtered.length) {
-      card.appendChild(el("div", { class: "muted", style: "font-size:12px;" }, "No operations match the filter."));
+      card.appendChild(
+        el("div", { class: "muted", style: "font-size:12px; margin-top:10px;" }, "No operations match the filter."),
+      );
       m.appendChild(card);
       return;
     }
@@ -215,97 +216,109 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
   }
 
 
-  function renderList(pipelines: BuilderRowVm[], vm: BuilderVm): void {
+ 
+  function renderList(_pipelines: BuilderRowVm[], vm: BuilderVm): void {
     const m = ensureListMount();
     m.innerHTML = "";
 
     const card = el("div", { class: "card", style: "padding:10px;" });
     card.appendChild(el("div", { class: "cardTitle" }, "Stored user pipelines"));
 
-    // Controls row: pipeline select + filters
-    const controls = el("div", { class: "row", style: "align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;" });
-
-    const lblPipe = el("label", { class: "fieldInline" });
-    lblPipe.appendChild(el("span", {}, "Preview pipeline"));
-    selPipeline = el("select") as HTMLSelectElement;
-    lblPipe.appendChild(selPipeline);
-
-    // Populate pipeline select from raw defs (not summary)
-    const raw = Array.isArray(vm.userPipelinesRaw) ? vm.userPipelinesRaw : [];
-    selPipeline.innerHTML = "";
-    {
-      const optNone = el("option") as HTMLOptionElement;
-      optNone.value = "";
-      optNone.textContent = "None";
-      selPipeline.appendChild(optNone);
-
-      for (const p of raw) {
-        const opt = el("option") as HTMLOptionElement;
-        opt.value = p.id;
-        opt.textContent = `${p.title} (${p.id})`;
-        selPipeline.appendChild(opt);
-      }
-    }
-
-    // Keep selection stable
-    if (selectedPipelineId && raw.some((p) => p.id === selectedPipelineId)) {
-      selPipeline.value = selectedPipelineId;
-    } else {
-      selPipeline.value = "";
-      selectedPipelineId = null;
-    }
-
-    selPipeline.addEventListener("change", () => {
-      const v = selPipeline ? selPipeline.value : "";
-      selectedPipelineId = v || null;
-      // re-render pipeline preview only (cheap to re-render everything too)
-      renderPipelinePreview(vm);
+    // Controls row: pipeline name/id filter
+    const controls = el("div", {
+      class: "row",
+      style: "align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;",
     });
 
-    const lblIn = el("label", { class: "fieldInline" });
-    lblIn.appendChild(el("span", {}, "Filter input"));
-    selFilterInput = buildTypeSelect(String(filterInput), (v) => {
-      filterInput = (v === "all" ? "all" : (v as any));
-      renderOps(vm.ops ?? []);
+    const lblQuery = el("label", { class: "fieldInline" });
+    lblQuery.appendChild(el("span", {}, "Filter pipelines"));
+
+    inpPipelineQuery = el("input", {
+      type: "text",
+      value: pipelineQuery,
+      placeholder: "Search by id or title…",
+      style: "min-width:260px;",
+    }) as HTMLInputElement;
+
+    inpPipelineQuery.addEventListener("input", () => {
+      pipelineQuery = inpPipelineQuery ? inpPipelineQuery.value : "";
+      renderList(vm.pipelines, vm);
     });
-    lblIn.appendChild(selFilterInput);
 
-    const lblOut = el("label", { class: "fieldInline" });
-    lblOut.appendChild(el("span", {}, "Filter output"));
-    selFilterOutput = buildTypeSelect(String(filterOutput), (v) => {
-      filterOutput = (v === "all" ? "all" : (v as any));
-      renderOps(vm.ops ?? []);
+    lblQuery.appendChild(inpPipelineQuery);
+
+    const btnClear = el("button", { type: "button", class: "btn", style: "padding:4px 10px; font-size:12px;" }, "Clear");
+    btnClear.addEventListener("click", () => {
+      pipelineQuery = "";
+      if (inpPipelineQuery) inpPipelineQuery.value = "";
+      renderList(vm.pipelines, vm);
     });
-    lblOut.appendChild(selFilterOutput);
 
-    controls.appendChild(lblPipe);
-    controls.appendChild(lblIn);
-    controls.appendChild(lblOut);
-
+    controls.appendChild(lblQuery);
+    controls.appendChild(btnClear);
     card.appendChild(controls);
 
-    // Summary list
-    if (!pipelines.length) {
-      card.appendChild(el("div", { class: "muted", style: "font-size:12px; margin-top:10px;" }, "No user pipelines stored."));
+    // Management board
+    const rawPipes = Array.isArray(vm.userPipelinesRaw) ? vm.userPipelinesRaw : [];
+    if (!rawPipes.length) {
+      card.appendChild(
+        el("div", { class: "muted", style: "font-size:12px; margin-top:10px;" }, "No user pipelines stored."),
+      );
       m.appendChild(card);
       return;
     }
 
-    const ul = el("ul", { style: "margin:10px 0 0 0; padding-left:18px;" }) as HTMLUListElement;
+    const q = pipelineQuery.trim().toLowerCase();
+    const filteredPipes =
+      q.length === 0
+        ? rawPipes
+        : rawPipes.filter((p) => {
+            const id = String(p.id ?? "").toLowerCase();
+            const title = String(p.title ?? "").toLowerCase();
+            return id.includes(q) || title.includes(q);
+          });
 
-    for (const p of pipelines) {
-      ul.appendChild(
-        el(
-          "li",
-          { style: "font-size:12px; margin:4px 0;" },
-          `${p.id} — ${p.title} (${p.implemented ? "implemented" : "not implemented"}, ops=${p.opCount})`,
-        ),
+    if (!filteredPipes.length) {
+      card.appendChild(
+        el("div", { class: "muted", style: "font-size:12px; margin-top:10px;" }, "No pipelines match the search."),
+      );
+      m.appendChild(card);
+      return;
+    }
+
+    const board = el("div", {
+      style: "margin-top:10px; display:flex; flex-direction:column; gap:10px;",
+    }) as HTMLDivElement;
+
+    const allRecipes = (vm.recipesAll ?? {}) as any;
+
+    for (const pDef of filteredPipes) {
+      const st = allRecipes?.[pDef.id] ?? { recipesById: {}, selectedRecipeId: undefined };
+      const recipesById = st?.recipesById ?? {};
+      const recipes = Object.values(recipesById) as any[];
+      const selectedRecipeId = st?.selectedRecipeId as string | undefined;
+
+      board.appendChild(
+        createPipelineManagementCard({
+          pipeline: pDef,
+          opsLibrary: vm.ops ?? [],
+          selectedRecipeId,
+          recipes,
+          handlers: {
+            onDeletePipeline: handlers.onDeletePipeline,
+            onUpsertPipeline: handlers.onUpsertPipeline,
+            onSelectRecipe: handlers.onSelectRecipe,
+            onUpsertRecipe: handlers.onUpsertRecipe,
+            onDeleteRecipe: handlers.onDeleteRecipe,
+          },
+        }),
       );
     }
 
-    card.appendChild(ul);
+    card.appendChild(board);
     m.appendChild(card);
   }
+
 
 
   function bind(): void {
@@ -337,7 +350,6 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
     if (mounted) return;
     mounted = true;
     ensureListMount();
-    ensurePipelineMount();
     ensureOpsMount();
   }
 
@@ -346,35 +358,36 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
     dom.builderStatusEl.textContent = vm.statusText || "Idle";
 
     renderList(vm.pipelines, vm);
-    renderPipelinePreview(vm);
-    renderOps(vm.ops ?? []);
+    renderOps(vm.ops ?? [], vm);
   }
+
 
   function dispose(): void {
     mounted = false;
     bound = false;
     selectedFile = null;
 
-    selectedPipelineId = null;
     filterInput = "all";
     filterOutput = "all";
+    pipelineQuery = "";
+    inpPipelineQuery = null;
 
     selFilterInput = null;
     selFilterOutput = null;
-    selPipeline = null;
 
-    clearListMount();
-    listMountEl?.remove();
-    listMountEl = null;
+    if (listMountEl) {
+      listMountEl.innerHTML = "";
+      listMountEl.remove();
+      listMountEl = null;
+    }
 
-    clearPipelineMount();
-    pipelineMountEl?.remove();
-    pipelineMountEl = null;
-
-    clearOpsMount();
-    opsMountEl?.remove();
-    opsMountEl = null;
+    if (opsMountEl) {
+      opsMountEl.innerHTML = "";
+      opsMountEl.remove();
+      opsMountEl = null;
+    }
   }
+
 
 
 

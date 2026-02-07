@@ -151,3 +151,78 @@ export function applyRecipeToPipelineOps<T extends { instanceId: string; enabled
     };
   });
 }
+
+
+export type PipelineRecipeBundle = {
+  pipelineId: PipelineId;
+  selectedRecipeId?: RecipeId;
+  recipes: PipelineRecipe[];
+};
+
+/**
+ * Convert internal AllRecipes map to an array (portable export format).
+ * - Always returns an array (possibly empty).
+ */
+export function allRecipesToBundles(all: AllRecipes): PipelineRecipeBundle[] {
+  const out: PipelineRecipeBundle[] = [];
+
+  for (const [pipelineId, st] of Object.entries(all ?? {})) {
+    const recipes = Object.values(st.recipesById ?? {});
+    out.push({
+      pipelineId,
+      selectedRecipeId: st.selectedRecipeId,
+      recipes,
+    });
+  }
+
+  // stable order for diffs
+  out.sort((a, b) => a.pipelineId.localeCompare(b.pipelineId));
+  return out;
+}
+
+/**
+ * Convert portable array format back into the internal AllRecipes map.
+ * - Tolerant: skips invalid entries.
+ * - If duplicates exist for the same pipelineId, later entries win.
+ */
+export function bundlesToAllRecipes(bundles: unknown): AllRecipes {
+  if (!Array.isArray(bundles)) return {};
+
+  const out: AllRecipes = {};
+
+  for (const b of bundles) {
+    if (!b || typeof b !== "object") continue;
+
+    const pipelineId = (b as any).pipelineId;
+    if (typeof pipelineId !== "string" || !pipelineId) continue;
+
+    const selectedRecipeId = (b as any).selectedRecipeId;
+    const recipesArr = (b as any).recipes;
+
+    const recipesById: Record<RecipeId, PipelineRecipe> = {};
+
+    if (Array.isArray(recipesArr)) {
+      for (const r of recipesArr) {
+        if (!r || typeof r !== "object") continue;
+        const id = (r as any).id;
+        const title = (r as any).title;
+        const updatedTs = (r as any).updatedTs;
+        const ops = (r as any).ops;
+
+        if (typeof id !== "string" || !id) continue;
+        if (typeof title !== "string" || !title) continue;
+        if (typeof updatedTs !== "number") continue;
+        if (!Array.isArray(ops)) continue;
+
+        recipesById[id] = r as PipelineRecipe;
+      }
+    }
+
+    out[pipelineId] = {
+      selectedRecipeId: typeof selectedRecipeId === "string" ? selectedRecipeId : undefined,
+      recipesById,
+    };
+  }
+
+  return out;
+}

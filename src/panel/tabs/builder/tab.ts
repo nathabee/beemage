@@ -23,7 +23,8 @@ export function createBuilderTab(dom: Dom, _bus: Bus) {
   const model = createBuilderModel();
 
   let mounted = false;
- 
+let cachedRecipesAll: any = {};
+
   // Cached VM source
   let statusText = "Idle";
   let cachedPipes = [] as Array<{ id: string; title: string; implemented: boolean; ops: unknown[] }>;
@@ -47,23 +48,12 @@ export function createBuilderTab(dom: Dom, _bus: Bus) {
           });
 
           statusText = `Imported ${res.imported} pipeline(s) (skipped ${res.skipped}).`;
-
           await refreshList();
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
 
-          actionLog.append({
-            scope: "panel",
-            kind: "error",
-            message: `Builder import failed: ${msg}`,
-          });
-
-          debugTrace.append({
-            scope: "panel",
-            kind: "error",
-            message: "Builder import failed",
-            meta: { error: msg },
-          });
+          actionLog.append({ scope: "panel", kind: "error", message: `Builder import failed: ${msg}` });
+          debugTrace.append({ scope: "panel", kind: "error", message: "Builder import failed", meta: { error: msg } });
 
           statusText = `Import failed: ${msg}`;
           render();
@@ -89,55 +79,157 @@ export function createBuilderTab(dom: Dom, _bus: Bus) {
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
 
-          actionLog.append({
-            scope: "panel",
-            kind: "error",
-            message: `Builder export failed: ${msg}`,
-          });
-
-          debugTrace.append({
-            scope: "panel",
-            kind: "error",
-            message: "Builder export failed",
-            meta: { error: msg },
-          });
+          actionLog.append({ scope: "panel", kind: "error", message: `Builder export failed: ${msg}` });
+          debugTrace.append({ scope: "panel", kind: "error", message: "Builder export failed", meta: { error: msg } });
 
           statusText = `Export failed: ${msg}`;
+          render();
+        }
+      },
+
+      // NEW: pipeline management
+      onDeletePipeline: async (pipelineId: string) => {
+        try {
+          await model.deleteUserPipelineById(pipelineId);
+          await model.deleteAllRecipesForPipeline(pipelineId);
+
+          actionLog.append({
+            scope: "panel",
+            kind: "info",
+            message: `Builder: deleted user pipeline "${pipelineId}" (and its recipes)`,
+          });
+
+          statusText = `Deleted pipeline ${pipelineId}.`;
+          await refreshList();
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          actionLog.append({ scope: "panel", kind: "error", message: `Delete pipeline failed: ${msg}` });
+          debugTrace.append({ scope: "panel", kind: "error", message: "Delete pipeline failed", meta: { pipelineId, error: msg } });
+          statusText = `Delete failed: ${msg}`;
+          render();
+        }
+      },
+
+      onUpsertPipeline: async (p: any) => {
+        try {
+          await model.upsertUserPipeline(p);
+
+          actionLog.append({
+            scope: "panel",
+            kind: "info",
+            message: `Builder: saved user pipeline "${String(p?.id ?? "")}"`,
+          });
+
+          statusText = `Saved pipeline ${String(p?.id ?? "")}.`;
+          await refreshList();
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          actionLog.append({ scope: "panel", kind: "error", message: `Save pipeline failed: ${msg}` });
+          debugTrace.append({ scope: "panel", kind: "error", message: "Save pipeline failed", meta: { error: msg } });
+          statusText = `Save failed: ${msg}`;
+          render();
+        }
+      },
+
+      // NEW: recipe management
+      onSelectRecipe: async (pipelineId: string, recipeId: string) => {
+        try {
+          await model.setSelectedRecipe(pipelineId, recipeId);
+
+          actionLog.append({
+            scope: "panel",
+            kind: "info",
+            message: `Builder: selected recipe "${recipeId}" for pipeline "${pipelineId}"`,
+          });
+
+          statusText = `Selected recipe ${recipeId} for ${pipelineId}.`;
+          await refreshList();
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          actionLog.append({ scope: "panel", kind: "error", message: `Select recipe failed: ${msg}` });
+          debugTrace.append({ scope: "panel", kind: "error", message: "Select recipe failed", meta: { pipelineId, recipeId, error: msg } });
+          statusText = `Select recipe failed: ${msg}`;
+          render();
+        }
+      },
+
+      onUpsertRecipe: async (pipelineId: string, recipe: any) => {
+        try {
+          await model.upsertRecipe(pipelineId, recipe);
+
+          actionLog.append({
+            scope: "panel",
+            kind: "info",
+            message: `Builder: saved recipe "${String(recipe?.id ?? "")}" for pipeline "${pipelineId}"`,
+          });
+
+          statusText = `Saved recipe ${String(recipe?.id ?? "")} for ${pipelineId}.`;
+          await refreshList();
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          actionLog.append({ scope: "panel", kind: "error", message: `Save recipe failed: ${msg}` });
+          debugTrace.append({ scope: "panel", kind: "error", message: "Save recipe failed", meta: { pipelineId, error: msg } });
+          statusText = `Save recipe failed: ${msg}`;
+          render();
+        }
+      },
+
+      onDeleteRecipe: async (pipelineId: string, recipeId: string) => {
+        try {
+          await model.deleteRecipe(pipelineId, recipeId);
+
+          actionLog.append({
+            scope: "panel",
+            kind: "info",
+            message: `Builder: deleted recipe "${recipeId}" from pipeline "${pipelineId}"`,
+          });
+
+          statusText = `Deleted recipe ${recipeId} from ${pipelineId}.`;
+          await refreshList();
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          actionLog.append({ scope: "panel", kind: "error", message: `Delete recipe failed: ${msg}` });
+          debugTrace.append({ scope: "panel", kind: "error", message: "Delete recipe failed", meta: { pipelineId, recipeId, error: msg } });
+          statusText = `Delete recipe failed: ${msg}`;
           render();
         }
       },
     },
   });
 
-  async function refreshList(): Promise<void> {
-    const pipes = await model.listUserPipelines().catch(() => []);
-    cachedPipes = pipes as any;
 
-    // ops come from the global catalogue; stable, but we refresh anyway (cheap + future-proof)
-    cachedOps = model.listOperations();
+async function refreshList(): Promise<void> {
+  const pipes = await model.listUserPipelines().catch(() => []);
+  cachedPipes = pipes as any;
 
-    statusText = `Ready. User pipelines: ${pipes.length} · Operations: ${cachedOps.length}`;
-    render();
-  }
+  cachedOps = model.listOperations();
+
+  cachedRecipesAll = await model.listAllRecipes().catch(() => ({} as any));
+
+  statusText = `Ready. User pipelines: ${pipes.length} · Operations: ${cachedOps.length}`;
+  render();
+}
 
 
-  function getVm() {
-    const raw = (cachedPipes ?? []) as any[];
 
-    return {
-      statusText,
-      pipelines: raw.map((p: any) => ({
-        id: String(p.id),
-        title: String(p.title),
-        implemented: !!p.implemented,
-        opCount: Array.isArray(p.ops) ? p.ops.length : 0,
-      })),
-      // NEW: full defs for pipelineCard
-      userPipelinesRaw: raw,
-      // already added earlier:
-      ops: cachedOps,
-    };
-  }
+
+function getVm() {
+  const raw = (cachedPipes ?? []) as any[];
+
+  return {
+    statusText,
+    pipelines: raw.map((p: any) => ({
+      id: String(p.id),
+      title: String(p.title),
+      implemented: !!p.implemented,
+      opCount: Array.isArray(p.ops) ? p.ops.length : 0,
+    })),
+    userPipelinesRaw: raw,
+    ops: cachedOps,
+    recipesAll: cachedRecipesAll ?? {},
+  };
+}
+
 
 
 

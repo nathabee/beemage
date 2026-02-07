@@ -1,4 +1,4 @@
- # <img src="./docs/icon.svg" alt="Icon" width="60" style="vertical-align:middle; margin-right:20px;"> BeeMage — Extract the main outline
+ # <img src="./docs/icon.svg" alt="Icon" width="60" style="vertical-align:middle; margin-right:20px;"> BeeMage — Explore image processing through visual pipelines
 
 **BeeMage is a client-side image-processing playground that lets you build and run visual pipelines directly in your browser.**
 It works best with **high-contrast subjects** such as drawings, silhouettes, winter trees, scanned artwork, or simple photos with clear edges.

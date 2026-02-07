@@ -1,14 +1,30 @@
 // src/panel/tabs/builder/model.ts
 
-import type { PipelineDef, OpSpec } from "../../app/pipeline/type";
-import { loadUserPipelines, saveUserPipelines } from "../../app/pipeline/userPipelineStore";
+import type { PipelineDef, OpSpec } from "../../app/pipeline/type"; 
 import { createPipelineCatalogue } from "../../app/pipeline/catalogue";
+import type { AllRecipes } from "../../app/pipeline/recipeStore";
+ 
+import { loadUserPipelines, saveUserPipelines, upsertUserPipeline, deleteUserPipeline } from "../../app/pipeline/userPipelineStore";
+import type { PipelineRecipeBundle } from "../../app/pipeline/recipeStore";
+import {
+  loadAllRecipes,
+  saveAllRecipes,
+  allRecipesToBundles,
+  bundlesToAllRecipes,
+  setSelectedRecipe as setSelectedRecipeStore,
+  upsertRecipe as upsertRecipeStore,
+  deleteRecipe as deleteRecipeStore,
+} from "../../app/pipeline/recipeStore";
 
-export type BuilderExportFile = {
-  format: "beemage.pipeline.userPipelines.v1";
+
+
+export type BuilderExportFileV2 = {
+  format: "beemage.pipeline.userPipelines.v2";
   exportedAt: string; // ISO
   pipelines: PipelineDef[];
+  recipes?: PipelineRecipeBundle[]; // optional but if present, always an array
 };
+
 
 export type BuilderImportResult = {
   imported: number;
@@ -19,9 +35,23 @@ export type BuilderImportResult = {
 export type BuilderModel = {
   listUserPipelines(): Promise<PipelineDef[]>;
   listOperations(): ReadonlyArray<OpSpec>;
+
+  // import/export
   importFromJsonText(jsonText: string): Promise<BuilderImportResult>;
   exportToJsonText(): Promise<string>;
+
+  // NEW: recipes + management
+  listAllRecipes(): Promise<AllRecipes>;
+  deleteUserPipelineById(pipelineId: string): Promise<void>;
+  upsertUserPipeline(p: PipelineDef): Promise<void>;
+
+  setSelectedRecipe(pipelineId: string, recipeId: string): Promise<void>;
+  upsertRecipe(pipelineId: string, recipe: { id: string; title: string; ops: any[] }): Promise<void>;
+  deleteRecipe(pipelineId: string, recipeId: string): Promise<void>;
+
+  deleteAllRecipesForPipeline(pipelineId: string): Promise<void>;
 };
+
 
 function isObject(x: unknown): x is Record<string, unknown> {
   return !!x && typeof x === "object";
@@ -58,6 +88,40 @@ export function createBuilderModel(): BuilderModel {
     return catalogue.ops;
   }
 
+  async function listAllRecipes(): Promise<AllRecipes> {
+    return await loadAllRecipes().catch(() => ({} as any));
+  }
+
+  async function deleteUserPipelineById(pipelineId: string): Promise<void> {
+    await deleteUserPipeline(pipelineId).catch(() => null);
+  }
+
+  async function upsertUserPipelineApi(p: PipelineDef): Promise<void> {
+    await upsertUserPipeline(p).catch(() => null);
+  }
+
+  async function deleteAllRecipesForPipeline(pipelineId: string): Promise<void> {
+    const all = await loadAllRecipes().catch(() => ({} as any));
+    if (!all || typeof all !== "object") return;
+    delete (all as any)[pipelineId];
+    await saveAllRecipes(all as any).catch(() => null);
+  }
+
+  async function setSelectedRecipeApi(pipelineId: string, recipeId: string): Promise<void> {
+    await setSelectedRecipeStore(pipelineId, recipeId).catch(() => null);
+  }
+
+  async function upsertRecipeApi(
+    pipelineId: string,
+    recipe: { id: string; title: string; ops: any[] },
+  ): Promise<void> {
+    await upsertRecipeStore(pipelineId, recipe as any).catch(() => null);
+  }
+
+  async function deleteRecipeApi(pipelineId: string, recipeId: string): Promise<void> {
+    await deleteRecipeStore(pipelineId, recipeId).catch(() => null);
+  }
+
   async function importFromJsonText(jsonText: string): Promise<BuilderImportResult> {
     let parsed: unknown;
     try {
@@ -67,14 +131,16 @@ export function createBuilderModel(): BuilderModel {
     }
 
     // Accept:
-    // A) { format, pipelines: [...] } (preferred)
+    // A) { format, pipelines: [...] } (v1 or v2)
     // B) [...] (raw PipelineDef[])
     let pipelinesRaw: unknown;
+    let recipesRaw: unknown = undefined;
 
     if (Array.isArray(parsed)) {
       pipelinesRaw = parsed;
     } else if (isObject(parsed) && Array.isArray((parsed as any).pipelines)) {
       pipelinesRaw = (parsed as any).pipelines;
+      recipesRaw = (parsed as any).recipes; // v2 optional (array)
     } else {
       throw new Error('Invalid file shape. Expected {"pipelines":[...]} or an array of pipelines.');
     }
@@ -105,20 +171,49 @@ export function createBuilderModel(): BuilderModel {
 
     await saveUserPipelines(Array.from(byId.values()));
 
+    // Import recipes if provided (array-only).
+    if (recipesRaw !== undefined) {
+      if (!Array.isArray(recipesRaw)) {
+        throw new Error('Invalid "recipes" shape. Expected an array (or omit the field).');
+      }
+      const all: AllRecipes = bundlesToAllRecipes(recipesRaw);
+      await saveAllRecipes(all).catch(() => null);
+    }
+
     return { imported: valid.length, skipped, totalInFile };
   }
 
   async function exportToJsonText(): Promise<string> {
     const pipelines = await loadUserPipelines().catch(() => []);
-    const file: BuilderExportFile = {
-      format: "beemage.pipeline.userPipelines.v1",
+    const all = await loadAllRecipes().catch(() => ({} as any));
+
+    const file: BuilderExportFileV2 = {
+      format: "beemage.pipeline.userPipelines.v2",
       exportedAt: new Date().toISOString(),
       pipelines,
+      recipes: allRecipesToBundles(all), // always array (possibly empty)
     };
+
     return JSON.stringify(file, null, 2);
   }
 
-  return { listUserPipelines, listOperations, importFromJsonText, exportToJsonText };
+  return {
+    listUserPipelines,
+    listOperations,
+    importFromJsonText,
+    exportToJsonText,
+
+    listAllRecipes,
+    deleteUserPipelineById,
+    upsertUserPipeline: upsertUserPipelineApi,
+
+    setSelectedRecipe: setSelectedRecipeApi,
+    upsertRecipe: upsertRecipeApi,
+    deleteRecipe: deleteRecipeApi,
+
+    deleteAllRecipesForPipeline,
+  };
 }
 
- 
+
+
