@@ -1,20 +1,7 @@
 {
   "format": "beemage.pipeline.userPipelines.v2",
   "exportedAt": "2026-02-06T00:00:00.000Z",
-  "pipelines": [
-    {
-      "id": "iconize",
-      "title": "Iconize (resize)",
-      "description": "Reduce image dimensions for small outputs (uses edge.resize). Tune size via the Resize tuning node.",
-      "implemented": true,
-      "ops": [
-        {
-          "instanceId": "iconize.1",
-          "opId": "op.edge.resize",
-          "enabled": true
-        }
-      ]
-    },
+  "pipelines": [ 
     {
       "id": "user.segmentation.clean",
       "title": "User Segmentation (clean mask)",
@@ -30,34 +17,6 @@
     }
   ],
   "recipes": [
-    {
-      "pipelineId": "iconize",
-      "selectedRecipeId": "png-256",
-      "recipes": [
-        {
-          "id": "png-256",
-          "title": "PNG 256px",
-          "updatedTs": 1738896000000,
-          "ops": [
-            {
-              "instanceId": "iconize.1",
-              "override": { "params": { "targetLongEdge": 256 } }
-            }
-          ]
-        },
-        {
-          "id": "svg-512",
-          "title": "SVG 512px",
-          "updatedTs": 1738896000000,
-          "ops": [
-            {
-              "instanceId": "iconize.1",
-              "override": { "params": { "targetLongEdge": 512 } }
-            }
-          ]
-        }
-      ]
-    },
     {
       "pipelineId": "user.segmentation.clean",
       "selectedRecipeId": "fast",
