@@ -1,7 +1,7 @@
 // src/panel/tabs/builder/view.ts 
 import type { Dom } from "../../app/dom";
 import type { OpSpec, PipelineDef, ArtifactType } from "../../app/pipeline/type";
-import { createOperationCard } from "../../app/pipeline/ui/operationCard"; 
+import { createOperationCard } from "../../app/pipeline/ui/operationCard";
 import { createPipelineManagementCard } from "../../app/pipeline/ui/pipelineManagementCard";
 
 
@@ -21,24 +21,32 @@ export type BuilderVm = {
 
   userPipelinesRaw: ReadonlyArray<PipelineDef>;
 
-  // NEW: all recipes keyed by pipelineId
+  // all recipes keyed by pipelineId
   recipesAll: Record<string, any>;
+
+  // NEW: example bundles available in assets/pipelines/
+  examples: Array<{ id: string; title: string; path: string }>;
 };
+
 
 
 export type BuilderViewHandlers = {
   onImportFile: (file: File) => Promise<void>;
   onExport: () => Promise<void>;
 
-  // NEW: pipeline management
+  // NEW: load example bundle from assets
+  onLoadExample: (examplePath: string) => Promise<void>;
+
+  // pipeline management
   onDeletePipeline: (pipelineId: string) => Promise<void>;
   onUpsertPipeline: (p: PipelineDef) => Promise<void>;
 
-  // NEW: recipe management
+  // recipe management
   onSelectRecipe: (pipelineId: string, recipeId: string) => Promise<void>;
   onUpsertRecipe: (pipelineId: string, recipe: any) => Promise<void>;
   onDeleteRecipe: (pipelineId: string, recipeId: string) => Promise<void>;
 };
+
 
 
 export type BuilderView = {
@@ -216,7 +224,7 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
   }
 
 
- 
+
   function renderList(_pipelines: BuilderRowVm[], vm: BuilderVm): void {
     const m = ensureListMount();
     m.innerHTML = "";
@@ -224,12 +232,60 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
     const card = el("div", { class: "card", style: "padding:10px;" });
     card.appendChild(el("div", { class: "cardTitle" }, "Stored user pipelines"));
 
-    // Controls row: pipeline name/id filter
+    // Controls row: examples + pipeline filter
     const controls = el("div", {
       class: "row",
       style: "align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px;",
     });
 
+    // --- Examples select + load button ---
+    const examples = Array.isArray(vm.examples) ? vm.examples : [];
+
+    const lblExample = el("label", { class: "fieldInline" });
+    lblExample.appendChild(el("span", {}, "Load example"));
+
+    const selExample = el("select", { style: "min-width:260px;" }) as HTMLSelectElement;
+
+    // Default option
+    {
+      const opt = el("option") as HTMLOptionElement;
+      opt.value = "";
+      opt.textContent = examples.length ? "Select an example…" : "No examples available";
+      opt.selected = true;
+      selExample.appendChild(opt);
+    }
+
+    for (const ex of examples) {
+      const opt = el("option") as HTMLOptionElement;
+      opt.value = String(ex.path ?? "");
+      opt.textContent = String(ex.title ?? ex.id ?? ex.path ?? "Example");
+      selExample.appendChild(opt);
+    }
+
+    lblExample.appendChild(selExample);
+
+    const btnLoadExample = el(
+      "button",
+      { type: "button", class: "btn", style: "padding:4px 10px; font-size:12px;" },
+      "Load",
+    ) as HTMLButtonElement;
+
+    btnLoadExample.disabled = true;
+
+    selExample.addEventListener("change", () => {
+      btnLoadExample.disabled = !selExample.value;
+    });
+
+    btnLoadExample.addEventListener("click", () => {
+      const path = selExample.value;
+      if (!path) return;
+      void handlers.onLoadExample(path);
+      // optional: reset UI to default
+      selExample.value = "";
+      btnLoadExample.disabled = true;
+    });
+
+    // --- Pipeline name/id filter ---
     const lblQuery = el("label", { class: "fieldInline" });
     lblQuery.appendChild(el("span", {}, "Filter pipelines"));
 
@@ -247,15 +303,22 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
 
     lblQuery.appendChild(inpPipelineQuery);
 
-    const btnClear = el("button", { type: "button", class: "btn", style: "padding:4px 10px; font-size:12px;" }, "Clear");
+    const btnClear = el(
+      "button",
+      { type: "button", class: "btn", style: "padding:4px 10px; font-size:12px;" },
+      "Clear",
+    );
     btnClear.addEventListener("click", () => {
       pipelineQuery = "";
       if (inpPipelineQuery) inpPipelineQuery.value = "";
       renderList(vm.pipelines, vm);
     });
 
+    controls.appendChild(lblExample);
+    controls.appendChild(btnLoadExample);
     controls.appendChild(lblQuery);
     controls.appendChild(btnClear);
+
     card.appendChild(controls);
 
     // Management board
@@ -273,10 +336,10 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
       q.length === 0
         ? rawPipes
         : rawPipes.filter((p) => {
-            const id = String(p.id ?? "").toLowerCase();
-            const title = String(p.title ?? "").toLowerCase();
-            return id.includes(q) || title.includes(q);
-          });
+          const id = String(p.id ?? "").toLowerCase();
+          const title = String(p.title ?? "").toLowerCase();
+          return id.includes(q) || title.includes(q);
+        });
 
     if (!filteredPipes.length) {
       card.appendChild(

@@ -51,14 +51,30 @@ echo "== 1) Build extension zip =="
 echo
 echo "== 2) Build demo zip =="
 ./demo/scripts/build-demo-zip.sh
-
+ 
 # 3) Publish demo/dist -> docs/demo for GitHub Pages (diff-aware)
+
+# for info:
+# 1. **Source of truth (repo root):**
+#   `/assets/pipelines/*.json`
+# 2. **Demo build pre-step (Vite plugin, before Vite copies `public/`):**
+#   `ensurePipelinesPublicPlugin()` copies
+#   `/assets/pipelines/*.json` → `/demo/public/assets/pipelines/*.json`
+# 3. **Vite build static copy rule:**
+#   Vite copies `demo/public/**` into `demo/dist/**`, so:
+#   `/demo/public/assets/pipelines/*.json` → `/demo/dist/assets/pipelines/*.json`
+# 4. **GitHub Pages publish step (release-all.sh rsync):**
+#   `rsync demo/dist/ → docs/demo/` so:
+#   `/demo/dist/assets/pipelines/*.json` → `/docs/demo/assets/pipelines/*.json`
+
+
 echo
 echo "== 3) Publish demo to GitHub Pages (docs/demo) =="
 
-DEMO_DIST="demo/dist"
-DOCS_DEMO="docs/demo"
-DOCS="docs"
+DEMO_DIST="${ROOT_DIR}/demo/dist"
+DOCS_DEMO="${ROOT_DIR}/docs/demo"
+ASSETS_SRC="${ROOT_DIR}/assets"
+ASSETS_DST="${ROOT_DIR}/docs/assets"
 
 [[ -d "$DEMO_DIST" ]] || die "Missing $DEMO_DIST (demo build failed?)"
 
@@ -69,16 +85,30 @@ rsync -a --delete --checksum \
   "$DEMO_DIST"/ \
   "$DOCS_DEMO"/
 
-# Assets must live in /docs/assets, not /docs/demo/assets
-mkdir -p  "$DOCS/assets/opencv"
+# Optional: commit runtime/assets for GitHub Pages reproducible builds
+# - OpenCV runtime (if you keep it committed under docs/assets/opencv)
+# - Pipeline examples JSON (committed under docs/assets/pipelines)
 
-# Sync OpenCV assets (diff-aware)
-rsync -a --delete --checksum \
-  "$DOCS_DEMO/assets/opencv"/ \
-  "$DOCS/assets/opencv"/
+mkdir -p "$ASSETS_DST/opencv" "$ASSETS_DST/pipelines"
+
+# OpenCV runtime (only if present in repo assets/)
+if [[ -d "$ASSETS_SRC/opencv" ]]; then
+  rsync -a --delete --checksum \
+    "$ASSETS_SRC/opencv"/ \
+    "$ASSETS_DST/opencv"/
+fi
+
+# Pipeline example JSON (source-of-truth = repo root assets/pipelines)
+if [[ -d "$ASSETS_SRC/pipelines" ]]; then
+  rsync -a --delete --checksum \
+    "$ASSETS_SRC/pipelines"/ \
+    "$ASSETS_DST/pipelines"/
+fi
+
 
 echo "Demo published to $DOCS_DEMO (diff-aware)"
 
+ 
 
 
 # 4) Commit + push docs demo (only if changed)

@@ -7,6 +7,8 @@ import { createBuilderView } from "./view";
 
 import * as actionLog from "../../../shared/actionLog";
 import * as debugTrace from "../../../shared/debugTrace";
+import { runtimeGetAssetUrl } from "../../platform/runtime";
+
 
 function downloadJson(filename: string, jsonText: string): void {
   const blob = new Blob([jsonText], { type: "application/json;charset=utf-8" });
@@ -23,12 +25,41 @@ export function createBuilderTab(dom: Dom, _bus: Bus) {
   const model = createBuilderModel();
 
   let mounted = false;
-let cachedRecipesAll: any = {};
+  let cachedRecipesAll: any = {};
+  let cachedExamples: Array<{ id: string; title: string; path: string }> = [];
+
 
   // Cached VM source
   let statusText = "Idle";
   let cachedPipes = [] as Array<{ id: string; title: string; implemented: boolean; ops: unknown[] }>;
   let cachedOps = model.listOperations();
+
+  async function loadExamplesIndex(): Promise<Array<{ id: string; title: string; path: string }>> {
+    const url = runtimeGetAssetUrl("assets/pipelines/index.json");
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Examples index not found: ${res.status}`);
+    const json = await res.json().catch(() => null);
+
+    const arr = (json as any)?.examples;
+    if (!Array.isArray(arr)) return [];
+
+    return arr
+      .map((x: any) => ({
+        id: String(x?.id ?? ""),
+        title: String(x?.title ?? x?.id ?? x?.path ?? "Example"),
+        path: String(x?.path ?? ""),
+      }))
+      .filter((x: any) => x.id && x.path);
+  }
+
+  async function importExampleFromPath(examplePath: string): Promise<void> {
+    const url = runtimeGetAssetUrl(examplePath);
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Example fetch failed (${res.status}): ${examplePath}`);
+    const text = await res.text();
+    await model.importFromJsonText(text);
+  }
+
 
   const view = createBuilderView({
     dom,
@@ -194,41 +225,70 @@ let cachedRecipesAll: any = {};
           render();
         }
       },
+      onLoadExample: async (examplePath: string) => {
+        try {
+          statusText = `Loading example: ${examplePath}`;
+          render();
+
+          await importExampleFromPath(examplePath);
+
+          actionLog.append({
+            scope: "panel",
+            kind: "info",
+            message: `Builder example loaded: ${examplePath}`,
+          });
+
+          statusText = `Loaded example: ${examplePath}`;
+          await refreshList();
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+
+          actionLog.append({ scope: "panel", kind: "error", message: `Load example failed: ${msg}` });
+          debugTrace.append({ scope: "panel", kind: "error", message: "Load example failed", meta: { error: msg, examplePath } });
+
+          statusText = `Load example failed: ${msg}`;
+          render();
+        }
+      },
+
     },
   });
 
 
-async function refreshList(): Promise<void> {
-  const pipes = await model.listUserPipelines().catch(() => []);
-  cachedPipes = pipes as any;
+  async function refreshList(): Promise<void> {
+    const pipes = await model.listUserPipelines().catch(() => []);
+    cachedPipes = pipes as any;
 
-  cachedOps = model.listOperations();
+    cachedOps = model.listOperations();
 
-  cachedRecipesAll = await model.listAllRecipes().catch(() => ({} as any));
+    cachedRecipesAll = await model.listAllRecipes().catch(() => ({} as any));
 
-  statusText = `Ready. User pipelines: ${pipes.length} · Operations: ${cachedOps.length}`;
-  render();
-}
+    cachedExamples = await loadExamplesIndex().catch(() => []);
+
+    statusText = `Ready. User pipelines: ${pipes.length} · Operations: ${cachedOps.length} · Examples: ${cachedExamples.length}`;
+    render();
+  }
 
 
 
 
-function getVm() {
-  const raw = (cachedPipes ?? []) as any[];
+  function getVm() {
+    const raw = (cachedPipes ?? []) as any[];
 
-  return {
-    statusText,
-    pipelines: raw.map((p: any) => ({
-      id: String(p.id),
-      title: String(p.title),
-      implemented: !!p.implemented,
-      opCount: Array.isArray(p.ops) ? p.ops.length : 0,
-    })),
-    userPipelinesRaw: raw,
-    ops: cachedOps,
-    recipesAll: cachedRecipesAll ?? {},
-  };
-}
+    return {
+      statusText,
+      pipelines: raw.map((p: any) => ({
+        id: String(p.id),
+        title: String(p.title),
+        implemented: !!p.implemented,
+        opCount: Array.isArray(p.ops) ? p.ops.length : 0,
+      })),
+      userPipelinesRaw: raw,
+      ops: cachedOps,
+      recipesAll: cachedRecipesAll ?? {},
+      examples: cachedExamples ?? [],
+    };
+  }
 
 
 

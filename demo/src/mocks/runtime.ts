@@ -1,4 +1,5 @@
 // demo/src/mocks/runtime.ts
+
 import type { AnyEvent } from "../../../src/shared/messages";
 import type { AnyRequest } from "../../../src/shared/messages/requests";
 
@@ -20,4 +21,13 @@ export function runtimeOnMessageRemove(handler: RuntimeMessageHandler): void {
 export async function runtimeSend<T = any>(_msg: AnyRequest): Promise<T> {
   // Generic demo: no background features
   return { ok: true } as T;
+}
+
+/**
+ * Resolve a public asset URL in the demo build.
+ * Example: runtimeGetAssetUrl("assets/pipelines/index.json") -> "./assets/pipelines/index.json"
+ */
+export function runtimeGetAssetUrl(relPath: string): string {
+  const p = String(relPath || "").replace(/^\/+/, "");
+  return `./${p}`;
 }

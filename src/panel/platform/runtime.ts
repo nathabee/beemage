@@ -31,3 +31,23 @@ export function runtimeOnMessageRemove(handler: RuntimeMessageHandler): void {
   chrome.runtime.onMessage.removeListener(wrapped);
   handlerMap.delete(handler);
 }
+
+/**
+ * Resolve an extension asset URL.
+ * Example: runtimeGetAssetUrl("assets/pipelines/index.json")
+ */ 
+
+export function runtimeGetAssetUrl(p: string): string {
+  // Extension case: chrome.runtime.getURL exists
+  const rt: any = (globalThis as any)?.chrome?.runtime;
+  if (rt && typeof rt.getURL === "function") {
+    return rt.getURL(p);
+  }
+
+  // Demo / non-extension case:
+  // Vite build uses base:"./", and public assets are served relative to the current page.
+  // So "assets/..." should resolve correctly as a relative URL.
+  const clean = String(p || "").replace(/^\.?\//, ""); // drop leading "./" or "/"
+  return `./${clean}`;
+}
+

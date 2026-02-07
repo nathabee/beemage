@@ -23,6 +23,17 @@ Conventions:
 * Architecture exploration and refinement
 * Internal testing and demos
 
+
+--- 
+
+#### v0.1.7 — Epic: Builder recipe examples
+
+* Add **“Load examples”** button in Builder to import bundled JSON examples
+* Store examples in `/assets/pipelines/` and publish them through demo build to `docs/demo/assets/pipelines/`
+* Builder lists all available examples and imports on click (reuse existing JSON import)
+* Ensure imported pipelines **and recipes** appear in Builder and Pipeline tab
+* Log import results and handle errors cleanly
+
 --- 
 
 #### v0.1.6 — Epic: User pipeline recipes (JSON import/export)
