@@ -17,12 +17,20 @@ Conventions:
 
 ## **MAJOR v0**
 
-### **v0.x — Focus: Development and stabilization**
+### **v0.1.x — Focus: Universal Pipeline and Builder**
 
-* Iterative development phase
-* Architecture exploration and refinement
-* Internal testing and demos
+ 
+#### v0.1.8 — Epic: Builder create new pipeline in a playground
 
+* Introduce `pipelinePlayground.ts` to build pipelines interactively (drag/drop ops, reorder, save).
+* Refactor Builder view to host and drive the Playground (layout, mounts, handlers, state flow).
+* Extend pipeline typing/models to support user-defined pipelines and recipes consistently.
+* Update the universal runner to execute arbitrary pipelines from the new definitions.
+* Rework `operationCard` (UI + types) to support compact rendering and puzzle-style ports.
+* Add puzzle-frame option for operation cards (mask-based silhouette + outline).
+* Polish CSS for port glyphs, puzzle frame insets, and responsive grids.
+* Ensure Builder and Pipeline views use the shared operation card consistently (plain vs puzzle modes).
+* Fix visual/UX issues: input connector visibility, brightness balance, and content clipping in puzzle shapes.
 
 --- 
 
@@ -116,6 +124,9 @@ Conventions:
 
  ---
 
+### **v0.0.x — Focus: Development and stabilization**
+
+ 
 #### v0.0.10 — Epic: Segmentation issues and native code
 
 * Ensure tracing is mounted at boot (panel.ts) so logs work before visiting Settings

@@ -8,6 +8,8 @@ export type DebugTraceScope =
   | "image"
   | "colors"
   | "settings"
+  | "builder"
+  | "pipeline"
   | "logs"
   | "demo"
   | "ui"

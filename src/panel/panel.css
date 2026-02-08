@@ -144,8 +144,6 @@ h3 {
 /* -----------------------------
    Views
 ----------------------------- */
- 
-
 
 /* Hidden attribute must always hide, regardless of classes */
 [hidden] {
@@ -407,19 +405,18 @@ button.danger:hover {
   border-radius: 999px;
 }
 
-
 /* BeeMage: image tab UI */
 .dropZone {
-  border: 2px dashed rgba(255,255,255,0.25);
+  border: 2px dashed rgba(255, 255, 255, 0.25);
   border-radius: 12px;
   padding: 16px;
   margin: 12px 0;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .dropZone.is-hover {
-  border-color: rgba(255,255,255,0.6);
-  background: rgba(255,255,255,0.06);
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .dropZoneInner {
@@ -439,7 +436,9 @@ button.danger:hover {
 }
 
 @media (max-width: 900px) {
-  .grid2 { grid-template-columns: 1fr; }
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
 }
 
 .grid4 {
@@ -450,16 +449,19 @@ button.danger:hover {
 }
 
 @media (max-width: 900px) {
-  .grid4 { grid-template-columns: 1fr; }
+  .grid4 {
+    grid-template-columns: 1fr;
+  }
 }
-
 
 .card {
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   padding: 10px;
-  background: rgba(0,0,0,0.12);
+  background: rgba(0, 0, 0, 0.12);
 }
+
+
 
 .cardTitle {
   font-weight: 700;
@@ -470,26 +472,29 @@ button.danger:hover {
   width: 100%;
   height: auto;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .spinner {
   width: 14px;
   height: 14px;
   border-radius: 999px;
-  border: 2px solid rgba(255,255,255,0.25);
-  border-top-color: rgba(255,255,255,0.9);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: rgba(255, 255, 255, 0.9);
   display: inline-block;
   animation: spin 0.8s linear infinite;
 }
 
-.spinner.is-hidden { display: none; }
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.spinner.is-hidden {
+  display: none;
 }
 
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* BeeMage: Colors tab UI */
 .colorGrid {
@@ -536,7 +541,6 @@ input[type="color"] {
   background: rgba(255, 255, 255, 0.08);
 }
 
-
 /* Colors tab: layout */
 .colorsLayout {
   display: grid;
@@ -545,14 +549,16 @@ input[type="color"] {
 }
 
 @media (max-width: 900px) {
-  .colorsLayout { grid-template-columns: 1fr; }
+  .colorsLayout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .colorsCanvasCard {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 10px;
-  background: rgba(0,0,0,0.12);
+  background: rgba(0, 0, 0, 0.12);
 }
 
 .colorsSide {
@@ -583,8 +589,6 @@ input[type="color"] {
   border-color: rgba(122, 162, 255, 0.55);
 }
 
-
-
 .qBadge {
   display: inline-flex;
   align-items: center;
@@ -593,7 +597,7 @@ input[type="color"] {
   padding: 4px 8px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -616,7 +620,9 @@ input[type="color"] {
   color: rgba(255, 210, 210, 0.92);
 }
 
-.qBadge--off { opacity: 0.8; }
+.qBadge--off {
+  opacity: 0.8;
+}
 
 .qBar {
   flex: 1;
@@ -624,7 +630,7 @@ input[type="color"] {
   height: 10px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   overflow: hidden;
 }
 
@@ -633,7 +639,6 @@ input[type="color"] {
   border-radius: 999px;
   background: rgba(122, 162, 255, 0.55);
 }
-
 
 /* -----------------------------
    Switch (toggle)
@@ -702,7 +707,6 @@ input[type="color"] {
   cursor: not-allowed;
 }
 
-
 /* Segmentation layout */
 .segLayout {
   display: grid;
@@ -728,7 +732,7 @@ input[type="color"] {
 }
 
 .segPresetCard {
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 10px;
   padding: 10px;
   cursor: grab;
@@ -755,7 +759,7 @@ input[type="color"] {
 }
 
 .segDropZone {
-  border: 1px dashed rgba(255,255,255,0.18);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
   border-radius: 12px;
   padding: 10px;
 }
@@ -767,7 +771,7 @@ input[type="color"] {
 }
 
 .segDropZone.is-over {
-  outline: 2px solid rgba(255,255,255,0.22);
+  outline: 2px solid rgba(255, 255, 255, 0.22);
   outline-offset: 2px;
 }
 
@@ -785,28 +789,30 @@ input[type="color"] {
 }
 
 .segStep.is-active {
-  background-color: rgba(255,255,255,0.06);
-  outline: 2px solid rgba(255,255,255,0.45);
+  background-color: rgba(255, 255, 255, 0.06);
+  outline: 2px solid rgba(255, 255, 255, 0.45);
   outline-offset: 2px;
-  box-shadow: 0 0 0 2px rgba(255,255,255,0.10);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.10);
 }
 
 .segStep.is-done {
   opacity: 0.65;
-  background-color: rgba(255,255,255,0.03);
+  background-color: rgba(255, 255, 255, 0.03);
 }
-
-
-
 /* =========================================
    Operation cards (shared UI)
    ========================================= */
 
 .opCard {
-  border: 1px solid rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--border-2);
   border-radius: 10px;
   padding: 10px;
   background: rgba(255, 255, 255, 0.06);
+}
+
+/* allow cards to shrink inside flex rows (very important for puzzle masks) */
+.row > .opCard {
+  min-width: 0;
 }
 
 .opCard--compact {
@@ -818,7 +824,28 @@ input[type="color"] {
 }
 
 .opCard--clickable:hover {
-  border-color: rgba(0, 0, 0, 0.35);
+  border-color: rgba(122, 162, 255, 0.35);
+}
+
+/* Wrapper used for layering outline behind content */
+.opCard__content {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+/* Inner “real” content card (used only when cardStyle=puzzleFrame) */
+.opCard__inner {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.16);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.opCard--compact .opCard__inner {
+  padding: 8px 10px;
 }
 
 .opCard__head {
@@ -826,9 +853,13 @@ input[type="color"] {
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
+  min-width: 0;
 }
 
 .opCard__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-weight: 700;
   font-size: 13px;
   line-height: 1.2;
@@ -839,6 +870,7 @@ input[type="color"] {
   gap: 6px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  min-width: 0;
 }
 
 .opBadge {
@@ -848,6 +880,10 @@ input[type="color"] {
   border: 1px solid rgba(0, 0, 0, 0.18);
   background: rgba(255, 255, 255, 0.06);
   white-space: nowrap;
+
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .opBadge--id {
@@ -888,37 +924,157 @@ input[type="color"] {
   font-size: 11px;
   padding: 3px 8px;
   border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.06);
   white-space: nowrap;
 }
 
-/* Type coloring (input/output both use same color coding) */
-.opPort--image {
-  background: rgba(70, 130, 180, 0.18);
+/* Type backgrounds */
+.opPort--image { background: rgba(70, 130, 180, 0.18); }
+.opPort--mask  { background: rgba(34, 139, 34, 0.18); }
+.opPort--svg   { background: rgba(186, 85, 211, 0.18); }
+.opPort--unknown { background: rgba(128, 128, 128, 0.18); }
+
+/* =========================================
+   Operation ports: puzzle style (SVG glyph)
+   ========================================= */
+
+/* Accent used by glyphs (slightly subdued) */
+.opPort--image   { --port-accent: rgba(150, 200, 255, 0.72); }
+.opPort--mask    { --port-accent: rgba(160, 255, 190, 0.68); }
+.opPort--svg     { --port-accent: rgba(225, 190, 255, 0.68); }
+.opPort--unknown { --port-accent: rgba(210, 210, 210, 0.60); }
+
+/* Puzzle port container */
+.opPort--puzzle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-radius: 10px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.opPort--mask {
-  background: rgba(34, 139, 34, 0.18);
+.opPort__puzzleLabel {
+  font-size: 11px;
+  line-height: 1;
+  color: var(--muted);
+  white-space: nowrap;
 }
 
-.opPort--svg {
-  background: rgba(186, 85, 211, 0.18);
+/* SVG sizing */
+.opPort__glyph {
+  display: block;
+  width: 44px;
+  height: 18px;
+  flex: 0 0 auto;
 }
 
-.opPort--unknown {
-  background: rgba(128, 128, 128, 0.18);
+.opPort__glyphTrack {
+  fill: rgba(0, 0, 0, 0.24);
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 1;
 }
 
-/* Builder grid helper */
+/* Male plug (output): filled */
+.opPort__glyphShape {
+  fill: var(--port-accent, rgba(255, 255, 255, 0.65));
+  stroke: none;
+}
+
+/* Female socket (input): stroke only */
+.opPort__glyphShape--socket {
+  fill: transparent;
+  stroke: var(--port-accent, rgba(255, 255, 255, 0.65));
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  opacity: 0.95;
+}
+
+/* =========================================
+   Puzzle-frame shell + inner card
+   ========================================= */
+
+.opCard--puzzleFrame {
+  position: relative;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+
+  /* “rand” between silhouette edge and inner card */
+  padding-left: var(--opPuzzleInsetX, 24px);
+  padding-right: var(--opPuzzleInsetX, 24px);
+  padding-top: var(--opPuzzleInsetTop, 22px);
+  padding-bottom: var(--opPuzzleInsetBottom, 22px);
+
+  min-width: 0;
+}
+
+.opCard--compact.opCard--puzzleFrame {
+  padding-left: var(--opPuzzleInsetX, 20px);
+  padding-right: var(--opPuzzleInsetX, 20px);
+  padding-top: var(--opPuzzleInsetTop, 18px);
+  padding-bottom: var(--opPuzzleInsetBottom, 18px);
+}
+
+/* Outline behind content */
+.opCard__puzzleOutline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Centering for puzzle-frame content */
+.opCard--puzzleFrame .opCard__inner {
+  text-align: center;
+}
+
+.opCard--puzzleFrame .opCard__head {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.opCard--puzzleFrame .opCard__meta {
+  justify-content: center;
+}
+
+.opCard--puzzleFrame .opCard__portsRow {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.opCard--puzzleFrame .opCard__portsLabel {
+  width: auto;
+  text-align: center;
+}
+
+.opCard--puzzleFrame .opCard__ports {
+  justify-content: center;
+}
+
+/* =========================================
+   Builder grid helper
+   ========================================= */
+
 .opsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 10px;
 }
 
+/* =========================================
+   Pipeline card (reuses opCard inside)
+   ========================================= */
 
-/* Pipeline card (reuses opCard inside) */
 .pipelineCard {
   border-radius: 10px;
   padding: 10px;
@@ -952,7 +1108,7 @@ input[type="color"] {
 .pipelineConnector::before {
   content: "";
   position: absolute;
-  left: 22px; /* visually lines up with opCard content */
+  left: 22px;
   top: 0;
   bottom: 0;
   width: 2px;

@@ -479,6 +479,8 @@ export function createPipelineView(args: {
           compact: true,
           showGroup: true,
           showId: true,
+          portStyle: "puzzle",
+          cardStyle: "plain",
         });
 
         opHead.appendChild(opCard);

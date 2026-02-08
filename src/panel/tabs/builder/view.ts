@@ -3,6 +3,7 @@ import type { Dom } from "../../app/dom";
 import type { OpSpec, PipelineDef, ArtifactType } from "../../app/pipeline/type";
 import { createOperationCard } from "../../app/pipeline/ui/operationCard";
 import { createPipelineManagementCard } from "../../app/pipeline/ui/pipelineManagementCard";
+import { createPipelinePlayground, type PipelinePlayground } from "./pipelinePlayground";
 
 
 export type BuilderRowVm = {
@@ -97,6 +98,17 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
   // Track current selected file.
   let selectedFile: File | null = null;
 
+  // Two-column layout mounts
+  let layoutMountEl: HTMLDivElement | null = null;
+  let leftColEl: HTMLDivElement | null = null;
+  let rightColEl: HTMLDivElement | null = null;
+
+  // Playground mount + component
+  let playgroundMountEl: HTMLDivElement | null = null;
+  let playground: PipelinePlayground | null = null;
+
+
+
   function ensureListMount(): HTMLDivElement {
     if (listMountEl) return listMountEl;
 
@@ -116,17 +128,49 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
 
 
   function ensureOpsMount(): HTMLDivElement {
+    ensureLayoutMount();
+
     if (opsMountEl) return opsMountEl;
-    const m = el("div", { "data-role": "builderOpsMount", style: "margin-top:12px;" }) as HTMLDivElement;
-    dom.viewBuilder.appendChild(m);
+    const m = el("div", { "data-role": "builderOpsMount" }) as HTMLDivElement;
+
+    // Ops list belongs in the left column.
+    (leftColEl ?? dom.viewBuilder).appendChild(m);
+
     opsMountEl = m;
     return m;
   }
+
 
   function clearOpsMount(): void {
     if (!opsMountEl) return;
     opsMountEl.innerHTML = "";
   }
+
+
+  function ensureLayoutMount(): void {
+    if (layoutMountEl) return;
+
+    layoutMountEl = el("div", {
+      "data-role": "builderLayout",
+      style: "display:flex; gap:12px; align-items:flex-start; margin-top:12px;",
+    }) as HTMLDivElement;
+
+    leftColEl = el("div", {
+      "data-role": "builderLeftCol",
+      style: "flex:1; min-width:320px;",
+    }) as HTMLDivElement;
+
+    rightColEl = el("div", {
+      "data-role": "builderRightCol",
+      style: "flex:1; min-width:320px;",
+    }) as HTMLDivElement;
+
+    layoutMountEl.appendChild(leftColEl);
+    layoutMountEl.appendChild(rightColEl);
+
+    dom.viewBuilder.appendChild(layoutMountEl);
+  }
+
 
   function buildTypeSelect(current: string, onChange: (v: string) => void): HTMLSelectElement {
     const s = el("select") as HTMLSelectElement;
@@ -150,8 +194,28 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
     return s;
   }
 
+  function ensurePlaygroundMount(): HTMLDivElement {
+    ensureLayoutMount();
 
+    if (playgroundMountEl) return playgroundMountEl;
 
+    const m = el("div", { "data-role": "builderPlaygroundMount" }) as HTMLDivElement;
+
+    // Playground belongs in the right column.
+    (rightColEl ?? dom.viewBuilder).appendChild(m);
+
+    playgroundMountEl = m;
+
+    // Create playground once
+    playground = createPipelinePlayground({
+      mountEl: playgroundMountEl,
+      onSavePipeline: async (p) => {
+        await handlers.onUpsertPipeline(p);
+      },
+    });
+
+    return m;
+  }
 
 
   function passesFilter(op: OpSpec): boolean {
@@ -210,14 +274,25 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
     const grid = el("div", { class: "opsGrid", style: "margin-top:10px;" }) as HTMLDivElement;
 
     for (const op of filtered) {
-      grid.appendChild(
-        createOperationCard(op, {
-          compact: true,
-          showGroup: true,
-          showId: true,
-        }),
-      );
+      const cardEl = createOperationCard(op, {
+        compact: true,
+        showGroup: true,
+        showId: true,
+        portStyle: "puzzle",
+        cardStyle: "plain",
+      });
+
+      // Make draggable for the playground
+      cardEl.setAttribute("draggable", "true");
+      cardEl.addEventListener("dragstart", (ev) => {
+        ev.dataTransfer?.setData("application/x-beemage-opid", op.id);
+        ev.dataTransfer?.setData("text/plain", op.id);
+        if (ev.dataTransfer) ev.dataTransfer.effectAllowed = "copy";
+      });
+
+      grid.appendChild(cardEl);
     }
+
 
     card.appendChild(grid);
     m.appendChild(card);
@@ -408,21 +483,40 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
       selectedFile = null;
     });
   }
-
   function mount(): void {
     if (mounted) return;
     mounted = true;
-    ensureListMount();
+
+    // Create 2-col layout + mounts
+    ensureLayoutMount();
     ensureOpsMount();
+    ensurePlaygroundMount();
+
+    // Stored pipelines list stays below the 2 columns
+    ensureListMount();
   }
+
 
 
   function render(vm: BuilderVm): void {
     dom.builderStatusEl.textContent = vm.statusText || "Idle";
 
-    renderList(vm.pipelines, vm);
+    // Ensure mounts exist
+    ensureLayoutMount();
+    ensureOpsMount();
+    ensurePlaygroundMount();
+    ensureListMount();
+
+    // Right column: playground
+    playground?.render({ opsLibrary: vm.ops ?? [] });
+
+    // Left column: ops library
     renderOps(vm.ops ?? [], vm);
+
+    // Below: stored pipelines management board
+    renderList(vm.pipelines, vm);
   }
+
 
 
   function dispose(): void {
@@ -449,6 +543,24 @@ export function createBuilderView(args: { dom: Dom; handlers: BuilderViewHandler
       opsMountEl.remove();
       opsMountEl = null;
     }
+
+    playground?.dispose();
+    playground = null;
+
+    if (playgroundMountEl) {
+      playgroundMountEl.innerHTML = "";
+      playgroundMountEl.remove();
+      playgroundMountEl = null;
+    }
+
+    if (layoutMountEl) {
+      layoutMountEl.innerHTML = "";
+      layoutMountEl.remove();
+      layoutMountEl = null;
+      leftColEl = null;
+      rightColEl = null;
+    }
+
   }
 
 

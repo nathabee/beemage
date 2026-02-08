@@ -14,6 +14,8 @@ import type {
   PipelineOpInstance,
 } from "./type";
 import { artifactDims } from "./type";
+import { resolveEnabledLinear, validateLinearChainTypes } from "./typing";
+
 
 function isImage(a: Artifact): a is ImageArtifact {
   return a.type === "image";
@@ -161,32 +163,34 @@ export async function runPipelineDef(args: {
   }
 
   // Resolve enabled op specs
-  const enabledInstances = pipeline.ops.filter((x) => x.enabled !== false);
-
-  const resolvedSpecs: OpSpec[] = [];
-  for (const inst of enabledInstances) {
-    const s = catalogue.getOp(inst.opId);
-    if (!s) {
-      return {
-        pipelineId: pipeline.id,
-        title: pipeline.title,
-        status: "error",
-        error: `Unknown opId in pipeline: ${inst.opId}`,
-        input: inputArtifact,
-        ops: [],
-      };
-    }
-    resolvedSpecs.push(s);
-  }
-
-  const chainErr = validateLinearChain(resolvedSpecs, "image");
-  if (chainErr) {
-    deps.debug("pipeline validation failed (linear)", { pipelineId: pipeline.id, error: chainErr });
+  const resolved = resolveEnabledLinear({ catalogue, pipeline });
+  if (resolved.error) {
     return {
       pipelineId: pipeline.id,
       title: pipeline.title,
       status: "error",
-      error: chainErr,
+      error: resolved.error,
+      input: inputArtifact,
+      ops: [],
+    };
+  }
+
+  const enabledInstances = resolved.enabledInstances;
+  const resolvedSpecs = resolved.specs;
+
+  const typing = validateLinearChainTypes({
+    specs: resolvedSpecs,
+    instances: enabledInstances,
+    startType: "image",
+  });
+
+  if (!typing.ok) {
+    deps.debug("pipeline validation failed (linear)", { pipelineId: pipeline.id, error: typing.error });
+    return {
+      pipelineId: pipeline.id,
+      title: pipeline.title,
+      status: "error",
+      error: typing.error ?? "Invalid pipeline typing",
       input: inputArtifact,
       ops: enabledInstances.map((inst, i): OpRunResult => ({
         instanceId: inst.instanceId,
@@ -194,10 +198,11 @@ export async function runPipelineDef(args: {
         title: resolvedSpecs[i]?.title ?? inst.opId,
         io: resolvedSpecs[i]?.io ?? { input: "image", output: "image" },
         status: "error",
-        error: chainErr,
+        error: typing.error ?? "Invalid pipeline typing",
       })),
     };
   }
+
 
   const runs: OpRunResult[] = [];
   let current: Artifact = inputArtifact;

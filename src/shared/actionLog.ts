@@ -10,6 +10,8 @@ export type ActionLogScope =
   | "image"
   | "colors"
   | "settings"
+  | "builder"
+  | "pipeline"
   | "logs"
   | "demo"
   | "ui"
