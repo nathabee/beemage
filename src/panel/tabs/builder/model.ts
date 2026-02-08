@@ -1,9 +1,9 @@
 // src/panel/tabs/builder/model.ts
 
-import type { PipelineDef, OpSpec } from "../../app/pipeline/type"; 
+import type { PipelineDef, OpSpec } from "../../app/pipeline/type";
 import { createPipelineCatalogue } from "../../app/pipeline/catalogue";
 import type { AllRecipes } from "../../app/pipeline/recipeStore";
- 
+
 import { loadUserPipelines, saveUserPipelines, upsertUserPipeline, deleteUserPipeline } from "../../app/pipeline/userPipelineStore";
 import type { PipelineRecipeBundle } from "../../app/pipeline/recipeStore";
 import {
@@ -16,6 +16,7 @@ import {
   deleteRecipe as deleteRecipeStore,
 } from "../../app/pipeline/recipeStore";
 
+import { emitPipelineStorageChanged } from "../../app/pipeline/storageSignals";
 
 
 export type BuilderExportFileV2 = {
@@ -94,32 +95,77 @@ export function createBuilderModel(): BuilderModel {
 
   async function deleteUserPipelineById(pipelineId: string): Promise<void> {
     await deleteUserPipeline(pipelineId).catch(() => null);
+
+    emitPipelineStorageChanged({
+      kind: "userPipelines",
+      reason: "delete",
+      pipelineId,
+    });
   }
+
 
   async function upsertUserPipelineApi(p: PipelineDef): Promise<void> {
     await upsertUserPipeline(p).catch(() => null);
+
+    emitPipelineStorageChanged({
+      kind: "userPipelines",
+      reason: "upsert",
+      pipelineId: p.id,
+    });
   }
 
   async function deleteAllRecipesForPipeline(pipelineId: string): Promise<void> {
     const all = await loadAllRecipes().catch(() => ({} as any));
     if (!all || typeof all !== "object") return;
+
     delete (all as any)[pipelineId];
     await saveAllRecipes(all as any).catch(() => null);
+
+    emitPipelineStorageChanged({
+      kind: "recipes",
+      reason: "deleteAllForPipeline",
+      pipelineId,
+    });
   }
+
+
 
   async function setSelectedRecipeApi(pipelineId: string, recipeId: string): Promise<void> {
     await setSelectedRecipeStore(pipelineId, recipeId).catch(() => null);
+
+    emitPipelineStorageChanged({
+      kind: "recipes",
+      reason: "select",
+      pipelineId,
+      recipeId,
+    });
   }
+
 
   async function upsertRecipeApi(
     pipelineId: string,
     recipe: { id: string; title: string; ops: any[] },
   ): Promise<void> {
     await upsertRecipeStore(pipelineId, recipe as any).catch(() => null);
+
+    emitPipelineStorageChanged({
+      kind: "recipes",
+      reason: "upsert",
+      pipelineId,
+      recipeId: recipe.id,
+    });
   }
+
 
   async function deleteRecipeApi(pipelineId: string, recipeId: string): Promise<void> {
     await deleteRecipeStore(pipelineId, recipeId).catch(() => null);
+
+    emitPipelineStorageChanged({
+      kind: "recipes",
+      reason: "delete",
+      pipelineId,
+      recipeId,
+    });
   }
 
   async function importFromJsonText(jsonText: string): Promise<BuilderImportResult> {
@@ -171,6 +217,11 @@ export function createBuilderModel(): BuilderModel {
 
     await saveUserPipelines(Array.from(byId.values()));
 
+    emitPipelineStorageChanged({
+      kind: "userPipelines",
+      reason: "import",
+    });
+
     // Import recipes if provided (array-only).
     if (recipesRaw !== undefined) {
       if (!Array.isArray(recipesRaw)) {
@@ -178,10 +229,16 @@ export function createBuilderModel(): BuilderModel {
       }
       const all: AllRecipes = bundlesToAllRecipes(recipesRaw);
       await saveAllRecipes(all).catch(() => null);
+
+      emitPipelineStorageChanged({
+        kind: "recipes",
+        reason: "import",
+      });
     }
 
     return { imported: valid.length, skipped, totalInFile };
   }
+
 
   async function exportToJsonText(): Promise<string> {
     const pipelines = await loadUserPipelines().catch(() => []);

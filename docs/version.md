@@ -19,7 +19,14 @@ Conventions:
 
 ### **v0.1.x — Focus: Universal Pipeline and Builder**
 
- 
+ #### v0.1.9 — Epic: Anomaly correction
+
+* Fix: pipeline combobox refreshes from storage on Reset
+* Fix: automatic combobox update when user pipelines/recipes change
+
+
+---
+
 #### v0.1.8 — Epic: Builder create new pipeline in a playground
 
 * Introduce `pipelinePlayground.ts` to build pipelines interactively (drag/drop ops, reorder, save).

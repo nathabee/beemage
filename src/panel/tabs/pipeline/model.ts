@@ -129,6 +129,9 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
   let currentArtifact: Artifact | null = null;
 
   async function reloadCatalogue(): Promise<void> {
+    const prevPipelineId = activePipelineId;
+    const prevRecipeId = activeRecipeId;
+
     const userPipelines = await loadUserPipelines().catch(() => []);
     catalogue = createPipelineCatalogue({ userPipelines });
 
@@ -137,8 +140,9 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
 
     // If the currently selected pipeline id no longer exists, fall back to first available.
     const all = catalogue.listPipelines?.() ?? catalogue.builtIns;
-    const exists = all.some((p) => p.id === activePipelineId);
-    if (!exists) {
+    const pipelineExists = all.some((p) => p.id === activePipelineId);
+
+    if (!pipelineExists) {
       activePipelineId = (all[0]?.id ?? "segmentation") as PipelineId;
       activeRecipeId = "default";
     }
@@ -147,15 +151,29 @@ export function createPipelineModel(deps: PipelineModelDeps): PipelineModel {
     const base = catalogue.getPipeline?.(activePipelineId) ?? catalogue.listPipelines?.()?.[0];
     if (base) {
       const recipes = makeRecipesForPipeline(base);
-      const ok = recipes.some((r) => r.id === activeRecipeId);
-      if (!ok) activeRecipeId = "default";
+      const recipeOk = recipes.some((r) => r.id === activeRecipeId);
+      if (!recipeOk) activeRecipeId = "default";
     } else {
       activeRecipeId = "default";
     }
 
-    // Changing catalogue can invalidate the plan
-    resetRunState();
+    const selectionChanged = prevPipelineId !== activePipelineId || prevRecipeId !== activeRecipeId;
+
+    if (selectionChanged) {
+      // Selection invalidated (deleted pipeline or recipe) → full reset is correct.
+      resetRunState();
+      return;
+    }
+
+    // Selection is still valid:
+    // - keep lastResult/output so user doesn't lose their preview
+    // - but invalidate step-plan because opSpec references can become stale
+    plan = [];
+    nextIndex = 0;
+
+    // statusText/lastResult/currentArtifact stay as-is by design
   }
+
 
 
   function getBasePipeline(): PipelineDef {

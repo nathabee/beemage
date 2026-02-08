@@ -10,7 +10,7 @@ import * as actionLog from "../../../shared/actionLog";
 import type { TuningController } from "../../app/tuning/controller";
 import type { ParamValue } from "../../app/tuning/types";
 import { setLastPipelineOutputFromVm } from "../../app/pipeline/outputStore";
-import { loadUserPipelines } from "../../app/pipeline/userPipelineStore";
+import { onPipelineStorageChanged, type PipelineStorageChange } from "../../app/pipeline/storageSignals";
 
 
 export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController) {
@@ -36,6 +36,149 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
   // Track which tuning subtree is currently mounted into the Pipeline tab slot.
   let mountedScopeRootId: string | null = null;
   let lastSurfacedError: string | null = null;
+  let unsubscribePipelineSignals: (() => void) | null = null;
+
+  let autoReloadQueued = false;
+  const autoReloadReasons: string[] = [];
+
+  function attachPipelineSignals(): void {
+    if (unsubscribePipelineSignals) return;
+
+    unsubscribePipelineSignals = onPipelineStorageChanged((change: PipelineStorageChange) => {
+      if (!mounted) return;
+
+      autoReloadReasons.push(`${change.kind}:${change.reason}`);
+      scheduleAutoReloadFromStorage();
+    });
+
+  }
+
+  function detachPipelineSignals(): void {
+    unsubscribePipelineSignals?.();
+    unsubscribePipelineSignals = null;
+  }
+
+  function scheduleAutoReloadFromStorage(): void {
+    if (autoReloadQueued) return;
+    autoReloadQueued = true;
+
+    queueMicrotask(() => {
+      autoReloadQueued = false;
+      const reason = autoReloadReasons.splice(0, autoReloadReasons.length).join(",") || "unknown";
+      void autoReloadCatalogueNow(reason);
+    });
+  }
+
+  async function autoReloadCatalogueNow(reason: string): Promise<void> {
+    // Keep this out of user-visible log to avoid spam.
+    debugTrace.append({
+      scope: "panel",
+      kind: "info",
+      message: "Pipeline tab: auto reload catalogue",
+      meta: { reason },
+    });
+
+    const before = model.getVm();
+    const beforePipeline = String(before.activePipelineId ?? "");
+    const beforeRecipe = String(before.activeRecipeId ?? "");
+
+    try {
+      await model.reloadCatalogue();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+
+      debugTrace.append({
+        scope: "panel",
+        kind: "error",
+        message: "Pipeline tab: auto reloadCatalogue failed",
+        meta: { reason, error: msg },
+      });
+
+      actionLog.append({
+        scope: "panel",
+        kind: "error",
+        message: "Pipeline catalogue refresh failed (auto).",
+      });
+
+      return;
+    }
+
+    const after = model.getVm();
+    const afterPipeline = String(after.activePipelineId ?? "");
+    const afterRecipe = String(after.activeRecipeId ?? "");
+
+    // If selection got invalidated (deleted pipeline/recipe), tell the user once.
+    if (beforePipeline !== afterPipeline || beforeRecipe !== afterRecipe) {
+      actionLog.append({
+        scope: "panel",
+        kind: "info",
+        message: `Pipeline selection updated due to storage change: ${beforePipeline}/${beforeRecipe} → ${afterPipeline}/${afterRecipe}`,
+      });
+
+      // Keep tuning consistent with model selection.
+      void tuning.setParamValue("pipeline", "mode", afterPipeline);
+      void tuning.setParamValue("pipeline", "recipe", afterRecipe);
+    }
+
+    // Ensure tuning subtree matches potentially changed pipeline
+    mountScopedTuningForActivePipeline();
+
+    // Publish vm output snapshot (safe; other tabs read this)
+    setLastPipelineOutputFromVm(after);
+
+    render();
+  }
+
+
+  async function resetAndReloadFromStorage(): Promise<void> {
+    model.reset();
+
+    const img = readSourceImageData();
+    if (img) model.setInputImageData(img);
+
+    // Publish cleared state for other tabs
+    setLastPipelineOutputFromVm(model.getVm());
+
+    actionLog.append({ scope: "panel", kind: "info", message: "Pipeline reset (reseed from source)" });
+
+    // Critical: rehydrate catalogue (built-ins + user pipelines) so combobox reflects storage.
+    try {
+      await model.reloadCatalogue();
+    } catch (e) {
+      debugTrace.append({
+        scope: "panel",
+        kind: "error",
+        message: "Pipeline reset: reloadCatalogue() failed",
+        meta: { error: e instanceof Error ? e.message : String(e) },
+      });
+
+      actionLog.append({
+        scope: "panel",
+        kind: "error",
+        message: "Pipeline reset: failed to reload pipeline catalogue from storage.",
+      });
+    }
+
+    // Re-apply tuning selection AFTER catalogue refresh, so newly added pipelines can be selected.
+    try {
+      await syncPipelineFromTuning();
+    } catch (e) {
+      debugTrace.append({
+        scope: "panel",
+        kind: "error",
+        message: "Pipeline reset: syncPipelineFromTuning() failed",
+        meta: { error: e instanceof Error ? e.message : String(e) },
+      });
+
+      // Defensive fallback: keep tuning mount sane even if sync fails.
+      mountScopedTuningForActivePipeline();
+    }
+
+    // Publish final vm after catalogue/sync
+    setLastPipelineOutputFromVm(model.getVm());
+
+    render();
+  }
 
   function surfacePipelineErrorsToActionLog(): void {
     const vm = model.getVm();
@@ -176,6 +319,7 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
     mountScopedTuningForActivePipeline();
   }
 
+
   function ensureView(): PipelineView {
     if (view) return view;
 
@@ -212,20 +356,12 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
 
         onRunAll: () => void runAll(),
         onNext: () => void runNext(),
+
+        // Key change: Reset now reloads catalogue from storage before rendering,
+        // so the pipeline combobox reflects newly added/renamed user pipelines.
         onReset: () => {
-          model.reset();
-
-          const img = readSourceImageData();
-          if (img) model.setInputImageData(img);
-
-          setLastPipelineOutputFromVm(model.getVm());
-
-          actionLog.append({ scope: "panel", kind: "info", message: "Pipeline reset (reseed from source)" });
-
-          mountScopedTuningForActivePipeline();
-          render();
+          void resetAndReloadFromStorage();
         },
-
       },
     });
 
@@ -236,6 +372,7 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
 
     return view;
   }
+
 
   function render(): void {
     ensureView().render(model.getVm());
@@ -278,8 +415,6 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
     // view binds its own internal UI
   }
 
-  // inside src/panel/tabs/pipeline/tab.ts
-
   async function mount(): Promise<void> {
     mounted = true;
 
@@ -287,14 +422,18 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
 
     refreshInputForRun();
 
-    // NEW: load user pipelines into catalogue
+    // Load user pipelines + recipes into catalogue (built-ins + user)
     await model.reloadCatalogue().catch(() => null);
 
     await syncPipelineFromTuning();
 
+    // Start listening for builder changes while this tab is visible.
+    attachPipelineSignals();
+
     actionLog.append({ scope: "panel", kind: "info", message: "Pipeline tab: render()" });
     render();
   }
+
 
   async function refresh(): Promise<void> {
     if (!mounted) return;
@@ -311,15 +450,20 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
   }
 
 
-
-
   function unmount(): void {
     mounted = false;
+
+    // Stop listening while hidden; mount() already reloads catalogue anyway.
+    detachPipelineSignals();
+
     actionLog.append({ scope: "panel", kind: "info", message: "Pipeline tab: unmount()" });
   }
 
+
   function dispose(): void {
     actionLog.append({ scope: "panel", kind: "info", message: "Pipeline tab: dispose()" });
+
+    detachPipelineSignals();
 
     view?.dispose();
     view = null;
@@ -327,6 +471,7 @@ export function createPipelineTab(dom: Dom, _bus: Bus, tuning: TuningController)
     mountedScopeRootId = null;
     clearPipelineTuningMount();
   }
+
 
   return { bind, mount, unmount, refresh, dispose };
 }
