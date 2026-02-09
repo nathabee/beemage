@@ -1,22 +1,7 @@
-Perfect, this is now very close.
-Below is a **cleaned, final replacement** that does exactly what you asked:
-
-* **only sections 1 / 2 / 3**
-* no A/B/C, no sub-classification thinking
-* no “what we don’t do / what we don’t want”
-* **OpenCV mandatory in web**, via `node_modules`
-* extension and web **fully separated**
-* wording is factual, positive, and implementation-accurate
-* numbering is consistent (no 3.6 / 3.7 drift)
-
-You can paste this **as-is**.
-
----
-
 # Tester Guide
 
 **BeeMage — Explore image processing through visual pipelines**
-**Version:** v0.1.10
+* **Document updated for version:** `0.1.10`
 
 This document explains how to test **BeeMage** across its supported delivery formats.
 

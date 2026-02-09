@@ -1,7 +1,7 @@
 # User Manual
 
 **BeeMage — Explore image processing through visual pipelines**
-**Version:** v0.1.10
+* **Document updated for version:** `0.1.10`
 
 This document explains how to use BeeMage from an end-user perspective.
 

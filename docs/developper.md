@@ -1,40 +1,149 @@
 # Developer Guide
 
-This document is intended for developers working on **BeeMage — Extract the main outline**.
+**BeeMage — Explore image processing through visual pipelines**  
+**Applies to:** extension + static web demo  
+* **Document updated for version:** `0.1.10`
 
-## Project Structure
+This document describes the **development workflow** for BeeMage:
+where code lives, how changes are organized, how versions are produced,
+and how releases are made.
 
-The repository is organized to separate concerns clearly:
+Installation, build, and testing procedures are documented separately and
+are referenced where needed.
 
-- `src/` — source code
-- `assets/` — icons and static resources
-- `scripts/` — build and utility scripts
-- `docs/` — documentation
-- `tools/` — template and initialization utilities
+---
 
-## Development Workflow
+## 1. Code organization
 
-Typical workflow:
+BeeMage is delivered through two formats that share the same UI and core logic:
 
-1. Install dependencies
-2. Run the development build
-3. Load the extension in Chrome
-4. Iterate on source code
-5. Rebuild and reload as needed
+1. **Chrome Extension (MV3, Side Panel)**
+2. **Static Web Demo (Vite, GitHub Pages)**
 
-## Initialization Scripts
+The demo is **not a separate application**.  
+It runs the same panel code and replaces platform seams at build time.
 
-The project includes initialization scripts using `GENERIC*` placeholders.
+### Shared code (extension + demo)
 
-These scripts are intended to be run **once**, when creating a new project from the template.
+Most development happens in:
 
-After initialization:
-- Verify all placeholders are replaced
-- Remove the `tools/` directory if no longer needed
+```
 
-## Coding Guidelines
+src/
 
-- Keep logic explicit
-- Avoid unused permissions
-- Prefer small, testable modules
-- Document non-obvious behavior
+```
+
+Key areas:
+
+* `src/panel/` — panel UI, tabs, pipeline system, tuning
+* `src/shared/` — storage, logging, messages, versioning
+
+Changes here affect **both** delivery formats.
+
+### Demo-specific code (web-only)
+
+Demo-only behavior lives in:
+
+```
+
+demo/src/mocks/
+
+```
+
+This includes:
+
+* runtime abstraction
+* storage abstraction
+* OpenCV-backed engine implementations
+
+If functionality must exist **only in the demo**, it belongs here.
+
+---
+
+## 2. Development rules
+
+* Do **not** introduce Chrome APIs into shared code.
+* Do **not** introduce OpenCV or WASM into extension runtime.
+* Demo-only capabilities must be implemented via seam swapping.
+* Extension runtime must remain MV3-safe and CSP-compatible.
+
+---
+
+## 3. Local development and testing
+
+Installation, build, and test procedures are documented in:
+
+* **Installation:** `docs/installation.md`
+* **Testing:** `docs/tester.md`
+
+Use those documents as the source of truth.
+
+---
+
+## 4. Versioning workflow
+
+BeeMage uses a `VERSION` file as the single source of truth.
+
+### 4.1 Bump version
+
+```bash
+./scripts/bump-version.sh
+```
+
+### 4.2 Implement changes
+
+* Shared changes → `src/`
+* Demo-only changes → `demo/src/mocks/`
+
+### 4.3 Update version documentation
+
+Update:
+
+```
+docs/version.md
+```
+
+Add an entry describing the patch or epic.
+
+### 4.4 Commit
+
+```bash
+git add -A
+git status
+git commit -m "vX.Y.Z — <short description>"
+```
+
+---
+
+## 5. Release workflow
+
+Releases are built and published via a single entry point:
+
+```bash
+./scripts/release-all.sh
+```
+
+This script:
+
+* builds the extension artifact
+* builds the demo
+* publishes the demo to `docs/demo` (GitHub Pages)
+* creates the Git tag and GitHub release artifacts
+
+The script enforces a clean working tree before running.
+
+---
+
+## 6. Responsibilities summary
+
+| Area            | Document               |
+| --------------- | ---------------------- |
+| Installation    | `docs/installation.md` |
+| Testing         | `docs/tester.md`       |
+| Architecture    | `docs/architecture.md` |
+| Developer flow  | `docs/developer.md`    |
+| Version history | `docs/version.md`      |
+
+---
+
+ 

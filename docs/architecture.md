@@ -1,7 +1,7 @@
 # Architecture
 
 **BeeMage — Explore image processing through visual pipelines**
-**Version:** v0.1.10
+* **Document updated for version:** `0.1.10`
 
 This document describes the **architecture of BeeMage**, its **shared core**, and its **delivery-specific runtimes**.
 

@@ -154,7 +154,8 @@ The core pipeline system is stable, while features and UI continue to evolve.
 
 Feedback, testing, and issue reports are welcome.
 
-This document was updated for the **Version:** v0.1.10
+This document was updated :
+**Current version:** v0.1.10
 
 ---
 
