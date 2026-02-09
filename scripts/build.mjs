@@ -102,8 +102,7 @@ if (!isWatch) {
 }
 mkdirp(distDir);
 
-const entryPoints = {
-  background: path.join(root, "src/background/index.ts"),
+const entryPoints = { 
   content: path.join(root, "src/content.ts"),
   panel: path.join(root, "src/panel/panel.ts")
 };

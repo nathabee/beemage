@@ -1,137 +1,252 @@
-# Test
+Perfect, this is now very close.
+Below is a **cleaned, final replacement** that does exactly what you asked:
 
+* **only sections 1 / 2 / 3**
+* no A/B/C, no sub-classification thinking
+* no “what we don’t do / what we don’t want”
+* **OpenCV mandatory in web**, via `node_modules`
+* extension and web **fully separated**
+* wording is factual, positive, and implementation-accurate
+* numbering is consistent (no 3.6 / 3.7 drift)
 
-##  Test on your main plateform
+You can paste this **as-is**.
 
-Test in two passes:
+---
 
-### Unpacked load (Developer mode → “Load unpacked”)
-Best for debugging, service worker console, quick iteration.
- 
+# Tester Guide
+
+**BeeMage — Explore image processing through visual pipelines**
+**Version:** v0.1.10
+
+This document explains how to test **BeeMage** across its supported delivery formats.
+
+Each delivery format has its own runtime and platform characteristics and is tested independently.
+
+---
+
+## 1. Presentation
+
+BeeMage is a visual image-processing tool built around **explicit pipelines** and **interactive exploration**.
+
+Testing focuses on:
+
+* correctness of pipeline execution
+* clarity of visual feedback
+* predictability of state and actions
+* consistency of behavior within each delivery format
+
+BeeMage is delivered through two formats:
+
+1. **Static Web application**
+2. **Chrome Extension**
+
+The core UI and pipeline logic are shared.
+Runtime and platform specifics are tested per format.
+
+---
+
+## 2. Static Web version (Browser application)
+
+This section applies when BeeMage is run as a **static web application**
+(GitHub Pages, local static hosting, iframe embedding, etc.).
+
+---
+
+### 2.1 Runtime and platform
+
+* Runs as a **standard website**
+* Same UI and pipeline logic as other deliveries
+* Web runtime with **OpenCV (WASM) support**
+* Static asset–based deployment
+
+OpenCV is a **required runtime dependency** for the static web version.
+
+---
+
+### 2.2 Install dependencies and prepare OpenCV runtime
+
+The static web version requires `node_modules` in order to install the OpenCV runtime.
+
+From the project root:
+
+```bash
+cd demo
+npm install
+./scripts/get-opencv.sh
+```
+
+This copies OpenCV runtime files from `node_modules` into:
+
+* `docs/assets/opencv/` (GitHub Pages runtime)
+* `demo/public/assets/opencv/` (served by Vite)
+
+---
+
+### 2.3 Build and run
+
+From the `demo/` directory:
+
+```bash
+npm run build
+```
+
+Build output:
+
+```
+demo/dist/
+```
+
+Serve locally:
+
+```bash
+npx serve dist
+```
+
+Open the served URL in a browser.
+
+---
+
+### 2.4 What to verify (static web)
+
+* Application loads correctly in a browser
+
+* All tabs render:
+
+  * Image
+  * Pipeline
+  * Builder
+  * Colors
+  * Settings
+  * Logs
+
+* Pipelines execute correctly
+
+* OpenCV-backed operations execute correctly
+
+* Outputs can be downloaded
+
+* Visual feedback matches pipeline state
+
+---
+
+## 3. Chrome Extension version
+
+This section applies when BeeMage is run as a **Chrome Extension**
+(Manifest V3, Side Panel UI).
+
+---
+
+### 3.1 Runtime and platform
+
+* Runs as a **Chrome Side Panel**
+* Uses Chrome extension platform APIs
+* Native execution engine
+* Packaged as a production extension build
+
+---
+
+### 3.2 Build and load (developer mode)
+
+From the project root:
+
+```bash
+npm install
+npm run build
+```
+
+Then:
+
+1. Open `chrome://extensions`
+2. Enable **Developer mode**
+3. Click **Load unpacked**
+4. Select the `dist/` directory
+   (the folder that directly contains `manifest.json`)
+
+---
+
+### 3.3 Iteration workflow
 
 ```text
 edit code
 ↓
 npm run build
 ↓
-chrome://extensions → Reload 
-Reload or re-install it via `chrome://extensions` (choose the dist repository)
+chrome://extensions → Reload
 ↓
-refresh chatgpt.com
-``` 
+open BeeMage side panel
+```
 
-
-### Packaged pack extension 
-
-
-make a pack extension :
-
-
-### 2) Test a real packed install (CRX) locally (optional)
-
-If you specifically want to test the packed format:
-
-1. Extract the ZIP (same as above).
-2. Go to `chrome://extensions`
-3. Developer mode ON
-4. Click **Pack extension**
-5. **Extension root directory**: select the folder containing `manifest.json`
-6. Leave **Private key** empty the first time → Chrome creates:
-
-   * a `.crx`
-   * a `.pem` (private key)
-
-Now you can install the `.crx` by dragging it into `chrome://extensions` (sometimes Chrome blocks this on stable builds depending on policy; “Load unpacked” is more reliable).
-
-### About the key / extension ID
-
-* If you **don’t** provide a key, Chrome generates a new one → the extension ID will be different each time.
-* If you want to simulate updating the same extension, you reuse the generated `.pem`.
-
-But for release QA, **you don’t need Pack extension at all**.
+Use this workflow for development and verification.
 
 ---
 
-## What about testing “exactly as users install it”?
+### 3.4 Test the release ZIP
 
-Users install via **Chrome Web Store**, not ZIP.
+This verifies the packaged extension artifact.
 
-So the closest-to-real test is:
+```bash
+./scripts/build-zip.sh
+```
 
-* upload to the Web Store as **Unlisted** (or use a test group)
-* install from the store listing
-* test update flow by uploading a new version
+Output:
 
-That’s the only way to test store-specific behaviors.
+```
+release/beemage-<version>.zip
+```
 
----
+Test procedure:
 
-## Minimal checklist for “packed” release QA (practical)
-
-Test at least:
-
-* install via **Load unpacked** from extracted release ZIP
-* open your UI entry points (popup / side panel / options)
-* check `chrome://extensions` → “service worker” console for errors
-* permissions prompts behave as expected
-* all icons load (no broken paths)
-* any downloads/export features work
+1. Unzip the ZIP into a folder
+2. Open `chrome://extensions`
+3. Enable **Developer mode**
+4. Click **Load unpacked**
+5. Select the folder that directly contains `manifest.json`
 
 ---
 
-If you tell me what your release ZIP contains (top-level files/folders), I’ll tell you exactly which folder you must select for “Load unpacked” and what to fix if your ZIP structure isn’t ideal.
+### 3.5 What to verify (extension)
 
+* Side panel opens reliably
+* All tabs render correctly
+* Pipelines execute correctly
+* Storage persists across reloads
+* Logs behave as expected
+* No runtime errors appear
+
+---
+
+### 3.6 Platform coverage
+
+Testing should include at least one configuration from each group:
+
+* Windows 11 + Chrome
+* Windows 11 + Edge
+* macOS + Chrome
+* Linux (Ubuntu) + Chrome
+
+Focus on:
+
+* layout and sizing
+* DPI scaling
+* download behavior
+* storage persistence after restart
 
 ---
 
-## Platform-specific tests you should include 
+### 3.7 Testing principle
 
-Plafeform can be :
-* **Windows 11 + Chrome**
-* **Windows 11 + Edge**
-* **Ubuntu + Chrome**
-* **macOS + Chrome**
+BeeMage is designed around:
 
-Here are the tests that can genuinely vary by OS/browser and therefore deserve checklist items:
+* explicit user actions
+* visual feedback at every step
+* predictable state transitions
 
-### 1) Installation and updates
+Testing should always verify that:
 
-* Install from ZIP/unpacked works on Windows paths
-* Update behavior: reinstall over existing version preserves expected state (or resets cleanly)
-
-### 2) File/download behavior
-
-If your extension exports JSON/MD or downloads files:
-
-* Windows download path handling
-* Filename validity (Windows is stricter about reserved characters)
-* “Save as” / auto-download permissions differences
-
-### 3) Keyboard shortcuts
-
-* Modifier keys differ (Ctrl vs Cmd, but Windows vs Linux can also differ by layout)
-* Conflicts with browser/system shortcuts
-
-### 4) Fonts/layout rendering
-
-* UI spacing can shift (fonts differ, scrollbars differ)
-* High DPI scaling on Windows (125% / 150%) can break layout
-
-### 5) Browser differences (Chrome vs Edge)
-
-* Slight policy/permission UX differences
-* `chrome.*` APIs are mostly identical, but review behavior and enterprise policies can affect:
-
-  * storage persistence under “clear browsing data”
-  * extension side panel behavior (if you use it)
-  * popups and focus quirks
-
-
-
-### 6) Performance + throttling
-
-* Service worker lifecycle is sensitive; sometimes manifests behave differently depending on browser optimizations
-* “wake up” behavior after idle can feel different
+* every operation is intentional
+* each action produces a visible result
+* state changes are controlled and observable
 
 ---
+
  

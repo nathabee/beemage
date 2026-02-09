@@ -1,39 +1,62 @@
 # Demo Overview
 
-Alongside **BeeMage — Extract the main outline**, this project provides a **Demo version**.
+Alongside **BeeMage — Explore image processing through visual pipelines**, this project provides a **Demo version**.
 
-The demo is intended for preview, documentation, and presentation purposes only.
+The demo exists for **preview, documentation, and presentation purposes**.
 
 ---
 
-## Demo version  
+## Demo version
+
 ### What it is — and what it is NOT
 
 ### What the demo **is**
 
-- A **web-based simulation** of the extension UI
-- Runs the **real UI code** in a normal browser page
-- Uses **mock data only**
-- Requires:
-  - no account
-  - no login
-  - no browser extension installation
+* A **web-based version** of the BeeMage panel UI
+* Runs the **same UI and processing code** as the extension
+* Processes **real images locally in the browser**
+* Uses **the same pipeline definitions and execution logic**
+* Adapts to a web environment via **platform seam swapping**
+* Requires:
 
-The demo is designed for:
+  * no account
+  * no login
+  * no browser extension installation
 
-- previewing the user interface
-- testing interaction flows
-- documentation and screenshots
-- embedding in websites (for example WordPress)
-- public presentation and review
+The demo is intended for:
+
+* previewing the user interface
+* understanding the workflow
+* documentation and screenshots
+* embedding in websites (e.g. WordPress)
+* public presentation and review
 
 ### What the demo **is NOT**
 
-- ❌ Not a browser extension
-- ❌ Not connected to any user account
-- ❌ No access to real browser data
-- ❌ No access to external services
-- ❌ Not installable via `chrome://extensions`
+* ❌ Not a Chrome extension
+* ❌ Not installed via `chrome://extensions`
+* ❌ No access to browser APIs restricted to extensions
+* ❌ No access to user browsing data
+* ❌ No background or privileged extension context
+
+---
+
+## How the demo works (important)
+
+The demo is **not a mock UI**.
+
+It runs the **real BeeMage panel code**, but replaces certain platform-dependent components with web-compatible implementations:
+
+* storage → browser-local mock storage
+* runtime APIs → web-safe runtime wrapper
+* engine adapter → demo-compatible engine detection
+* OpenCV execution → demo-only OpenCV dispatch implementation
+
+This ensures:
+
+* identical UI behavior
+* identical pipeline logic
+* safe execution outside an extension context
 
 ---
 
@@ -41,117 +64,87 @@ The demo is designed for:
 
 The demo is distributed **separately** from the extension.
 
-It is typically provided as a ZIP file in the same GitHub Release as the extension:
+It is typically available in two forms:
 
-- `beemage-demo-0.0.1.zip`
+### 1) Live demo (recommended)
 
-The demo ZIP is **not** installed as an extension.
+* Hosted via **GitHub Pages**
+* Accessible from the project homepage
+* Can be embedded in other websites
+* No installation required
 
-Instead, it can be:
+### 2) Demo ZIP archive
 
-- served as a **static website**
-- opened locally in a browser
-- embedded in another website (for example via an iframe)
-- hosted on GitHub Pages or any static hosting service
+* Provided as a **separate ZIP** in GitHub Releases
+* Versioned consistently with the extension
+* Can be:
+
+  * opened locally
+  * hosted on any static web server
+  * embedded via iframe
+
+The demo ZIP is **not installed** as an extension.
 
 ---
 
 ## Relationship between extension and demo
 
-| Component        | Purpose                                      |
-| ---------------- | -------------------------------------------- |
-| Extension package | Real usage inside the browser                |
-| Demo package      | UI preview and documentation                 |
+| Component         | Purpose                              |
+| ----------------- | ------------------------------------ |
+| Extension package | Real usage inside the browser        |
+| Demo package      | Preview, documentation, presentation |
 
-If you want to **use BeeMage — Extract the main outline** → install the **extension**.  
+If you want to **use BeeMage** → install the **extension**.
 If you want to **see how it works** → open the **demo**.
 
 ---
 
-
 ## Demo delivery and publishing
 
-The demo is delivered **inside the repository** under:
+The demo is built from the same source code as the extension.
 
-```
+During the release process:
 
-/docs/demo
-
-```
-
-This has two important consequences:
-
-### GitHub Pages publication
-
-If the GitHub repository is configured to publish **GitHub Pages from `/docs`**, then:
-
-- the demo is automatically published as part of the GitHub Pages site
-- the demo becomes accessible via the project homepage
-
-This allows the demo to be:
-
-- publicly accessible
-- linked from documentation
-- embedded in other websites
-- used for screenshots and previews without installing the extension
-
----
-
-## Build and release workflow
-
-The demo is built and published together with the extension as part of the release process.
-
-The script:
-
-```
-
-scripts/release-all.sh
-
-```
-
-is responsible for:
-
-- building the extension
-- building the demo
-- creating ZIP archives for:
-  - the extension
-  - the demo
-- copying the demo’s static output into:
-```
-
-/docs/demo
-
-```
-- committing the updated documentation and demo
-- creating a GitHub Release
+* the extension is built and packaged
+* the demo is built as a static web application
+* ZIP archives are created for both
+* the demo output is copied into the repository’s GitHub Pages directory
+* a GitHub Release is created containing both artifacts
 
 As a result:
 
-- the **extension ZIP** is available in the GitHub Release assets
-- the **demo ZIP** is available in the GitHub Release assets
-- the **live demo** is available via GitHub Pages
+* the **extension ZIP** is available in GitHub Release assets
+* the **demo ZIP** is available in GitHub Release assets
+* the **live demo** is accessible via GitHub Pages
 
----
-
-## Summary
-
-| Artifact        | Location                          | Purpose                         |
-|-----------------|-----------------------------------|---------------------------------|
-| Extension ZIP   | GitHub Release assets             | Real usage                       |
-| Demo ZIP        | GitHub Release assets             | Offline / custom hosting         |
-| Live demo       | GitHub Pages (`/docs/demo`)       | Public preview and documentation |
-
-This separation ensures that users can clearly distinguish between **using the extension** and **previewing its interface**.
- 
 ---
 
 ## Privacy and data
 
 The demo:
 
-- does not collect data
-- does not connect to external services
-- does not require authentication
-- operates entirely with static, mock content
+* runs entirely in the browser
+* does not upload images
+* does not collect data
+* does not use analytics
+* does not require authentication
+
+Images and processing results exist only in memory unless the user downloads them.
 
 For real usage details, refer to the extension documentation and privacy policy.
+
+---
+
+## Summary
+
+| Artifact      | Purpose                          |
+| ------------- | -------------------------------- |
+| Extension ZIP | Real usage (Chrome Extension)    |
+| Demo ZIP      | Offline / custom hosting         |
+| Live demo     | Public preview and documentation |
+
+This separation ensures a clear distinction between **using BeeMage** and **previewing how it works**.
+
+---
+
+ 

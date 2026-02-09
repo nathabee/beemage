@@ -1,210 +1,321 @@
 # Architecture
 
-**BeeMage — Extract the main outline**
+**BeeMage — Explore image processing through visual pipelines**
+**Version:** v0.1.10
 
-This document describes the high-level architecture of **BeeMage — Extract the main outline**.
+This document describes the **architecture of BeeMage**, its **shared core**, and its **delivery-specific runtimes**.
 
----
-
-## Overview
-
-BeeMage is a **Chrome Extension built on Manifest V3**.
-
-Its architecture is intentionally simple:
-
-* All image processing runs **locally in the browser**
-* The user interface is implemented as a **panel-based extension UI**
-* A minimal **background service worker** exists only to satisfy the MV3 lifecycle and shared infrastructure
-* No external services, APIs, or remote code are used
-
-There is **no backend** and **no network dependency**.
+BeeMage is built around a single, delivery-agnostic application core that is executed in different browser environments.
 
 ---
 
-## High-Level Architecture
+## 1. Architectural overview
+
+BeeMage consists of three layers:
+
+1. **Application Core** (shared)
+2. **Platform / Runtime Seams**
+3. **Delivery Formats**
+
+All image processing happens **locally in the browser**.
+There is no backend and no remote processing.
+
+---
+
+## 2. Application core (shared)
+
+The application core is identical across all deliveries.
+
+It provides:
+
+* the full UI
+* the pipeline system
+* tuning, storage, and logs
+* execution orchestration
+
+### Core properties
+
+* **Pipeline-based execution**
+* **Typed artifacts** (`image`, `mask`, `svg`)
+* **Explicit execution model**
+* **Inspectable intermediate results**
+* **Local persistence**
+
+---
+
+## 3. High-level core architecture
 
 ```
-┌─────────────────────────────┐
-│        Browser UI           │
-│  (Extension Panel)          │
-│                             │
-│  ┌─────────────┐            │
-│  │ image Tab │            │
-│  │ Colors Tab  │            │
-│  │ Settings    │            │
-│  │ Logs        │            │
-│  └─────────────┘            │
-│                             │
-│  Canvas-based processing    │
-│  (client-side only)         │
-└───────────────┬─────────────┘
-                │
-                │ message passing (internal only)
-                ▼
-┌─────────────────────────────┐
-│ Background Service Worker   │
-│ (Manifest V3)               │
-│                             │
-│ - Extension lifecycle       │
-│ - Logging / diagnostics     │
-│ - Platform abstraction      │
-└─────────────────────────────┘
+┌───────────────────────────────────────────────────────────────┐
+│                         Application UI                          │
+│               panel/panel.html + panel.ts                       │
+│                                                               │
+│  Tabs: Image | Pipeline | Builder | Colors | Settings | Logs   │
+│                                                               │
+│  - tab modules (tabs/*)                                        │
+│  - in-memory artifacts and previews                            │
+│  - user-triggered downloads                                   │
+└───────────────────────────────┬───────────────────────────────┘
+                                │ uses
+                                ▼
+┌───────────────────────────────────────────────────────────────┐
+│                 Pipeline and Tuning Core                        │
+│   src/panel/app/pipeline/*     src/panel/app/tuning/*           │
+│                                                               │
+│  - pipeline catalogue and typing                               │
+│  - pipeline runner                                             │
+│  - user pipelines and recipes                                  │
+│  - tuning registry, presets, stored overrides                  │
+└───────────────────────────────┬───────────────────────────────┘
+                                │ dispatch through seams
+                                ▼
+┌───────────────────────────────────────────────────────────────┐
+│                  Platform / Execution Seams                     │
+│                 src/panel/platform/*                            │
+│                                                               │
+│  - opsDispatch (facade + core)                                  │
+│  - engineAdapter                                               │
+│  - runtime abstraction                                         │
+└───────────────────────────────┬───────────────────────────────┘
+                                │ persistence & logs
+                                ▼
+┌───────────────────────────────────────────────────────────────┐
+│                    Shared Services                              │
+│                        src/shared/*                             │
+│                                                               │
+│  - storage abstraction                                         │
+│  - action log                                                  │
+│  - debug trace                                                 │
+│  - dev configuration store                                     │
+└───────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Main Components
+## 4. Core modules and responsibilities
 
-### `manifest.json`
+### `src/panel/` — UI and application logic
 
-* Declares extension metadata
-* Defines the MV3 service worker
-* Registers UI entry points
-* Declares permissions (see below)
+* `panel.html`, `panel.css`, `panel.ts`
+  UI entry point and layout.
 
-The manifest intentionally avoids optional or speculative permissions.
+* `app/dom.ts`
+  Typed DOM bindings.
 
----
+* `app/tabs.ts`
+  Tab lifecycle and routing.
 
-### Background (Service Worker)
+* `app/state.ts`, `app/cache.ts`
+  Shared state and caches.
 
-The background script:
+* `app/pipeline/*`
+  Pipeline catalogue, typing rules, runner, stores.
 
-* Runs as a **Manifest V3 service worker**
-* Does **not** perform image processing
-* Does **not** access network resources
-* Exists mainly for:
-
-  * extension lifecycle management
-  * internal message routing
-  * shared logging and diagnostics
-
-The service worker remains idle most of the time.
+* `app/tuning/*`
+  Parameter registry, presets, persistence, UI bindings.
 
 ---
 
-### UI Layer (Panel)
+### `src/panel/tabs/*` — UI tabs
 
-The primary user interface is a **panel-based UI**, composed of:
+Each tab follows a uniform structure:
 
-* **Mage tab**
-  Image loading, image extraction, and output generation
-* **Colors tab**
-  Region-based coloring on top of the image output
-* **Settings tab**
-  Configuration and developer-oriented options
-* **Logs tab**
-  Audit and debug information
+* `tab.ts` — lifecycle and wiring
+* `model.ts` — state and operations
+* `view.ts` — rendering
 
-Each tab is implemented as a **self-contained module** with:
+Tabs:
 
-* its own view logic
-* explicit DOM bindings
-* no hidden cross-tab side effects
+* **Image** — image loading and preview
+* **Pipeline** — pipeline execution and previews
+* **Builder** — pipeline construction and management
+* **Colors** — region-based coloring
+* **Settings** — configuration and runtime status
+* **Logs** — action log and debug trace
 
 ---
 
-### Image Processing Layer
+### `src/panel/platform/*` — execution abstraction
 
-All image processing is:
+This layer isolates runtime differences.
 
-* executed via the **HTML Canvas API**
-* performed entirely in the UI context
-* synchronous or microtask-based
-* limited to in-memory image data
+* `opsDispatch.ts`
+  Public dispatch facade.
 
-There is:
+* `opsDispatchCore.ts`
+  Engine resolution and parameter binding.
 
-* no WebAssembly
-* no OpenCV
-* no GPU or WebGL dependency
-* no background processing of images
+* `opsDispatchImpl.ts`
+  Native execution implementations.
 
----
+* `engineAdapter.ts`
+  Engine availability and policy resolution.
 
-### Assets
-
-* Icons and static assets are bundled with the extension
-* No assets are fetched at runtime
-* No dynamic code loading is performed
+* `runtime.ts`
+  Runtime abstraction (asset resolution, message bridge).
 
 ---
 
-## Permissions
+### `src/shared/*` — shared services
 
-BeeMage follows a **minimal-permissions** strategy.
+* `shared/platform/storage.ts`
+  Storage abstraction.
 
-### Declared permissions
+* `actionLog.ts`
+  User-visible audit history.
 
-* **`storage`**
-  Used only for local configuration and preferences (if enabled)
+* `debugTrace.ts`
+  Developer diagnostics.
 
-No other permissions are required.
-
-### Not used
-
-BeeMage explicitly does **not** use:
-
-* `host_permissions`
-* network access
-* file system access
-* clipboard access
-* tabs or browsing history access
+* `devConfigStore.ts`
+  Development flags and limits.
 
 ---
 
-## Libraries and Dependencies
+## 5. Delivery format: Static Web application
 
-BeeMage intentionally avoids external libraries.
+The static web delivery runs BeeMage as a **browser application**.
 
-* No frameworks (React, Vue, etc.)
-* No image processing libraries
-* No analytics or telemetry
-* No remote scripts
+### Runtime characteristics
 
-The codebase relies exclusively on:
+* Standard web runtime
+* OpenCV (WASM) execution enabled
+* Static asset loading
+* No browser-extension APIs
 
-* TypeScript
-* Standard Web APIs (Canvas, DOM)
-* Chrome Extension APIs (minimal subset)
+### Boot sequence
 
-This keeps the extension:
+1. Load static HTML container
+2. Inject `panel.html` and `panel.css`
+3. Boot the shared panel entry (`panel.ts`)
+4. Resolve assets via runtime abstraction
 
-* auditable
-* portable
-* easy to reason about
+### Runtime substitution
 
----
+During build, platform seams are swapped to web-compatible implementations:
 
-## Data Flow
+* runtime
+* storage
+* engine adapter
+* operation dispatch
 
-* User loads an image → processed in-memory
-* image output is stored only in UI state
-* Colors tab reads output **explicitly** when requested
-* No implicit state synchronization across tabs
-* No persistent image storage unless the user downloads a file
+This allows OpenCV-backed execution while keeping the core unchanged.
 
 ---
 
-## Security and Privacy Model
+## 6. Delivery format: Chrome Extension
 
-* All processing is local
-* No data leaves the browser
-* No background network requests
-* No hidden communication channels
+The Chrome Extension delivery runs BeeMage as a **Manifest V3 Side Panel**.
 
-The extension can be fully inspected using standard Chrome developer tools.
+### Runtime characteristics
+
+* Chrome extension APIs
+* Native execution engine
+* Extension storage
+* Packaged asset resolution
+
+### Entry points
+
+* `manifest.json`
+* `side_panel.default_path`: `panel/panel.html`
+
+The Side Panel hosts the **same UI and application core** as the web version.
 
 ---
 
-## Architectural Goals
+### Content script
 
-BeeMage is designed to remain:
+A content script entry exists at `src/content.ts`.
 
-* **Understandable** — small, explicit modules
-* **Predictable** — no implicit automation
-* **Extensible** — new tabs or processing steps can be added cleanly
-* **Review-friendly** — suitable for Chrome Web Store review without friction
+In the current architecture:
+
+* the UI and processing live entirely in the Side Panel
+* the content script is minimal
+* it may be removed if not required
+
+---
+
+## 7. Demo build architecture (static web)
+
+The demo build uses the **same application core** and swaps runtime seams at build time.
+
+### Seam swapping
+
+During Vite build, module resolution redirects:
+
+* platform runtime
+* storage
+* engine adapter
+* operation dispatch
+
+to demo-specific implementations.
+
+### Static assets
+
+Build-time plugins ensure required assets are available:
+
+* OpenCV runtime (`opencv.js`, `opencv.wasm`)
+* pipeline example JSON files
+
+Assets are copied into static directories and served by the web runtime.
+
+---
+
+## 8. Data flow
+
+### Image to pipeline execution
+
+1. Image loaded in Image tab
+2. Selected as pipeline input
+3. Pipeline executed step-by-step or end-to-end
+4. Artifacts propagated through stages
+5. Outputs displayed and made downloadable
+
+---
+
+### Builder to storage
+
+1. Pipeline assembled in Builder
+2. Type constraints enforced
+3. Pipeline definition stored locally
+4. Storage signals update dependent tabs
+
+---
+
+## 9. Logging model
+
+BeeMage uses three independent channels:
+
+* **Console trace** — ephemeral developer output
+* **Debug trace** — persisted developer diagnostics
+* **Action log** — user-visible history
+
+These channels are intentionally separated.
+
+---
+
+## 10. Permissions (extension delivery)
+
+Declared permissions:
+
+* `storage`
+* `sidePanel`
+
+No additional permissions are required.
+
+---
+
+## 11. Summary
+
+BeeMage is architected as:
+
+* one shared application core
+* multiple delivery runtimes
+* strict separation between logic and platform
+* fully local execution
+* explicit and inspectable processing
+
+This structure allows BeeMage to evolve across platforms without rewriting the core.
 
 ---
  

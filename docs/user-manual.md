@@ -1,216 +1,317 @@
 # User Manual
 
-**BeeMage — Extract the main outline**
+**BeeMage — Explore image processing through visual pipelines**
+**Version:** v0.1.10
 
-This document explains how to use **BeeMage — Extract the main outline** from an end-user perspective.
-
----
+This document explains how to use BeeMage from an end-user perspective.
 
 ## Purpose
 
-**BeeMage — Extract the main outline** is a browser extension that allows you to:
+BeeMage is a browser-based tool (extension panel / demo panel) to:
 
-* extract clean image outlines from images,
-* preview the result directly in the extension panel,
-* download the processed image image,
-* optionally color specific regions inside the detected contours.
+* load an image locally in the browser,
+* run processing pipelines made of small operations,
+* preview intermediate and final results (image, mask, or SVG),
+* optionally fill regions with color,
+* export results and (for advanced users) export logs and pipeline configurations.
 
-All processing happens **locally in your browser**.
-No images or data are sent to external servers.
+All processing happens locally in your browser. No uploads.
 
----
+## Interface overview
 
-## Installation
+BeeMage is organized into tabs:
 
-You can install BeeMage in one of the following ways:
+* **Image**: load an image and preview the source.
+* **Pipeline**: run a pipeline (multiple steps) with live previews per stage and per operation.
+* **Builder**: import/export pipeline configurations and manage stored pipelines and recipes; includes a drag-and-drop pipeline playground.
+* **Colors**: interactively fill regions with a chosen color palette (based on edge / region detection).
+* **Settings**: developer options, engine toggles, tuning, and project info.
+* **Logs**: audit log (user-visible history) and debug trace (developer diagnostics).
 
-* **Chrome Web Store** (once published)
-* **Manual installation** in Chrome developer mode (for testing or development)
+### Typical workflows
 
-Refer to the installation guide for detailed steps.
+**Run an existing pipeline (most common)**
 
----
+1. **Image**: load an image.
+2. **Pipeline**: select a pipeline + recipe, click **Run all**.
+3. **Pipeline**: download the output.
 
-## Interface Overview
+**Create your own pipeline (advanced)**
 
-The BeeMage panel is organized into **tabs**, each with a clear role:
+1. **Image**: load an image.
+2. **Builder**: create a pipeline in the playground and save it.
+3. **Builder**: (optional) add recipes for the pipeline.
+4. **Pipeline**: select your pipeline + recipe, run it, download.
 
-* **Mage** — load an image and generate its image outline
-* **Colors** — interactively color regions inside the image result
-* **Settings** — optional developer and configuration options
-* **Logs** — diagnostic and audit information (mainly for advanced users)
+## Image tab
 
-A typical workflow uses **Mage → Colors → Download**.
+### What it does
 
----
-
-## Typical Workflow (Recommended)
-
-1. Open the **Mage** tab
-2. Load an image and generate the image output
-3. (Optional) Switch to the **Colors** tab to color regions
-4. Download the final image
-
-Each step is described in detail below.
-
----
-
-## image Tab — Extracting the Outline
-
-The **Mage** tab is the starting point of the workflow.
-
-### What this tab does
-
-* Accepts an image (drag & drop or file selection)
-* Displays the input image
-* Generates a image-style output image
-* Allows downloading the generated outline
+* Lets you load an image via drag & drop or file picker.
+* Shows the loaded image in an **Input** canvas.
 
 ### How to use it
 
-1. **Load an image**
+1. Drag & drop an image onto the drop zone, or choose a file using the file input.
+2. Confirm the image appears in the **Input** preview.
 
-   * Drag & drop an image into the drop zone
-     **or**
-   * Click the file input to select an image from your computer
+Note: processing is performed via the **Pipeline** tab (generic pipeline runner).
 
-2. **Preview**
+## Pipeline tab
 
-   * The original image is shown in the *Input* canvas
+The Pipeline tab is the core execution UI: a universal pipeline runner with dynamic steps and previews.
 
-3. **Adjust options (optional)**
+### What it does
 
-   * **Edge threshold**: controls how strong edges must be to be detected
-     Higher values → fewer edges
-     Lower values → more edges
-   * **White background**: toggles background/foreground polarity
+* Lets you choose a **Pipeline** and a **Recipe**.
+* Runs either:
 
-4. **Process**
+  * the whole pipeline (**Run all**),
+  * or one step at a time (**Next step**).
+* Shows:
 
-   * Click **Process**
-   * The extension computes the image outline
-   * The result appears in the *Output* canvas
+  * **Input (from source)** preview,
+  * **Current output** preview (image, mask, or SVG),
+  * a detailed **Stages** section with per-stage and per-operation previews.
 
-5. **Download**
+### Controls
 
-   * Click **Download PNG** to save the image image
+* **Pipeline** (dropdown): selects which pipeline definition to run.
+* **Recipe** (dropdown): selects a parameter preset / configuration for the chosen pipeline.
+* **Run all**: executes all stages in order.
+* **Next step**: advances one step (useful for debugging or understanding the pipeline).
+* **Reset**: clears pipeline run state (so you can rerun cleanly).
+* **Download**: exports the current output:
 
-At this point, the image output is available to other tabs.
+  * SVG output is downloaded as `.svg` when present,
+  * otherwise image/mask outputs download as `.png`.
+
+Download is enabled only when an output exists.
+
+### Understanding the results display
+
+#### Input (from source)
+
+Shows the input image used by the pipeline (the source image).
+
+#### Current output
+
+Shows the latest available output. Output type is prioritized as:
+
+1. SVG (shown as an `<img>` preview),
+2. Image (shown on a canvas),
+3. Mask (shown on a canvas; binary masks are rendered for readability).
+
+#### Stages
+
+Each stage is shown as a card with:
+
+* stage title and state (idle/running/done/error),
+* stage typing (e.g. `image -> mask`, `mask -> svg`),
+* stage error message if any,
+* a preview of the stage output artifact (when available),
+* a list of operations inside that stage:
+
+  * each operation has an operation card (id, title, IO types),
+  * plus its run state and error if any,
+  * plus (optionally) its own preview.
+
+This makes the Pipeline tab usable as both an execution tool and a “pipeline inspector”.
+
+### Pipeline-only tuning box
+
+The Pipeline tab also has a **Tuning** section (“Pipeline-only tuning”) that mirrors the central tuning state. Use it to adjust parameters relevant to pipelines without leaving the tab.
+
+## Builder tab
+
+The Builder tab is for pipeline configuration management. In the current UI, it has three major areas:
+
+1. import/export,
+2. operations library (filterable),
+3. pipeline playground + stored pipelines management.
+
+### Import / Export
+
+At the top:
+
+* **Import**: choose a JSON pipeline configuration file (`.json`).
+
+  * Import triggers automatically when you select the file.
+* **Export JSON**: exports pipeline configuration data as JSON.
+* **Status**: shows whether the builder is idle or busy.
+
+### Operations library (left column)
+
+A card called **All operations** lists all available operations.
+
+You can filter operations by IO typing:
+
+* **Filter input**: `All | image | mask | svg`
+* **Filter output**: `All | image | mask | svg`
+
+Operations are displayed as compact cards and are **draggable**.
+
+### Pipeline playground (right column)
+
+A card called **Pipeline playground** lets you assemble a linear pipeline by drag-and-drop.
+
+#### Draft fields
+
+* **Id**: pipeline id (required).
+* **Title**: pipeline title (required).
+* **Implemented**: marks whether the pipeline is implemented.
+* **Description**: free text.
+
+Buttons:
+
+* **Clear**: removes all operations from the draft.
+* **Save pipeline**: validates typing and saves the pipeline to storage.
+
+#### Drag & drop rules (typing)
+
+The playground enforces IO compatibility:
+
+* The pipeline starts with input type **image**.
+* Each inserted operation must accept the current type and produce the next type.
+* Drop slots display the required type context (what the slot expects and what the next op needs).
+
+If a drop is refused (typing mismatch or missing drag payload), you’ll see a notice message. When debug is enabled, a debug trace entry may also be recorded.
+
+#### Reordering / removing
+
+Each inserted step has:
+
+* **Up**
+* **Down**
+* **Remove**
+
+### Stored user pipelines (below)
+
+A card called **Stored user pipelines** shows pipelines stored in your browser storage.
+
+Controls:
+
+* **Load example**: selects an example bundle from `assets/pipelines/` and loads it.
+* **Filter pipelines**: search by pipeline id or title.
+* **Clear**: clears the search filter.
+
+Each pipeline is shown with a management UI, including:
+
+* delete pipeline,
+* update pipeline,
+* recipe selection,
+* add/update/delete recipes.
+
+This area is your “pipeline catalogue” for user-defined pipelines and their recipes.
+
+## Colors tab
+
+### What it does
+
+* Lets you select a palette color.
+* Lets you click inside a region to preview its outline.
+* Applies a fill to that region.
+
+### How to use it
+
+1. Choose a color from **Palette** (selected color is highlighted).
+2. Click inside a region on the canvas to preview the region boundary.
+3. If the preview is correct, click **Apply fill**.
+4. If the preview is wrong:
+
+   * click **Cancel preview**,
+   * adjust edge/noise controls, then click again.
+
+Buttons:
+
+* **Apply fill**: commits the previewed fill (enabled only when a valid preview exists).
+* **Cancel preview**: cancels the current preview (enabled only when preview exists).
+* **Reset (reload output)**: reloads the underlying output again (discarding fills).
+
+### Edge / noise controls
+
+These controls help prevent leaking through gaps:
+
+* **Edges are dark**: indicates edge polarity.
+* **Edge threshold**: which pixels are treated as boundary.
+* **Gap close (px)**: dilates edges to close small gaps.
+* **Max region (px)**: safety cap to prevent filling huge regions by mistake.
+
+## Settings tab
+
+The Settings tab contains both user-facing and developer-facing controls.
+
+### General
+
+* **Show developer tools (Logs, debug options)**
+  Enables developer-only UI such as Logs and debug switches.
+
+### Developer
+
+* **Console trace (developer)**: toggles console tracing.
+* Storage limits:
+
+  * Action log max stored entries
+  * Debug trace max stored entries
+  * Max failure entries per run
+* **Debug enabled (OFF wipes all debug traces)**: turning debug off clears debug traces.
+* **Reset defaults**: restores default config values.
+
+### Engine
+
+* **OpenCV mode**: demo-only engine toggle. The extension build does not allow injection.
+* **Report**: shows OpenCV availability / status after toggling.
+* **Notes**: explains runtime availability and per-step selection direction.
+
+### Tuning
+
+Central tuning for engines and parameters. Other tabs may offer shortcuts later, but this is the canonical place.
+
+### About
+
+* Shows the current version.
+* Links to the GitHub issues page.
+
+## Logs tab
+
+This tab is intended for diagnostics and transparency.
+
+### Audit log
+
+Controls:
+
+* **Show**: number of entries to display.
+* **Refresh**
+* **Trim keep last**: keep last N entries.
+* **Trim**
+* **Export JSON**
+* **Clear**
+
+Audit log is the user-visible history (what actions happened).
+
+### Debug trace
+
+Controls:
+
+* **Show**
+* **Refresh debug**
+* **Export debug JSON**
+* **Clear debug**
+
+Debug trace is developer-focused diagnostic data. Availability and retention depend on Settings.
+
+## Data and privacy
+
+* All processing happens locally in your browser.
+* No image uploads.
+* No background analytics.
+
+## Practical “getting started” workflow
+
+1. **Image**: load an image.
+2. **Pipeline**: select a pipeline + recipe, click **Run all**.
+3. **Pipeline**: check **Current output** and **Stages** previews to confirm the result.
+4. **Pipeline**: click **Download** to export the current output.
 
 ---
-
-## Colors Tab — Coloring Regions Inside the image
-
-The **Colors** tab allows you to interactively color regions inside the image output.
-
-> This step is optional.
-> You can skip it if you only need the image outline.
-
-### What this tab does
-
-* Displays the latest image output
-* Lets you select a color palette
-* Allows clicking inside regions to preview fills
-* Applies color fills inside closed image regions
-
-### Initial behavior
-
-* When you open the **Colors** tab **for the first time**, it automatically loads the latest image output (if available).
-* If no image output exists yet, the tab will indicate that processing is required first.
-
-### Palette selection
-
-* A predefined palette of colors is displayed
-* Click a color to select it
-* The selected color is visually highlighted
-
-### Region selection and preview
-
-1. Click **inside** a region bounded by image lines
-2. The extension detects the region
-3. A **red outline preview** shows the area that will be filled
-4. If the preview is correct:
-
-   * Click **Apply fill**
-5. If the preview is incorrect:
-
-   * Click **Cancel preview**
-   * Adjust noise/edge settings or click another area
-
-### Noise and edge controls
-
-These controls help avoid accidental filling of large areas due to small gaps in contours:
-
-* **Edges are dark**
-  Indicates whether contours are dark on a light background (default)
-* **Edge threshold**
-  Controls which pixels are treated as image boundaries
-* **Gap close (px)**
-  Artificially thickens edges to close small gaps
-* **Max region (px)**
-  Safety limit to prevent filling extremely large regions
-
-### Reset (reload output)
-
-* **Reset (reload output)** discards all color changes
-* Reloads the original image output from the image tab
-* Useful if you want to start coloring again from scratch
-
-### State behavior
-
-* Color changes remain visible while you stay in the Colors tab
-* Switching to another tab and back keeps your current colored result
-* The result only resets if you explicitly click **Reset**
-
----
-
-## Settings Tab — Configuration
-
-The **Settings** tab provides optional configuration options.
-
-Typical users do not need to change anything here.
-
-Depending on build configuration, this tab may include:
-
-* Developer options
-* Logging and debug toggles
-* Version and project information
-
----
-
-## Logs Tab — Diagnostics
-
-The **Logs** tab is intended for advanced users and developers.
-
-It can show:
-
-* Internal actions performed by the extension
-* Debug traces
-* Audit information
-
-This tab does **not** affect image processing or results.
-
----
-
-## Data & Privacy
-
-* All image processing is performed **locally**
-* No images are uploaded
-* No personal data is collected
-* No background analytics or tracking
-
-BeeMage is fully client-side and transparent in behavior.
-
----
-
-## Summary
-
-**BeeMage — Extract the main outline** is designed for a simple, predictable workflow:
-
-1. **Mage tab** → generate a clean outline
-2. **Colors tab** → optionally color regions
-3. **Download** → export the result
-
-The extension favors explicit user actions, clear previews, and local processing.
-
---- 
+  

@@ -3,9 +3,7 @@
 // do not call directly
 // Panel logger: prints to the panel page console, reads panel devConfig store
 // from panel  call please : from /panel/app/log 
-
-//  Background logger: prints to the service worker console, reads background devConfig store (or the same shared store if you unify)
-// from background call please : from /background/util/log 
+ 
 
 import * as debugTrace from "./debugTrace";
 
@@ -14,7 +12,7 @@ function prefix(level: string) {
 }
 
 export function createLogger(opts: {
-  scope: "background" | "panel" | "colors" | "image" | "settings"  | "logs" | "ui";
+  scope:    "panel" | "colors" | "image" | "settings"  | "logs" | "ui";
   traceOn: () => boolean; // reads the right dev config snapshot for that runtime
 }) {
   function logTrace(...args: any[]) {

@@ -1,6 +1,9 @@
 # Installation
 
-This document explains how to install **BeeMage — Extract the main outline** locally for development.
+This document explains how to install **BeeMage — Explore image processing through visual pipelines** locally for development.
+
+* **Document updated for version:** `0.1.10`
+
 
 ## Requirements
 
@@ -8,26 +11,18 @@ This document explains how to install **BeeMage — Extract the main outline** l
 - Node.js
 - Git
 
-## Install dependencies
+
+## Chrome extension
+
+### Install dependencies
 
 From the project root:
 
 ```bash
 npm install
-````
-
-## Prepare OpenCV runtime (optional, required for Segmentation/OpenCV engine)
-
-BeeMage can run without OpenCV, but the Segmentation tab can optionally use OpenCV (WASM) for comparison.
-
-```bash
-chmod +x assets/opencv/get-opencv.sh
-./assets/opencv/get-opencv.sh
 ```
 
-This copies `opencv.js` and `opencv.wasm` into `assets/opencv/` (these files are typically gitignored).
-
-## Build the extension
+### Build the extension
 
 ```bash
 npm run build
@@ -37,7 +32,7 @@ This generates the production-ready extension files in:
 
 * `dist/`
 
-## Load in Chrome (Developer Mode)
+### Load in Chrome (Developer Mode)
 
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
@@ -46,8 +41,68 @@ This generates the production-ready extension files in:
 
 The extension will now be available locally.
 
+## Demo (static web)
+
+### Install dependencies
+
+From the project root:
+
+```bash
+cd demo
+npm install
+```
+
+### Prepare OpenCV runtime (optional, demo-only)
+
+OpenCV is **demo-only**. You only need this step if you want to enable **OpenCV mode** in the demo.
+
+```bash
+chmod +x demo/scripts/get-opencv.sh
+./demo/scripts/get-opencv.sh
+```
+
+What the script does (exact):
+
+* copies `opencv.js` and `opencv.wasm` from:
+
+  * `demo/node_modules/@opencv.js/wasm/`
+* into these two locations:
+
+  1. `docs/assets/opencv/` (canonical runtime for GitHub Pages; committed)
+  2. `demo/public/assets/opencv/` (demo runtime served by Vite; generated)
+
+### Build the demo
+ 
+
+```bash
+cd demo
+npm run build
+```
+
+This generates the static demo output in:
+
+* `demo/dist/`
+
+### Test the built demo locally
+
+```bash
+cd demo
+npx serve dist
+```
+
 ## Notes
 
 * This project is client-side only.
 * No external services are required to run the extension.
-* If the Segmentation/OpenCV probe shows a 404, re-run `./assets/opencv/get-opencv.sh` and rebuild.
+* If the demo OpenCV probe shows a 404, re-run:
+
+```bash
+./demo/scripts/get-opencv.sh
+```
+
+then rebuild the demo.
+
+```
+
+---
+ 

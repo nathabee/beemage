@@ -1,109 +1,119 @@
- # <img src="./docs/icon.svg" alt="Icon" width="60" style="vertical-align:middle; margin-right:20px;"> BeeMage — Explore image processing through visual pipelines
+# <img src="./docs/icon.svg" alt="Icon" width="60" style="vertical-align:middle; margin-right:20px;"> BeeMage — Explore image processing through visual pipelines
 
-**BeeMage is a client-side image-processing playground that lets you build and run visual pipelines directly in your browser.**
+**BeeMage is a client-side image-processing playground that lets you build, run, and inspect visual pipelines directly in your browser.**
 
+BeeMage is designed for **exploration, understanding, and manual refinement** of image-processing workflows — not black-box automation.
 
-BeeMage runs **entirely client-side** and is available as:
+All processing happens **locally in the browser**.
 
-* a **standalone web application**, and
-* a **Chrome Extension (Manifest V3)**.
+---
 
-No uploads. No server processing.
+## Availability and delivery formats
+
+BeeMage is available in multiple delivery formats:
+
+* **Static web application** (standalone, browser-based)
+* **Chrome Extension** (Manifest V3, Side Panel)
+
+Each delivery runs the **same application core**, adapted to its runtime environment.
+
+No uploads.
+No server-side processing.
 
 ---
 
 ## Try it now
 
-You can use BeeMage immediately in your browser:
+You can try BeeMage immediately in your browser:
 
-👉 **[Try the demo on github page](https://nathabee.github.io/beemage/demo/)**
+👉 **[Live web demo](https://nathabee.github.io/beemage/demo/)**
 
-The demo runs the same panel UI as the extension, without requiring any installation or browser permissions.
+The demo runs the same panel UI as the extension and requires no installation.
 
 ---
 
+## What BeeMage does
 
-## What BeeMage does 
+BeeMage focuses on one principle:
 
-BeeMage focuses on a clear goal:
-
-> Turning an image into clean intermediate representations (edges, masks, regions, SVG) — while **making each processing step visible and understandable**.
-
-
-BeeMage is designed as a **hands-on image processing playground**.
+> Making image-processing steps **visible, inspectable, and understandable**.
 
 With BeeMage, you can:
 
 * Load an image directly in the browser
-* Extract and repair contours step by step
-* Observe intermediate representations (edges, masks, cleaned results)
-* Adjust parameters and immediately see their effect
-* Export the result as raster images or SVG paths
-* Build and import custom image-processing pipelines (Builder tab)
-
+* Run explicit image-processing pipelines
+* Observe intermediate representations (edges, masks, cleaned regions, SVG)
+* Adjust parameters and see results immediately
+* Execute pipelines step by step or end to end
+* Export results as PNG or SVG
+* Create, import, and manage custom pipelines visually (Builder tab)
 
 The workflow is **manual, visual, and iterative by design**.
-Pipelines can be predefined, imported, or extended step by step.
 
-BeeMage deliberately avoids “one-click magic” in favor of **understanding how parameters influence results**.
+BeeMage deliberately avoids one-click automation in favor of **understanding how processing decisions affect results**.
 
 ---
-## Native vs OpenCV: a comparative playground
 
-BeeMage supports an engine strategy layer in the standalone web demo, allowing selected steps to run either as native TypeScript implementations or OpenCV (WASM) implementations.
-At the moment, OpenCV is experimental and enabled for one step only: image.clean.removeSmallComponents.
+## Visual pipelines
 
-### Native (self-implemented) pipeline (extension + web)
+BeeMage is built around a **pipeline-based execution model**.
+
+A pipeline is a sequence of typed operations, for example:
+
+```
+image → edge detection → threshold → morphology → svg
+```
+
+Each step produces an explicit artifact (`image`, `mask`, or `svg`) that can be previewed and inspected.
+
+Pipelines can be:
+
+* selected from predefined examples
+* built visually via drag & drop
+* imported or exported as JSON
+* extended with parameter presets (“recipes”)
+
+---
+
+## Native and OpenCV execution (web demo)
+
+The standalone web version includes an **engine strategy layer** that allows selected operations to run using different implementations.
+
+### Native execution
 
 * Written in TypeScript
-* Small, transparent, and easy to inspect
-* Designed for learning, experimentation, and fine control
-* Makes algorithmic choices explicit
+* Small, transparent, and inspectable
+* Used in all delivery formats
+* Emphasizes clarity and learning
 
-### OpenCV (WebAssembly) pipeline (web demo only)
+### OpenCV (WebAssembly) execution
 
-* OpenCV is loaded only in the demo build (no CDN), runs locally in the browser once enabled.
-* OpenCV is not a full alternative pipeline yet; it’s a per-step implementation option.
-* Current coverage: only image.clean.removeSmallComponents is implemented via OpenCV.
+* Available in the **web demo**
+* Loaded locally (no CDN)
+* Used selectively for comparison and experimentation
 
-The goal is not benchmarking. The goal is comparison and understanding:
+OpenCV support is currently **partial and experimental** and exists to explore:
 
-* How does the same operation behave in a native implementation vs OpenCV?
-* Which parameters matter most?
-* Where do results diverge?
-* What trade-offs exist between simplicity, robustness, and complexity?
+* algorithmic differences
+* parameter sensitivity
+* trade-offs between simplicity and robustness
 
-## Optional OpenCV support (web demo only)
-
-OpenCV support is optional and currently available **only in the standalone web demo**.
-
-The Chrome Extension (Manifest V3) does **not** include OpenCV at the moment because the OpenCV loading/build approach used in the demo is not compatible with **MV3 CSP requirements**.
-For now, OpenCV remains demo-only and the extension always runs in **native mode**.
-
-* BeeMage works fully without OpenCV
-* When enabled in the demo, OpenCV:
-  * is bundled locally with the demo (no CDN)
-  * runs client-side via WebAssembly
-  * increases bundle size and memory usage compared to native mode
-
-Details on enabling and packaging OpenCV are documented in:
-
-👉 `docs/installation.md`
+The Chrome Extension always runs using the native engine.
 
 ---
 
-## Typical use cases 
+## Typical use cases
 
-BeeMage is useful for:
+BeeMage is well suited for:
 
-* Exploring image extraction and cleanup techniques
-* Learning classic image-processing concepts visually
-* Comparing algorithmic approaches (native vs OpenCV)
-* Preparing outlines for illustration or vector work
-* Teaching or self-teaching image processing fundamentals
-* Quick experiments without installing heavy desktop software
+* Exploring image-processing concepts visually
+* Learning and teaching classic image-processing techniques
+* Extracting and refining outlines or silhouettes
+* Comparing different processing strategies
+* Prototyping pipelines without desktop software
+* Preparing base assets for illustration or vector work
 
-It is **not** intended to replace professional image editors or automated batch tools.
+It is not intended to replace full-scale image editors or batch automation tools.
 
 ---
 
@@ -111,27 +121,26 @@ It is **not** intended to replace professional image editors or automated batch 
 
 BeeMage is designed to be transparent and review-friendly.
 
-* Runs entirely **locally in the browser**
+* Runs entirely **locally**
 * No analytics
-* No advertising
 * No tracking
-* No uploads and no server-side image processing
-
+* No advertising
+* No uploads
 
 Privacy policy: `docs/privacy.html`
 
 ---
 
 ## Documentation
- 
 
-All documentation is available on the project homepage and in the `docs/` folder:
+Detailed documentation is available in the `docs/` directory and on the project site:
 
-👉 <a href="https://nathabee.github.io/beemage/index.html">
-  <img src="./docs/visitgithubpage.svg" alt="Docs" width="300" style="vertical-align:middle;">
-</a>
+👉 [https://nathabee.github.io/beemage/](https://nathabee.github.io/beemage/)
 
-* Overview and presentation: `docs/presentation.md`
+Key documents:
+
+* Presentation and concepts: `docs/presentation.md`
+* Architecture overview: `docs/architecture.md`
 * Installation and deployment: `docs/installation.md`
 * Versioning and development notes: `docs/version.md`
 
@@ -141,9 +150,11 @@ All documentation is available on the project homepage and in the `docs/` folder
 
 BeeMage is in active development.
 
-* Versioning status : `docs/version.md`
+The core pipeline system is stable, while features and UI continue to evolve.
 
 Feedback, testing, and issue reports are welcome.
+
+This document was updated for the **Version:** v0.1.10
 
 ---
 
@@ -151,7 +162,7 @@ Feedback, testing, and issue reports are welcome.
 
 * Homepage: [https://nathabee.github.io/beemage/](https://nathabee.github.io/beemage/)
 * Live demo: [https://nathabee.github.io/beemage/demo/](https://nathabee.github.io/beemage/demo/)
-* Issues & support: [https://github.com/nathabee/beemage/issues](https://github.com/nathabee/beemage/issues)
+* Issues and support: [https://github.com/nathabee/beemage/issues](https://github.com/nathabee/beemage/issues)
 
 ---
 
@@ -159,4 +170,5 @@ Feedback, testing, and issue reports are welcome.
 
 MIT — see `LICENSE`
 
---- 
+---
+ 

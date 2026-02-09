@@ -1,112 +1,202 @@
-# BeeMage — Extract the main outline
+# BeeMage — Presentation
 
-**BeeMage extracts clean image outlines from images directly in your browser and lets you optionally color regions inside those contours.**
-It works best with **high-contrast subjects** such as trees, drawings, silhouettes, or scanned artwork.
+**— Explore image processing through visual pipelines —**
 
-BeeMage is a **Chrome Extension built on Manifest V3**.
-All processing happens **locally in the browser**, with no backend and no external data transfer.
+**BeeMage is a visual image-processing tool that lets you build, run, and inspect processing pipelines directly in your browser.**
+It is designed for **exploration, understanding, and manual refinement**, not black-box automation.
 
-* Project code: `beemage`
-* Current version: `0.0.3`
-* Homepage: [https://nathabee.github.io/beemage/](https://nathabee.github.io/beemage/)
-* Support / Issues: [https://github.com/nathabee/beemage/issues](https://github.com/nathabee/beemage/issues)
+BeeMage runs entirely **locally in the browser**.
+No backend. No uploads. No tracking.
 
 ---
 
-## What BeeMage does
+## Project info
 
-BeeMage provides a simple, explicit workflow:
+* **Project code:** `beemage`
+* **Current version:** `0.1.10`
+* **Homepage:** [https://nathabee.github.io/beemage/](https://nathabee.github.io/beemage/)
+* **Issues / support:** [https://github.com/nathabee/beemage/issues](https://github.com/nathabee/beemage/issues)
+
+---
+
+## What BeeMage is
+
+BeeMage is a **pipeline-based image processing environment**.
+
+It lets you:
 
 1. Load an image
-2. Extract its main image outline
-3. (Optional) Color regions inside the detected contours
-4. Download the result as a PNG
+2. Select or build a processing pipeline
+3. Run it step-by-step or end-to-end
+4. Inspect intermediate results
+5. Optionally apply region-based coloring
+6. Download the final output (PNG or SVG)
 
-The extension is designed for **visual exploration and manual refinement**, not automated batch processing.
+All processing is **explicit, visible, and interactive**.
 
 ---
 
-## Key Features
+## Core concepts
 
-### image extraction
+### Visual pipelines
 
-* Drag & drop or file input
-* Live preview of the source image
-* Adjustable edge detection threshold
-* Inverted background option (white / black)
-* Downloadable PNG output
+BeeMage is built around a **universal pipeline runner**.
+
+A pipeline is a sequence of typed operations, for example:
+
+```
+image → edge detection → threshold → morphology → svg
+```
+
+Each pipeline is composed of:
+
+* **stages** (logical steps)
+* **operations** (small, well-defined processes)
+* **artifacts** (`image`, `mask`, `svg`) flowing between them
+
+You can:
+
+* run a pipeline in one click
+* execute it step-by-step
+* inspect every intermediate output
+
+---
+
+### Builder — create and manage pipelines
+
+The **Builder** lets you:
+
+* browse all available operations
+* assemble pipelines via drag & drop
+* enforce type compatibility automatically
+* save pipelines locally
+* define and manage **recipes** (parameter presets)
+* load example pipelines from JSON
+
+Pipelines can be created and modified **without code changes**.
+
+---
 
 ### Region-based coloring
 
-* Interactive coloring inside closed image regions
-* Click-to-preview region detection with visual outline
-* Predefined color palette
-* Noise and gap handling controls to prevent accidental large fills
-* Explicit apply / cancel actions
+On compatible outputs, BeeMage provides **interactive region coloring**:
 
-### Local-only processing
+* click inside a closed region to preview detection
+* adjust edge, noise, and gap parameters
+* explicitly apply or cancel fills
+* work with a predefined color palette
 
-* No image upload
-* No network calls
-* No tracking or analytics
-* Fully client-side execution
+Coloring is an optional step layered on top of pipeline output.
 
 ---
 
-## Typical Use Cases
+## Key features
 
-BeeMage is useful for:
+### Image input
 
-* Preparing outlines for illustration or graphic design
-* Extracting tree branches, silhouettes, or line art
-* Creating coloring bases from photos or scans
-* Educational or exploratory image processing
-* Prototyping visual workflows inside the browser
+* Drag & drop or file picker
+* Local preview
+* No upload, no persistence unless you download
 
-It is **not** intended as a replacement for full image editing software, but as a focused, lightweight tool.
+### Pipeline execution
+
+* Select pipeline and recipe
+* **Run all** or **Next step**
+* Reset execution state explicitly
+* Per-stage and per-operation previews
+* Download output as PNG or SVG
+
+### Pipeline builder
+
+* Operation library with IO typing
+* Drag-and-drop pipeline playground
+* User pipelines stored locally
+* JSON import/export
+* Example pipeline loader
+
+### Tuning & engines
+
+* Central parameter registry
+* Presets and persisted overrides
+* Engine policy handling
+* Deterministic execution paths
+
+### Logs & transparency
+
+* User-visible action log
+* Developer debug trace
+* Exportable logs
+* No hidden behavior
 
 ---
 
-## Project Philosophy
+## Typical use cases
 
-BeeMage follows a few clear principles:
+BeeMage is well suited for:
 
-* **Explicit actions over automation**
-  Nothing happens without user intent (process, apply, reset).
-* **Visual feedback first**
-  Every operation provides a preview before modification.
-* **Simple state model**
-  Tabs share output only when needed; user edits are never overwritten implicitly.
+* Extracting outlines and silhouettes
+* Exploring image processing workflows
+* Teaching or learning image processing concepts
+* Prototyping pipelines visually
+* Preparing base assets for illustration or coloring
+* Debugging and understanding processing steps
+
+It is **not** intended to replace full-scale image editors or batch automation tools.
+
+---
+
+## Project philosophy
+
+BeeMage follows a few strict principles:
+
+* **Explicit over implicit**
+  No automatic processing. No hidden state.
+
+* **Visual first**
+  Every step produces inspectable output.
+
+* **Composable, not monolithic**
+  Small operations with clear contracts.
+
+* **Local and inspectable**
+  Everything runs in the browser and can be inspected with DevTools.
+
 * **Minimal dependencies**
-  No frameworks, no backend, no hidden complexity.
+  No frameworks, no backend, no analytics.
 
 ---
 
-## Technical Overview (high level)
+## Technical overview (high level)
 
-* Chrome Extension (Manifest V3)
-* Panel-based UI with tab navigation
+* Browser-based execution
+
 * Canvas-based image processing
+
 * Modular tab architecture:
 
-  * image
+  * Image
+  * Pipeline
+  * Builder
   * Colors
   * Settings
   * Logs
-* Designed to be inspectable and extensible
+
+* Universal pipeline runner
+
+* Multiple delivery formats sharing the same core
+
+See **Architecture** and **User Manual** for details.
 
 ---
 
-## Current Status
+## Project status
 
-BeeMage is in an **early development phase**.
+BeeMage is in **active development**.
 
-* Core image extraction is functional
-* Region coloring workflow is implemented
-* API and UI are still evolving
+* Core pipeline system is stable
+* Builder and recipes are functional
+* UI and APIs are evolving
 * Feedback and testing are welcome
-
-See the **version history** and **user manual** for details on implemented features.
 
 ---
 

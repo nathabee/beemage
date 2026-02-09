@@ -19,7 +19,23 @@ Conventions:
 
 ### **v0.1.x — Focus: Universal Pipeline and Builder**
 
- #### v0.1.9 — Epic: Anomaly correction
+ 
+
+#### v0.1.10 — Epic: Documentation consolidation
+
+* user manual
+* architecture
+* presentation
+* demo documentation
+* installation guide
+* tester guide
+* README
+* removed src/background
+ 
+
+---
+
+#### v0.1.9 — Epic: Anomaly correction
 
 * Fix: pipeline combobox refreshes from storage on Reset
 * Fix: automatic combobox update when user pipelines/recipes change
