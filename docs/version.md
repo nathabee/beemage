@@ -15,11 +15,43 @@ Conventions:
 
 ---
 
+## Activity Overview
+
+<!-- VERSION_ACTIVITY_START -->
+| Date       | Version   | Summary |
+|------------|-----------|---------|
+| 2026-02-09 | v0.1.10 | Epic: Documentation consolidation |
+| 2026-02-08 | v0.1.9 | Epic: Anomaly correction |
+| 2026-02-08 | v0.1.8 | Epic: Builder create new pipeline in a playground |
+| 2026-02-07 | v0.1.7 | Epic: Builder recipe examples |
+| 2026-02-07 | v0.1.6 | Epic: User pipeline recipes (JSON import/export) |
+| 2026-02-07 | v0.1.5 | Epic: User Pipelines in Builder, PipelineCard, and OperationCard |
+| 2026-02-06 | v0.1.4 | Epic: User Pipelines in Builder |
+| 2026-02-06 | v0.1.3 | Epic: Rename project from BeeContour to BeeMage |
+| 2026-02-05 | v0.1.2 | Epic: Remove non-universal UI |
+| 2026-02-05 | v0.1.1 | new pipeline edge and svg added |
+| 2026-02-02 | v0.1.0 | pipeline tab |
+| 2026-02-01 | v0.0.10 | Epic: Segmentation issues and native code |
+| 2026-01-30 | v0.0.9 | Epic: Segmentation step runner (interactive execution + live preview) |
+| 2026-01-30 | v0.0.8 | — |
+| 2026-01-29 | v0.0.7 | add tuning concept in order to tune parameter per process (clean,..) later |
+| 2026-01-28 | v0.0.6 | openCV not available in extension, engine concept different in demo and extension, openCV injectable in the demo |
+| 2026-01-28 | v0.0.5 | test opencv inject in new segementation tab |
+| 2026-01-27 | v0.0.4 | Full contour pipeline (clean → vectorize) + diagnostics |
+| 2026-01-25 | v0.0.2 | creation contour tab |
+<!-- VERSION_ACTIVITY_END -->
+
+---
+
 ## **MAJOR v0**
 
 ### **v0.1.x — Focus: Universal Pipeline and Builder**
 
  
+#### v0.1.11 — Epic: add github hooks 
+
+* trace the activity overview inside the version.md
+
 
 #### v0.1.10 — Epic: Documentation consolidation
 

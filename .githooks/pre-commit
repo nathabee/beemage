@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Always regenerate the Activity Overview section and stage the file.
+# If either the file or the script is missing, do nothing (keeps clone/bootstrap safe).
+if [[ -f "docs/version.md" && -x "scripts/version-commited.sh" ]]; then
+  scripts/version-commited.sh
+fi
