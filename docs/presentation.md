@@ -13,7 +13,7 @@ No backend. No uploads. No tracking.
 ## Project info
 
 * **Project code:** `beemage`
-* **Current version:** `0.1.10`
+* **Document updated for version:** `0.1.10`
 * **Homepage:** [https://nathabee.github.io/beemage/](https://nathabee.github.io/beemage/)
 * **Issues / support:** [https://github.com/nathabee/beemage/issues](https://github.com/nathabee/beemage/issues)
 
