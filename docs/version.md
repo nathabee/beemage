@@ -20,6 +20,7 @@ Conventions:
 <!-- VERSION_ACTIVITY_START -->
 | Date       | Version   | Summary |
 |------------|-----------|---------|
+| 2026-02-10 | v0.2.0 | Epic: Initialize Android delivery (web bundle + wrapper) |
 | 2026-02-09 | v0.1.11 | Epic: add github hooks |
 | 2026-02-09 | v0.1.10 | Epic: Documentation consolidation |
 | 2026-02-08 | v0.1.9 | Epic: Anomaly correction |
