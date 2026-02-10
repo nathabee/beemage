@@ -30,6 +30,25 @@ docs/demo/assets/opencv/*.js
 !docs/assets/opencv/*.wasm
 !docs/assets/opencv/*.js
 
+# -------------------------------------------------
+# Android (Vite web bundle)
+# -------------------------------------------------
+android/node_modules/
+android/dist/
+
+# -------------------------------------------------
+# Android wrapper (Gradle / Android Studio)
+# -------------------------------------------------
+android-wrapper/local.properties
+android-wrapper/**/build/
+android-wrapper/.gradle/
+android-wrapper/**/*.iml
+
+# Generated web bundle copied into wrapper assets (do not commit)
+android-wrapper/app/src/main/assets/**
+!android-wrapper/app/src/main/assets/.gitkeep
+ 
+
 
 # -------------------------------------------------
 # logs

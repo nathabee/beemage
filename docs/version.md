@@ -20,6 +20,7 @@ Conventions:
 <!-- VERSION_ACTIVITY_START -->
 | Date       | Version   | Summary |
 |------------|-----------|---------|
+| 2026-02-09 | v0.1.11 | Epic: add github hooks |
 | 2026-02-09 | v0.1.10 | Epic: Documentation consolidation |
 | 2026-02-08 | v0.1.9 | Epic: Anomaly correction |
 | 2026-02-08 | v0.1.8 | Epic: Builder create new pipeline in a playground |
@@ -45,8 +46,26 @@ Conventions:
 
 ## **MAJOR v0**
 
-### **v0.1.x — Focus: Universal Pipeline and Builder**
+---
 
+### **v0.2.x — Focus: Android app**
+
+#### v0.2.0 — Epic: Initialize Android delivery (web bundle + wrapper)
+
+* add **Android as a first-class platform** in root README
+* create `/android` (Vite host) to build a WebView-compatible bundle from `/src`
+* introduce build-time **seam swapping** for extension-only APIs (runtime/storage/engineAdapter)
+* add `/android/scripts/build-android.sh` to build and copy into wrapper assets deterministically
+* create `/android-wrapper` (Android Studio project) embedding the bundle via `WebViewAssetLoader`
+* add wrapper scaffolding: `MainActivity`, manifest, resources, gradle setup
+* document Android architecture + workflow in `docs/android.md`
+* add install guides: `docs/android-install.md`, `docs/android-studio-install.md`, `docs/android-wrapper.md`
+* update version wiring (`VERSION`, `src/shared/version.ts`) and manifests/packages as needed
+
+---
+
+### **v0.1.x — Focus: Universal Pipeline and Builder**
+ 
  
 #### v0.1.11 — Epic: add github hooks 
 

@@ -14,13 +14,33 @@ BeeMage is available in multiple delivery formats:
 
 * **Static web application** (standalone, browser-based)
 * **Chrome Extension** (Manifest V3, Side Panel)
+* **Android application** (WebView-based wrapper)
 
 Each delivery runs the **same application core**, adapted to its runtime environment.
 
-No uploads.
+No uploads.  
 No server-side processing.
 
 ---
+
+### Android delivery
+
+The Android version embeds BeeMage as a **local web application**
+inside a native Android wrapper.
+
+* The UI and processing logic are identical to the web version
+* All image processing remains fully client-side
+* No backend, no cloud services
+
+Android is treated as a **first-class runtime**, not a separate codebase.
+
+See:
+
+* `android/README.md` — Android web bundle (main entry point)
+* `android-wrapper/README.md` — Android wrapper specifics
+
+---
+
 
 ## Try it now
 
