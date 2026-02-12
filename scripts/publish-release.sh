@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-die() { echo "ERROR: $*" >&2; exit 1; }
+die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "Missing command: $1"; }
 
 need git
@@ -13,6 +13,7 @@ need gh
 
 [[ -f VERSION ]] || die "VERSION file missing"
 ver="$(tr -d ' \t\r\n' < VERSION)"
+[[ -n "$ver" ]] || die "VERSION is empty"
 tag="v${ver}"
 
 # Clean tree guard (tag should represent committed state)
@@ -28,31 +29,42 @@ if gh release view "$tag" >/dev/null 2>&1; then
 fi
 
 # Ensure tag points to HEAD
-if git rev-parse "$tag" >/dev/null 2>&1; then
+if git rev-parse -q --verify "refs/tags/$tag" >/dev/null 2>&1; then
   TAG_SHA="$(git rev-parse "$tag^{commit}")"
   if [[ "$TAG_SHA" != "$HEAD_SHA" ]]; then
     if [[ "$RELEASE_EXISTS" == "yes" ]]; then
-      die "Release already exists for $tag and tag points to a different commit. Bump version for a new release."
+      die "Release already exists for $tag and the tag points to a different commit. Bump VERSION for a new release."
     fi
-    git tag -f -a "$tag" -m "Release $tag ($HEAD_SHORT)" HEAD
+    git tag -f -a "$tag" -m "Release $tag ($HEAD_SHORT)" "$HEAD_SHA"
   fi
 else
-  git tag -a "$tag" -m "Release $tag ($HEAD_SHORT)" HEAD
+  git tag -a "$tag" -m "Release $tag ($HEAD_SHORT)" "$HEAD_SHA"
 fi
 
 # Push tag (safe force only if no release exists yet)
 if [[ "$RELEASE_EXISTS" == "yes" ]]; then
-  git push origin "$tag"
+  git push origin "refs/tags/$tag"
 else
-  git push origin "$tag" --force-with-lease
+  git push origin "refs/tags/$tag" --force-with-lease
 fi
 
-# NOTES=$'BeeMage — Release artifacts\n\n'"- Version: ${ver}"$'\n'"- Tag: ${tag}"$'\n'"- Commit: ${HEAD_SHORT}"$'\n\n'"Artifacts (uploaded by release-all or per-app publish scripts):\n- beemage-extension-${ver}.zip\n- beemage-demo-${ver}.zip (optional)\n- beemage-android-${ver}-release.apk/.aab (optional)\n'
-NOTES="$'BeeMage — Release artifacts\n\n'- Version: ${ver}$'\n'- Tag: ${tag}$'\n'- Commit: ${HEAD_SHORT}$'\n\n'Artifacts (uploaded by release-all or per-app publish scripts):\n- beemage-extension-${ver}.zip\n- beemage-demo-${ver}.zip (optional)\n- beemage-android-${ver}-release.apk/.aab (optional)\n'"
- 
+# Notes via heredoc (avoids fragile $'...' quoting)
+NOTES="$(cat <<EOF
+BeeMage — Release artifacts
+
+- Version: ${ver}
+- Tag: ${tag}
+- Commit: ${HEAD_SHORT}
+
+Artifacts (uploaded by release-all or per-app publish scripts):
+- beemage-extension-${ver}.zip
+- beemage-demo-${ver}.zip (optional)
+- beemage-android-${ver}-release.apk/.aab (optional)
+EOF
+)"
 
 if [[ "$RELEASE_EXISTS" == "yes" ]]; then
-  echo "Release exists: $tag (not recreating)"
+  echo "Release exists: ${tag} — not recreating"
 else
   gh release create "$tag" --title "$tag" --notes "$NOTES"
   echo "Created release: $tag"
