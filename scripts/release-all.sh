@@ -236,25 +236,30 @@ echo
 echo "Done for $tag"
 
 
-# 11) Optional: bump VERSION after a successful release-all run
-# Default: no (to avoid surprising dirty/staged files after a dry run)
+ 
+# 11) Optional: bump VERSION after a successful *published* release
+# Only offer bump if a GitHub release exists/was created (RELEASE_READY=yes).
 echo
 echo "== 11) Bump VERSION (optional) =="
 
-bump_choice="${BCT_BUMP_AFTER_RELEASE:-}"
+if [[ "${RELEASE_READY:-no}" != "yes" ]]; then
+  echo "Skipping VERSION bump (no GitHub release for ${tag})."
+else
+  bump_choice="${BCT_BUMP_AFTER_RELEASE:-}"
 
-if [[ -z "$bump_choice" ]]; then
-  read -r -p "Bump VERSION to next patch now (recommended after publishing)? [y/N] " bump_choice
+  if [[ -z "$bump_choice" ]]; then
+    read -r -p "Bump VERSION to next patch now (recommended after publishing)? [y/N] " bump_choice
+  fi
+
+  case "${bump_choice,,}" in
+    y|yes)
+      ./scripts/bump-version.sh patch
+      echo
+      echo "VERSION bumped and staged."
+      echo "Next: update docs/version.md for the new epic, then commit when ready."
+      ;;
+    *)
+      echo "Skipping VERSION bump."
+      ;;
+  esac
 fi
-
-case "${bump_choice,,}" in
-  y|yes)
-    ./scripts/bump-version.sh patch
-    echo
-    echo "VERSION bumped and staged."
-    echo "Next: update docs/version.md for the new epic, then commit when ready."
-    ;;
-  *)
-    echo "Skipping VERSION bump."
-    ;;
-esac
