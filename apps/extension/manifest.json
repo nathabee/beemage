@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "BeeMage — Extract the main outline",
+  "name": "BeeMage — Explore image processing through visual pipelines",
   "version": "0.2.2",
   "description": "BeeMage extracts the main outline from an image directly in your browser. Works best with high-contrast subjects such as winter trees.",
   "author": "nathabee",
@@ -13,5 +13,5 @@
   },
   "permissions": ["storage", "sidePanel"],
   "side_panel": { "default_path": "panel/panel.html" },
-  "action": { "default_title": "BeeMage — Extract the main outline" }
+  "action": { "default_title": "BeeMage — Explore image processing through visual pipelines" }
 }

@@ -1,7 +1,7 @@
 # Logging, Tracing, and History
 
 This document defines the **logging and tracing architecture** used by
-**BeeMage — Extract the main outline**.
+**BeeMage — Explore image processing through visual pipelines**.
 
 It is intended as:
 

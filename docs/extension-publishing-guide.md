@@ -1,6 +1,6 @@
 # Extension Publishing Guide (Chrome Web Store)
 
-This guide describes how to publish **BeeMage — Extract the main outline** to the **Chrome Web Store**.
+This guide describes how to publish **BeeMage — Explore image processing through visual pipelines** to the **Chrome Web Store**.
 
 It covers:
 

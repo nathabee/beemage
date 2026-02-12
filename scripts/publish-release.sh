@@ -47,7 +47,9 @@ else
   git push origin "$tag" --force-with-lease
 fi
 
-NOTES=$'BeeMage — Release artifacts\n\n'"- Version: ${ver}"$'\n'"- Tag: ${tag}"$'\n'"- Commit: ${HEAD_SHORT}"$'\n\n'"Artifacts (uploaded by release-all or per-app publish scripts):\n- beemage-extension-${ver}.zip\n- beemage-demo-${ver}.zip (optional)\n- beemage-android-${ver}-release.apk/.aab (optional)\n'
+# NOTES=$'BeeMage — Release artifacts\n\n'"- Version: ${ver}"$'\n'"- Tag: ${tag}"$'\n'"- Commit: ${HEAD_SHORT}"$'\n\n'"Artifacts (uploaded by release-all or per-app publish scripts):\n- beemage-extension-${ver}.zip\n- beemage-demo-${ver}.zip (optional)\n- beemage-android-${ver}-release.apk/.aab (optional)\n'
+NOTES="$'BeeMage — Release artifacts\n\n'- Version: ${ver}$'\n'- Tag: ${tag}$'\n'- Commit: ${HEAD_SHORT}$'\n\n'Artifacts (uploaded by release-all or per-app publish scripts):\n- beemage-extension-${ver}.zip\n- beemage-demo-${ver}.zip (optional)\n- beemage-android-${ver}-release.apk/.aab (optional)\n'"
+ 
 
 if [[ "$RELEASE_EXISTS" == "yes" ]]; then
   echo "Release exists: $tag (not recreating)"

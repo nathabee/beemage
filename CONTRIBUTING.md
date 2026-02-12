@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in BeeMage — Extract the main outline.
+Thanks for your interest in BeeMage — Explore image processing through visual pipelines.
 
 This project is currently maintained by a single author.
 Bug reports, feature suggestions, and feedback are welcome.

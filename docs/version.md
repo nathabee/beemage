@@ -1,7 +1,7 @@
-# Version History — BeeMage — Extract the main outline
+# Version History — BeeMage — Explore image processing through visual pipelines
 
 This document tracks functional and architectural changes of  
-**BeeMage — Extract the main outline**.
+**BeeMage — Explore image processing through visual pipelines**.
 
 Conventions:
 
@@ -72,6 +72,7 @@ Targets:
 
 * Update docs to reflect the new multi-app `/apps/*` layout and Android delivery.
 * Introduce `@shared/*` (and related) path aliases to replace brittle `../../..` imports across app hosts.
+* modify slogan global in project 
 
 
 
