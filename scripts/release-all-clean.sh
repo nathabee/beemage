@@ -14,9 +14,8 @@ git add -A
 git commit -m "clean tree before release"
 
 # 3) Now the publish script will pass its clean-tree guard
-echo "in case error by publishing zip, you need to run:"
-echo "./demo/scripts/publish-zip.sh"
-echo "./demo/scripts/publish-demo-zip.sh"
-echo
-echo "in case error by publishing demo zip only, you need to run:"
-echo "./demo/scripts/publish-demo-zip.sh"
+echo "in case error by publishing zip, you need to run :"
+echo "./apps/extension/scripts/publish-extension-zip.sh"
+echo "./apps/demo/scripts/publish-demo-zip.sh"
+echo "./apps/android-native/scripts/publish-android-native-artifacts.sh"
+echo 
