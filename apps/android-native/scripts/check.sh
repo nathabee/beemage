@@ -173,9 +173,10 @@ if [[ -f "$KEYSTORE_PROPS" ]]; then
   fi
 
   [[ -f "$KS_PATH" ]] || die "Keystore file not found: $KS_PATH"
-
-  info "Keystore file:      $KS_PATH"
+  
+  info "Keystore:           present"
   info "Keystore alias:     $KEY_ALIAS"
+
 
   # Verify alias exists (uses store password)
   keytool -list -keystore "$KS_PATH" -storepass "$STORE_PASS" -alias "$KEY_ALIAS" >/dev/null
@@ -185,9 +186,12 @@ if [[ -f "$KEYSTORE_PROPS" ]]; then
   "$APKSIGNER_BIN" verify --verbose "$APK_PATH" >/dev/null
   info "OK: APK signature verified (apksigner)."
 
-  info "Certificate summary:"
-  "$APKSIGNER_BIN" verify --print-certs "$APK_PATH" | sed -n '1,25p'
+  info "Certificate fingerprint (SHA-256):"
+  "$APKSIGNER_BIN" verify --print-certs "$APK_PATH" \
+    | rg -n "certificate SHA-256 digest" \
+    | sed -E 's/^.*certificate SHA-256 digest: /sha256: /'
   info
+
 
 else
   if [[ "$REQUIRE_SIGNING" == "yes" ]]; then
