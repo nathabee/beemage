@@ -72,6 +72,12 @@ stil to do :
 ---
  
 
+#### v0.2.4 — Epic: Bump automatic after release
+
+* release-all.sh updated
+---
+ 
+
 #### v0.2.3 — Epic: Android delivery baseline + repeatable release pipeline (F-Droid-friendly)
 
 * Pin Android toolchain for targetSdk 35 (Gradle 8.9, AGP 8.7.3, JDK 17).
