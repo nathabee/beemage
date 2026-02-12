@@ -10,7 +10,7 @@ and produces a static build that is embedded into the native wrapper
 This is not an APK/AAB.
 It is the web artifact consumed by the Android app.
 
-* Document updated for version: `0.2.1`
+* Document updated for version: `0.2.3`
 
 ---
 
