@@ -2,9 +2,10 @@
 # apps/demo/scripts/publish-demo-zip.sh
 set -euo pipefail
 
-DEMO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ROOT_DIR="$(cd "${DEMO_DIR}/../../.." && pwd)"
+DEMO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"      # .../apps/demo
+ROOT_DIR="$(cd "${DEMO_DIR}/../.." && pwd)"                      # repo root
 cd "$ROOT_DIR"
+
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "Missing command: $1"; }
