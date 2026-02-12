@@ -40,7 +40,7 @@ async function boot() {
   root.innerHTML = html;
 
   // Boot the real panel entrypoint (extension panel code)
-  await import("../../../src/panel/panel"); // no .ts
+  await import("@panel/panel"); // no .ts
 }
 
 boot().catch((e) => {

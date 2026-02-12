@@ -66,6 +66,14 @@ Targets:
 - Production logging is clean and policy-safe.
 - Prefer `@shared/*` style imports (avoid brittle `../../..` paths).
 
+
+#### v0.2.2 — Epic: Docs refresh and `@shared/*` import aliases
+
+* Update docs to reflect the new multi-app `/apps/*` layout and Android delivery.
+* Introduce `@shared/*` (and related) path aliases to replace brittle `../../..` imports across app hosts.
+
+
+
 #### v0.2.1 — Epic: Prepare Android for GitHub releases
 
 * Restructured repo: moved extension, demo, and Android into `apps/`.

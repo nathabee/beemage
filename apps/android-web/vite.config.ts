@@ -289,6 +289,14 @@ export default defineConfig(({ command }) => {
   return {
     root: __dirname,
     base: "./",
+    resolve: {
+      alias: {
+        "@shared": path.resolve(repoRoot, "src/shared"),
+        "@panel": path.resolve(repoRoot, "src/panel"),
+        "@src": path.resolve(repoRoot, "src"),
+      },
+    },
+
     plugins: [
       ...(isDev ? [tracePlatformResolves()] : []),
       ensurePipelinesPublicPlugin(),

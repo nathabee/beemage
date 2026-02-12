@@ -1,20 +1,20 @@
 // demo/src/mocks/engine/opsDispatchImpl.ts
 export const OPS_IMPL_SOURCE = "demo" as const;
 
-import type { OpImpls } from "../../../../../src/panel/platform/opsDispatchCore";
-import { logTrace, logWarn } from "../../../../../src/panel/app/log";
+import type { OpImpls } from "@panel/platform/opsDispatchCore";
+import { logTrace, logWarn } from "@panel/app/log";
 
 import { ocvRemoveSmallComponents } from "./ops/removeSmallComponents";
 
-import { thresholdManual } from "../../../../../src/panel/tabs/pipeline/lib/threshold";
-import { resizeNative } from "../../../../../src/panel/tabs/pipeline/lib/resize";
-import { denoiseNative } from "../../../../../src/panel/tabs/pipeline/lib/denoise";
-import { colorNative } from "../../../../../src/panel/tabs/pipeline/lib/color";
-import { morphologyNative } from "../../../../../src/panel/tabs/pipeline/lib/morphology";
-import { removeSmallComponents as nativeRemoveSmallComponents } from "../../../../../src/panel/tabs/pipeline/lib/morphology";
-import { edgeFromMask } from "../../../../../src/panel/tabs/pipeline/lib/edge";
+import { thresholdManual } from "@panel/tabs/pipeline/lib/threshold";
+import { resizeNative } from "@panel/tabs/pipeline/lib/resize";
+import { denoiseNative } from "@panel/tabs/pipeline/lib/denoise";
+import { colorNative } from "@panel/tabs/pipeline/lib/color";
+import { morphologyNative } from "@panel/tabs/pipeline/lib/morphology";
+import { removeSmallComponents as nativeRemoveSmallComponents } from "@panel/tabs/pipeline/lib/morphology";
+import { edgeFromMask } from "@panel/tabs/pipeline/lib/edge";
 
-import { edgeMaskToSvg } from "../../../../../src/panel/tabs/pipeline/lib/svg";
+import { edgeMaskToSvg } from "@panel/tabs/pipeline/lib/svg";
 
 
 export const opImpls: OpImpls = {

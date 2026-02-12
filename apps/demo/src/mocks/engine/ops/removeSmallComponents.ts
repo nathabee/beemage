@@ -1,9 +1,9 @@
 // demo/src/mocks/engine/ops/removeSmallComponents.ts
 
-import { removeSmallComponents as nativeRemoveSmallComponents } from "../../../../../../src/panel/tabs/pipeline/lib/morphology";
+import { removeSmallComponents as nativeRemoveSmallComponents } from "@panel/tabs/pipeline/lib/morphology";
 import { getCvOrNull } from "./helpers/cv";
 
-import { traceScope } from "../../../../../../src/panel/app/log";
+import { traceScope } from "@panel/app/log";
 
 type MaskInput = { mask: Uint8Array; width: number; height: number };
 type RemoveSmallParams = { cleanMinArea: number };

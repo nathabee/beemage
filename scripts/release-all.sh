@@ -58,7 +58,7 @@ dirty_outside_allowed="$(
 
 # 1) Build extension zip
 echo "== 1) Build extension zip =="
-./apps/extension/scripts/build-zip.sh
+./apps/extension/scripts/build-extension-zip.sh
 
 # 2) Build demo zip
 echo
@@ -87,23 +87,16 @@ ASSETS_DST="${ROOT_DIR}/docs/assets"
 [[ -d "$DEMO_DIST" ]] || die "Missing $DEMO_DIST (demo build failed?)"
 
 mkdir -p "$DOCS_DEMO"
-
-rsync -a --delete --checksum \
-  "$DEMO_DIST"/ \
-  "$DOCS_DEMO"/
+rsync -a --delete --checksum "$DEMO_DIST"/ "$DOCS_DEMO"/
 
 mkdir -p "$ASSETS_DST/opencv" "$ASSETS_DST/pipelines"
 
 if [[ -d "$ASSETS_SRC/opencv" ]]; then
-  rsync -a --delete --checksum \
-    "$ASSETS_SRC/opencv"/ \
-    "$ASSETS_DST/opencv"/
+  rsync -a --delete --checksum "$ASSETS_SRC/opencv"/ "$ASSETS_DST/opencv"/
 fi
 
 if [[ -d "$ASSETS_SRC/pipelines" ]]; then
-  rsync -a --delete --checksum \
-    "$ASSETS_SRC/pipelines"/ \
-    "$ASSETS_DST/pipelines"/
+  rsync -a --delete --checksum "$ASSETS_SRC/pipelines"/ "$ASSETS_DST/pipelines"/
 fi
 
 echo "Demo published to $DOCS_DEMO (diff-aware)"
@@ -122,15 +115,62 @@ else
   echo "No docs changes to commit."
 fi
 
-# 7) Publish GitHub release + upload extension zip
+# 7) Create/ensure GitHub release (optional)
 echo
-echo "== 7) Publish GitHub release + upload extension zip =="
-./scripts/publish-release-zip.sh
+echo "== 7) Create/ensure GitHub release (optional) =="
+release_choice="${BCT_RELEASE_CREATE:-}"
+RELEASE_READY="no"
 
-# 8) Upload demo zip to same release (optional)
+if gh release view "$tag" >/dev/null 2>&1; then
+  RELEASE_READY="yes"
+fi
+
+if [[ -z "$release_choice" ]]; then
+  read -r -p "Create/ensure GitHub release ${tag}? [Y/n] " release_choice
+fi
+
+case "${release_choice,,}" in
+  ""|y|yes)
+    ./scripts/publish-release.sh
+    RELEASE_READY="yes"
+    ;;
+  *)
+    echo "Skipping release creation."
+    ;;
+esac
+
+# 8) Upload extension zip (optional)
 echo
-echo "== 8) Upload demo zip to same release (optional) =="
+echo "== 8) Upload extension zip (optional) =="
+ext_choice="${BCT_EXT_UPLOAD:-}"
+
+if [[ "$RELEASE_READY" != "yes" ]]; then
+  echo "No GitHub release available for ${tag}; skipping extension upload."
+  ext_choice="no"
+fi
+
+if [[ -z "$ext_choice" ]]; then
+  read -r -p "Upload extension zip to release ${tag}? [Y/n] " ext_choice
+fi
+
+case "${ext_choice,,}" in
+  ""|y|yes)
+    ./apps/extension/scripts/publish-extension-zip.sh
+    ;;
+  *)
+    echo "Skipping extension upload."
+    ;;
+esac
+
+# 9) Upload demo zip (optional)
+echo
+echo "== 9) Upload demo zip (optional) =="
 demo_choice="${BCT_DEMO_UPLOAD:-}"
+
+if [[ "$RELEASE_READY" != "yes" ]]; then
+  echo "No GitHub release available for ${tag}; skipping demo upload."
+  demo_choice="no"
+fi
 
 if [[ -z "$demo_choice" ]]; then
   read -r -p "Upload demo zip to release ${tag}? [y/N] " demo_choice
@@ -145,10 +185,15 @@ case "${demo_choice,,}" in
     ;;
 esac
 
-# 9) Upload Android artifacts to same release (optional)
+# 10) Upload Android artifacts (optional)
 echo
-echo "== 9) Upload Android APK/AAB to same release (optional) =="
+echo "== 10) Upload Android APK/AAB (optional) =="
 android_choice="${BCT_ANDROID_UPLOAD:-}"
+
+if [[ "$RELEASE_READY" != "yes" ]]; then
+  echo "No GitHub release available for ${tag}; skipping Android upload."
+  android_choice="no"
+fi
 
 if [[ -z "$android_choice" ]]; then
   read -r -p "Upload Android APK/AAB to release ${tag}? [y/N] " android_choice
@@ -164,4 +209,4 @@ case "${android_choice,,}" in
 esac
 
 echo
-echo "Release published for $tag"
+echo "Done for $tag"

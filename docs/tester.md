@@ -1,101 +1,94 @@
 # Tester Guide
 
-**BeeMage — Explore image processing through visual pipelines**
-* **Document updated for version:** `0.1.10`
+**BeeMage — Explore image processing through visual pipelines**  
+* **Document updated for version:** `0.2.2`
 
-This document explains how to test **BeeMage** across its supported delivery formats.
+This document explains how to test BeeMage across its supported delivery formats.
 
-Each delivery format has its own runtime and platform characteristics and is tested independently.
+BeeMage is a single shared application core (`/src`) executed in different runtime hosts (`/apps/*`).
+Each delivery format has its own platform characteristics and must be verified independently.
 
 ---
 
-## 1. Presentation
-
-BeeMage is a visual image-processing tool built around **explicit pipelines** and **interactive exploration**.
+## 1. Testing goals
 
 Testing focuses on:
 
-* correctness of pipeline execution
-* clarity of visual feedback
-* predictability of state and actions
-* consistency of behavior within each delivery format
-
-BeeMage is delivered through two formats:
-
-1. **Static Web application**
-2. **Chrome Extension**
-
-The core UI and pipeline logic are shared.
-Runtime and platform specifics are tested per format.
+- correctness of pipeline execution
+- clarity of visual feedback
+- predictable state transitions
+- persistence behavior (per runtime)
+- clean logging behavior (action log vs debug trace vs console trace)
 
 ---
 
-## 2. Static Web version (Browser application)
+## 2. Delivery formats
 
-This section applies when BeeMage is run as a **static web application**
-(GitHub Pages, local static hosting, iframe embedding, etc.).
+BeeMage is delivered through three formats:
 
----
+1. **Web Demo** (Vite build published to GitHub Pages)
+2. **Chrome Extension** (MV3 Side Panel)
+3. **Android App** (WebView wrapper embedding the Android web bundle)
 
-### 2.1 Runtime and platform
-
-* Runs as a **standard website**
-* Same UI and pipeline logic as other deliveries
-* Web runtime with **OpenCV (WASM) support**
-* Static asset–based deployment
-
-OpenCV is a **required runtime dependency** for the static web version.
+All three run the same panel UI and pipeline core.
 
 ---
 
-### 2.2 Install dependencies and prepare OpenCV runtime
+## 3. Web Demo (apps/demo)
 
-The static web version requires `node_modules` in order to install the OpenCV runtime.
+### 3.1 Runtime characteristics
 
-From the project root:
+- Runs as a standard website (no extension APIs)
+- Uses seam swapping for platform modules (runtime/storage/engine)
+- Can load OpenCV (WASM) for experimentation
+- Uses static asset deployment (`docs/demo` for GitHub Pages)
+
+OpenCV is **demo-only** and **optional** from a product perspective, but the demo build requires that
+OpenCV assets are available either via committed `docs/assets/opencv/` or via `node_modules/@opencv.js/wasm`
+(the demo build copies them into `apps/demo/public/` automatically).
+
+### 3.2 Install + run (dev)
 
 ```bash
-cd demo
+cd apps/demo
 npm install
-./scripts/get-opencv.sh
+npm run dev -- --host
 ```
 
-This copies OpenCV runtime files from `node_modules` into:
+Open the printed URL in a browser.
 
-* `docs/assets/opencv/` (GitHub Pages runtime)
-* `demo/public/assets/opencv/` (served by Vite)
-
----
-
-### 2.3 Build and run
-
-From the `demo/` directory:
+### 3.3 Build + preview (production build)
 
 ```bash
+cd apps/demo
 npm run build
+npm run preview -- --host
 ```
 
 Build output:
 
 ```
-demo/dist/
+apps/demo/dist/
 ```
 
-Serve locally:
+### 3.4 OpenCV runtime refresh (only when updating OpenCV)
+
+If you bump the OpenCV package version or want to refresh the committed runtime assets:
 
 ```bash
-npx serve dist
+cd apps/demo
+./scripts/get-opencv.sh
 ```
 
-Open the served URL in a browser.
+This updates:
 
----
+* `docs/assets/opencv/` (GitHub Pages runtime)
+* `apps/demo/public/assets/opencv/` (served by Vite)
 
-### 2.4 What to verify (static web)
+### 3.5 What to verify (web demo)
 
-* Application loads correctly in a browser
-
-* All tabs render:
+* App boots and renders consistently
+* Tabs render correctly:
 
   * Image
   * Pipeline
@@ -103,38 +96,27 @@ Open the served URL in a browser.
   * Colors
   * Settings
   * Logs
-
-* Pipelines execute correctly
-
-* OpenCV-backed operations execute correctly
-
-* Outputs can be downloaded
-
-* Visual feedback matches pipeline state
+* Pipeline execution works end-to-end
+* Intermediate artifacts display correctly (image/mask/svg)
+* OpenCV-backed operations (if enabled) work and fall back safely when disabled
+* Downloads (PNG/SVG) work in the browser
+* No unexpected errors in console
 
 ---
 
-## 3. Chrome Extension version
+## 4. Chrome Extension (apps/extension)
 
-This section applies when BeeMage is run as a **Chrome Extension**
-(Manifest V3, Side Panel UI).
+### 4.1 Runtime characteristics
 
----
+* Runs as a Chrome Side Panel (MV3)
+* Uses Chrome extension platform APIs where appropriate
+* Uses native (TypeScript) execution engine
+* OpenCV is intentionally disabled in the extension runtime
 
-### 3.1 Runtime and platform
-
-* Runs as a **Chrome Side Panel**
-* Uses Chrome extension platform APIs
-* Native execution engine
-* Packaged as a production extension build
-
----
-
-### 3.2 Build and load (developer mode)
-
-From the project root:
+### 4.2 Build + load unpacked (developer mode)
 
 ```bash
+cd apps/extension
 npm install
 npm run build
 ```
@@ -144,33 +126,30 @@ Then:
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
 3. Click **Load unpacked**
-4. Select the `dist/` directory
-   (the folder that directly contains `manifest.json`)
+4. Select:
 
----
+```
+apps/extension/dist/
+```
 
-### 3.3 Iteration workflow
+(the folder that directly contains `manifest.json`)
+
+### 4.3 Iteration workflow
 
 ```text
 edit code
 ↓
-npm run build
+cd apps/extension && npm run build
 ↓
 chrome://extensions → Reload
 ↓
 open BeeMage side panel
 ```
 
-Use this workflow for development and verification.
-
----
-
-### 3.4 Test the release ZIP
-
-This verifies the packaged extension artifact.
+### 4.4 Test the release ZIP
 
 ```bash
-./scripts/build-zip.sh
+./apps/extension/scripts/build-zip.sh
 ```
 
 Output:
@@ -181,57 +160,84 @@ release/beemage-<version>.zip
 
 Test procedure:
 
-1. Unzip the ZIP into a folder
-2. Open `chrome://extensions`
-3. Enable **Developer mode**
-4. Click **Load unpacked**
-5. Select the folder that directly contains `manifest.json`
+1. Unzip into a folder
+2. `chrome://extensions` → Developer mode
+3. Load unpacked → select the folder containing `manifest.json`
 
----
-
-### 3.5 What to verify (extension)
+### 4.5 What to verify (extension)
 
 * Side panel opens reliably
 * All tabs render correctly
 * Pipelines execute correctly
-* Storage persists across reloads
-* Logs behave as expected
-* No runtime errors appear
+* Storage persists across reloads/restarts (extension storage)
+* Logs behave correctly:
+
+  * user-visible actions go to action log
+  * developer debugging goes to debug trace
+  * console trace is dev-only
+* No runtime errors
 
 ---
 
-### 3.6 Platform coverage
+## 5. Android App (apps/android-web + apps/android-native)
 
-Testing should include at least one configuration from each group:
+Android is two layers:
 
-* Windows 11 + Chrome
-* Windows 11 + Edge
+* **Android web bundle:** `apps/android-web` (Vite build)
+* **Android wrapper:** `apps/android-native` (Gradle / Android Studio project)
+
+### 5.1 Build the Android web bundle and sync into wrapper assets
+
+```bash
+./apps/android-web/scripts/build-android-web.sh
+```
+
+This produces a web build and copies it into:
+
+```
+apps/android-native/app/src/main/assets/
+```
+
+### 5.2 Build Android APK/AAB from CLI
+
+Preferred (consistent with CI/F-Droid/Play):
+
+```bash
+./apps/android-native/scripts/build-android-native.sh all release
+```
+
+Typical development loop:
+
+```bash
+./apps/android-native/scripts/build-android-native.sh apk debug
+```
+
+### 5.3 What to verify (Android)
+
+* App installs and launches cleanly
+* WebView loads assets via `WebViewAssetLoader` (no file:// hacks)
+* No cleartext networking opt-in (HTTPS-only posture)
+* Pipeline execution works (native JS engine)
+* Local persistence works (WebView localStorage behavior)
+* No policy-dangerous logs in production builds
+* Minimal permissions (usually INTERNET only)
+
+---
+
+## 6. Platform coverage
+
+At minimum, test one config per group:
+
+* Windows + Chrome
 * macOS + Chrome
-* Linux (Ubuntu) + Chrome
+* Linux + Chrome
+* Android device (physical) + at least one recent WebView version
 
 Focus on:
 
-* layout and sizing
-* DPI scaling
-* download behavior
-* storage persistence after restart
+* layout / sizing / DPI
+* download/export behavior (web + extension)
+* persistence across restarts (extension + Android)
+* stability under repeated runs
 
 ---
-
-### 3.7 Testing principle
-
-BeeMage is designed around:
-
-* explicit user actions
-* visual feedback at every step
-* predictable state transitions
-
-Testing should always verify that:
-
-* every operation is intentional
-* each action produces a visible result
-* state changes are controlled and observable
-
----
-
- 

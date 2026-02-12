@@ -2,23 +2,36 @@
 
 This document explains how to install **BeeMage — Explore image processing through visual pipelines** locally for development.
 
-* **Document updated for version:** `0.1.10`
+* **Document updated for version:** `0.2.2`
 
+---
 
 ## Requirements
 
-- Google Chrome (or Chromium-based browser)
-- Node.js
 - Git
+- Node.js (LTS recommended)
+- npm
+- Google Chrome (or Chromium-based browser)
+- Java (JDK 17 recommended) — required for Android native builds
 
+---
 
-## Chrome extension
+## Repository layout (quick orientation)
+
+- Shared core: `src/`
+- Web demo host: `apps/demo/`
+- Chrome extension host: `apps/extension/`
+- Android web bundle host: `apps/android-web/`
+- Android native wrapper: `apps/android-native/`
+
+---
+
+## 1) Chrome Extension (apps/extension)
 
 ### Install dependencies
 
-From the project root:
-
 ```bash
+cd apps/extension
 npm install
 ```
 
@@ -28,81 +41,150 @@ npm install
 npm run build
 ```
 
-This generates the production-ready extension files in:
+Build output:
 
-* `dist/`
+* `apps/extension/dist/`
 
 ### Load in Chrome (Developer Mode)
 
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
 3. Click **Load unpacked**
-4. Select the `dist/` directory
+4. Select: `apps/extension/dist/` (the folder that directly contains `manifest.json`)
 
-The extension will now be available locally.
+---
 
-## Demo (static web)
+## 2) Web Demo (apps/demo)
+
+The demo runs the real shared panel UI in a normal website runtime using seam swapping.
 
 ### Install dependencies
 
-From the project root:
-
 ```bash
-cd demo
+cd apps/demo
 npm install
 ```
 
 ### Prepare OpenCV runtime (optional, demo-only)
 
-OpenCV is **demo-only**. You only need this step if you want to enable **OpenCV mode** in the demo.
+OpenCV is **demo-only** and used for experimentation/comparison.
 
 ```bash
-chmod +x demo/scripts/get-opencv.sh
-./demo/scripts/get-opencv.sh
+./scripts/get-opencv.sh
 ```
 
 What the script does (exact):
 
 * copies `opencv.js` and `opencv.wasm` from:
 
-  * `demo/node_modules/@opencv.js/wasm/`
-* into these two locations:
+  * `apps/demo/node_modules/@opencv.js/wasm/`
+* into:
 
-  1. `docs/assets/opencv/` (canonical runtime for GitHub Pages; committed)
-  2. `demo/public/assets/opencv/` (demo runtime served by Vite; generated)
+  1. `assets/opencv/` (canonical runtime for publishing; typically committed/published)
+  2. `apps/demo/public/assets/opencv/` (served by Vite; generated)
 
-### Build the demo
- 
+### Run dev server (hot reload)
 
 ```bash
-cd demo
+npm run dev -- --host
+```
+
+### Build the demo
+
+```bash
 npm run build
 ```
 
-This generates the static demo output in:
+Build output:
 
-* `demo/dist/`
+* `apps/demo/dist/`
 
 ### Test the built demo locally
 
 ```bash
-cd demo
 npx serve dist
 ```
 
-## Notes
-
-* This project is client-side only.
-* No external services are required to run the extension.
-* If the demo OpenCV probe shows a 404, re-run:
+If OpenCV assets 404 in the demo runtime, rerun:
 
 ```bash
-./demo/scripts/get-opencv.sh
-```
-
-then rebuild the demo.
-
+./scripts/get-opencv.sh
+npm run build
 ```
 
 ---
+
+## 3) Android Web Bundle (apps/android-web)
+
+This produces the static WebView-compatible bundle that the native wrapper embeds.
+
+### Install dependencies
+
+```bash
+cd apps/android-web
+npm install
+```
+
+### Build
+
+```bash
+npm run build
+```
+
+Build output:
+
+* `apps/android-web/dist/`
+
+### Build + copy into the native wrapper (recommended path)
+
+From repo root:
+
+```bash
+./apps/android-web/scripts/build-android-web.sh
+```
+
+This builds `apps/android-web/dist/` and copies it into:
+
+* `apps/android-native/app/src/main/assets/`
+
+Nothing under `apps/android-native/app/src/main/assets/` should be committed (except `.gitkeep`).
+
+---
+
+## 4) Android Native Wrapper (apps/android-native)
+
+This is the Android Studio / Gradle project that embeds the web bundle via WebView.
+
+### Open in Android Studio (manual workflow)
+
+1. Ensure assets are present (run the Android web bundle script above).
+2. Open Android Studio.
+3. Open the folder: `apps/android-native/`
+4. Build / Run.
+
+### Command-line build (recommended for reproducible releases)
+
+From repo root:
+
+```bash
+./apps/android-native/gradlew -p apps/android-native assembleDebug
+```
+
+For release artifacts (signing required):
+
+```bash
+./apps/android-native/gradlew -p apps/android-native assembleRelease
+./apps/android-native/gradlew -p apps/android-native bundleRelease
+```
+
+(If you use your wrapper script `apps/android-native/scripts/build-android-native.sh`, that should call the Gradle tasks above and place outputs into `release/`.)
+
+---
+
+## Notes
+
+* BeeMage runs fully client-side. No external services are required.
+* OpenCV is demo-only (web runtime). Extension and Android are native TypeScript engine only (unless explicitly enabled later).
+* The single source of truth for app logic remains `src/`. `/apps/*` are delivery hosts.
+
  

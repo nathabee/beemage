@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# scripts/publish-release.sh
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -14,19 +15,13 @@ need gh
 ver="$(tr -d ' \t\r\n' < VERSION)"
 tag="v${ver}"
 
-ZIP="release/beemage-${ver}.zip"
-
-[[ -f "$ZIP" ]] || die "Missing $ZIP. Run: ./apps/extension/scripts/build-zip.sh"
-
-# Clean tree guard (same reason as before)
+# Clean tree guard (tag should represent committed state)
 [[ -z "$(git status --porcelain)" ]] || die "Working tree not clean. Commit/stash first."
-
 gh auth status >/dev/null 2>&1 || die "gh not authenticated. Run: gh auth login"
 
 HEAD_SHA="$(git rev-parse HEAD)"
 HEAD_SHORT="$(git rev-parse --short HEAD)"
 
-# Refuse to retag if a release already exists
 RELEASE_EXISTS="no"
 if gh release view "$tag" >/dev/null 2>&1; then
   RELEASE_EXISTS="yes"
@@ -52,14 +47,11 @@ else
   git push origin "$tag" --force-with-lease
 fi
 
-NOTES=$'Chrome extension build.\n\n'"- Version: ${ver}"$'\n'"- Tag: ${tag}"$'\n'"- Commit: ${HEAD_SHORT}"$'\n'
+NOTES=$'BeeMage — Release artifacts\n\n'"- Version: ${ver}"$'\n'"- Tag: ${tag}"$'\n'"- Commit: ${HEAD_SHORT}"$'\n\n'"Artifacts (uploaded by release-all or per-app publish scripts):\n- beemage-extension-${ver}.zip\n- beemage-demo-${ver}.zip (optional)\n- beemage-android-${ver}-release.apk/.aab (optional)\n'
 
 if [[ "$RELEASE_EXISTS" == "yes" ]]; then
-  echo "Release exists: $tag"
+  echo "Release exists: $tag (not recreating)"
 else
   gh release create "$tag" --title "$tag" --notes "$NOTES"
+  echo "Created release: $tag"
 fi
-
-gh release upload "$tag" "$ZIP" --clobber
-
-echo "Done: uploaded $(basename "$ZIP") to release $tag."

@@ -1,5 +1,5 @@
 // android/src/mocks/engineAdapter.ts
-import { setEngineUnavailable } from "../../../../../src/panel/app/engine/engineAvailability";
+import { setEngineUnavailable } from "@panel/app/engine/engineAvailability";
 
 export function supportsOpenCvLoad(): boolean {
   return false;

@@ -1,172 +1,171 @@
 # Android Build Specification
 
-**Project:** BeeMage — Explore image processing through visual pipelines
-**Applies to:** `/android` (WebView wrapper target)
-**Status:** v0 — Web bundle builds; native Android wrapper TBD
-**Core principle:** **Reuse `/src` unchanged** by providing platform seams at build-time.
+**Project:** BeeMage — Explore image processing through visual pipelines  
+**Applies to:** `apps/android-web/` (Android WebView bundle target) + integration contract with `apps/android-native/`  
+**Status:** v1 — Web bundle builds and is embedded into native wrapper  
+**Core principle:** Reuse `src/` unchanged by providing platform seams at build-time.
 
-* **Document updated for version:** `0.2.0`
+* **Document updated for version:** `0.2.2`
 
 ---
 
 ## 1. Purpose
 
-BeeMage is implemented primarily as a **Chrome Extension (MV3, Side Panel)** built from `/src`.
-This document specifies how BeeMage is extended to support an **Android app** by reusing the same core code and UI, without forking `/src`.
+BeeMage is implemented as a single shared application core in:
 
-The Android delivery is designed as:
+- `src/` (UI + pipelines + tuning + logging + execution orchestration)
 
-* **A static web bundle** built from `/src` (via Vite in `/android`)
-* Later: packaged into a native Android application via a WebView-based wrapper (e.g., Capacitor or a custom WebView host)
+That core is delivered through multiple runtime hosts:
 
-**OpenCV is intentionally excluded in the first Android milestone.**
+- `apps/extension/` (Chrome Extension, MV3 Side Panel)
+- `apps/demo/` (Static web demo, optional OpenCV)
+- `apps/android-web/` (Android WebView-compatible web bundle, no OpenCV)
+- `apps/android-native/` (Android wrapper embedding the bundle)
+
+This document specifies how BeeMage supports Android by **reusing the same core code and UI** without forking `src/`.
+
+OpenCV is intentionally excluded in the Android milestone.
 
 ---
 
 ## 2. Strategy
 
-### 2.1 No fork of `/src`
+### 2.1 No fork of `src/`
 
-`/src` remains the single source of truth and continues to compile into:
+`src/` remains the single source of truth and is reused unchanged by:
 
-* the Chrome Extension (`/dist` from root build)
-* the Android web bundle (`/android/dist`)
+- `apps/extension/` (extension build)
+- `apps/android-web/` (Android web bundle build)
 
-### 2.2 Use seam swapping (build-time)
+### 2.2 Seam swapping (build-time)
 
-The extension build relies on `chrome.*` APIs and other extension runtime assumptions.
-Android cannot access these APIs, so the Android build swaps specific platform modules at bundle time.
+The extension host relies on Chrome extension APIs and MV3 assumptions.
+Android WebView cannot access those APIs, so the Android bundle swaps specific platform modules at bundle time.
 
-This is the same architectural pattern as `/demo`, but **Android does not bring OpenCV** and does **not** replace operation implementations.
+This is the same architectural pattern as `apps/demo/`, but Android:
+
+- does not include OpenCV
+- does not swap operation implementations
 
 ### 2.3 Keep native JS op implementations
 
-Android uses the existing pure JS processing implementations already present in:
+Android uses the existing pure JS processing implementations in shared code, such as:
 
-* `src/panel/platform/opsDispatchImpl.ts` (native implementations)
-* `src/panel/tabs/pipeline/lib/*` (resize, denoise, threshold, morphology, svg, etc.)
+- `src/panel/platform/opsDispatchImpl.ts` (native implementations)
+- pipeline operations under `src/panel/...` (resize, threshold, morphology, svg, etc.)
 
-No OpenCV loader, no OpenCV wasm assets, no OpenCV ops variants in the Android build.
+No OpenCV loader, no OpenCV wasm assets, no OpenCV-backed ops in the Android build.
 
 ---
 
 ## 3. Architecture overview
 
-Android delivery adds a third “host” that runs the same panel UI and pipeline core:
+Android adds a dedicated host project that runs the same panel UI and pipeline core:
 
 ```
-/src                      /android (host)
-├─ panel/*                ├─ index.html
-│  ├─ panel.html          ├─ src/main.ts
-│  ├─ panel.ts            ├─ src/app.ts
-│  └─ platform/*          ├─ src/mocks/*
-└─ shared/*               └─ vite.config.ts
+
+src/                          apps/android-web/ (host)
+├─ panel/*                    ├─ index.html
+│  ├─ panel.html              ├─ src/main.ts
+│  ├─ panel.ts                ├─ src/app.ts
+│  └─ platform/*              ├─ src/mocks/*
+└─ shared/*                   └─ vite.config.ts
+
 ```
 
-### 3.1 What is reused from `/src`
+### 3.1 What is reused from `src/`
 
-* Panel UI: `src/panel/panel.ts`, `panel.html`, `panel.css`
-* Tabs: `src/panel/tabs/*`
-* Pipeline core: `src/panel/app/pipeline/*`
-* Tuning core: `src/panel/app/tuning/*`
-* Logging model: actionLog + debugTrace + console trace
-* Execution ops: **native JS ops** in `src/panel/platform/opsDispatchImpl.ts`
+- Panel UI: `src/panel/panel.ts`, `panel.html`, `panel.css`
+- Tabs: `src/panel/tabs/*`
+- Pipeline core: `src/panel/app/pipeline/*`
+- Tuning core: `src/panel/app/tuning/*`
+- Logging model: actionLog + debugTrace + console trace
+- Execution ops: native JS ops in `src/panel/platform/opsDispatchImpl.ts`
 
 ### 3.2 What is replaced for Android
 
-Android replaces only the extension-specific runtime seams:
+Android replaces only the runtime seams that are extension-specific:
 
-* Runtime messaging + asset resolution (`src/panel/platform/runtime.ts`)
-* Storage abstraction (`src/shared/platform/storage.ts`)
-* Engine adapter (`src/panel/platform/engineAdapter.ts`)
+- Runtime messaging + asset resolution (`src/panel/platform/runtime.ts`)
+- Storage abstraction (`src/shared/platform/storage.ts`)
+- Engine adapter (`src/panel/platform/engineAdapter.ts`)
 
 ---
 
 ## 4. Seam swapping: exact modules
 
-The Android build swaps these modules at bundle time:
+Android swaps these modules at bundle time:
 
 ### 4.1 Runtime seam
 
-**Original (extension):**
-
-* `src/panel/platform/runtime.ts`
+**Original (extension / shared):**
+- `src/panel/platform/runtime.ts`
 
 **Android replacement:**
-
-* `android/src/mocks/runtime.ts`
+- `apps/android-web/src/mocks/runtime.ts`
 
 Purpose:
-
-* remove `chrome.runtime.*` dependencies
-* provide an in-process event bus used by the panel
-* resolve asset URLs in a static environment via `runtimeGetAssetUrl(...)`
+- remove `chrome.runtime.*` dependencies
+- provide an in-process event bus used by the panel
+- resolve asset URLs in a static WebView-compatible environment
 
 ### 4.2 Storage seam
 
-**Original (extension):**
-
-* `src/shared/platform/storage.ts` (chrome.storage.local)
+**Original (extension / shared):**
+- `src/shared/platform/storage.ts` (extension uses chrome.storage.*)
 
 **Android replacement:**
-
-* `android/src/mocks/storage.ts` (localStorage-backed)
+- `apps/android-web/src/mocks/storage.ts` (localStorage-backed)
 
 Purpose:
-
-* keep persistence and change notifications working without Chrome APIs
+- keep persistence and change notifications working without Chrome APIs
 
 ### 4.3 Engine adapter seam
 
-**Original (extension):**
-
-* `src/panel/platform/engineAdapter.ts` (extension stub: OpenCV unsupported)
+**Original (shared):**
+- `src/panel/platform/engineAdapter.ts`
 
 **Android replacement:**
-
-* `android/src/mocks/engine/engineAdapter.ts` (Android stub: OpenCV disabled)
+- `apps/android-web/src/mocks/engine/engineAdapter.ts`
 
 Purpose:
+- explicitly disable OpenCV for Android v1
+- keep “engine status” UI consistent
 
-* explicitly disable OpenCV for Android v1
-* keep “engine status” UI consistent
+### 4.4 What is not swapped
 
-### 4.4 What is *not* swapped
-
-Android **does not** swap:
-
-* `src/panel/platform/opsDispatchImpl.ts`
+Android does not swap:
+- `src/panel/platform/opsDispatchImpl.ts`
 
 Therefore the Android build uses:
-
-* the same native JS op implementations as the extension build
+- the same native JS op implementations as the extension build
 
 ---
 
-## 5. Android directory layout
-
-Current Android host project layout:
+## 5. Android web host directory layout
 
 ```
-android/
+
+apps/android-web/
 ├─ index.html
 ├─ package.json
 ├─ tsconfig.json
 ├─ tsconfig.node.json
 ├─ vite.config.ts
 ├─ public/
-│  └─ assets/pipelines/*          (copied from repo root assets/pipelines via plugin)
+│  └─ assets/pipelines/*      (synced from repo root assets/pipelines via plugin)
 └─ src/
-   ├─ main.ts
-   ├─ app.ts
-   ├─ mocks/
-   │  ├─ runtime.ts
-   │  ├─ storage.ts
-   │  └─ engine/
-   │     └─ engineAdapter.ts
-   ├─ types/
-   │  └─ chrome-shime.d.ts
-   └─ vite-env.d.ts
+├─ main.ts
+├─ app.ts
+├─ mocks/
+│  ├─ runtime.ts
+│  ├─ storage.ts
+│  └─ engine/
+│     └─ engineAdapter.ts
+├─ types/
+│  └─ chrome-shime.d.ts
+└─ vite-env.d.ts
+
 ```
 
 ---
@@ -176,36 +175,37 @@ android/
 ### 6.1 Install
 
 ```bash
-cd android
+cd apps/android-web
 npm install
 ```
 
-### 6.2 Build
+### 6.2 Build + sync into wrapper assets (recommended path)
+
+From repo root:
 
 ```bash
-npm run build
+./apps/android-web/scripts/build-android-web.sh
 ```
 
-Outputs:
+This builds the web bundle and copies it into:
 
-* `android/dist/` with:
-
-  * `dist/index.html`
-  * `dist/app/panel.html`
-  * `dist/app/panel.css`
-  * `dist/assets/*.js`
-  * `dist/assets/pipelines/*.json`
-
-### 6.3 Dev server
-
-```bash
-npm run dev
+```
+apps/android-native/app/src/main/assets/
 ```
 
-Notes:
+### 6.3 Build output (web bundle)
 
-* `--host` is enabled so Android devices can load the dev server over LAN if needed.
-* No Chrome APIs are used; the build stays web-compatible.
+The Vite output is:
+
+* `apps/android-web/dist/`
+
+Expected contents include:
+
+* `dist/index.html`
+* `dist/app/panel.html`
+* `dist/app/panel.css`
+* `dist/assets/*.js`
+* `dist/assets/pipelines/*.json`
 
 ---
 
@@ -213,29 +213,34 @@ Notes:
 
 ### 7.1 Panel HTML/CSS
 
-`vite.config.ts` contains a plugin (`panelAssetsPlugin`) that:
+`apps/android-web/vite.config.ts` contains a plugin that:
 
 * reads `src/panel/panel.html` and `src/panel/panel.css`
 * sanitizes the HTML to remove extension bundle references
-* emits them into the Android bundle as:
+* emits them as:
 
   * `app/panel.html`
   * `app/panel.css`
 
-The Android host boot code loads these assets and boots the panel.
-
 ### 7.2 Pipeline JSON files
 
-`vite.config.ts` contains a plugin (`ensurePipelinesPublicPlugin`) that:
+A Vite plugin ensures pipeline examples are sourced from:
 
-* copies repo root pipeline assets from:
+```
+assets/pipelines/**/*.json
+```
 
-  * `assets/pipelines/**/*.json`
-* into:
+and copied into:
 
-  * `android/public/assets/pipelines/`
+```
+apps/android-web/public/assets/pipelines/
+```
 
-So they are included in `android/dist/assets/pipelines/` at build.
+so they end up in:
+
+```
+apps/android-web/dist/assets/pipelines/
+```
 
 ---
 
@@ -243,112 +248,99 @@ So they are included in `android/dist/assets/pipelines/` at build.
 
 ### 8.1 Processing
 
-All image processing runs client-side in the WebView using:
+All image processing runs client-side in WebView using:
 
 * Canvas 2D
-* Typed arrays
-* Native JS implementations in `/src`
+* typed arrays
+* native JS implementations in `src/`
 
 ### 8.2 Persistence
 
-Persistence is local to the WebView context using `localStorage` (via storage mock).
+Persistence is local to the WebView context via the storage seam (localStorage-backed).
 
 Stored data includes:
 
 * user pipelines / recipes
 * tuning overrides
-* UI preferences (if stored)
+* UI state (where stored)
 
-Images are not persisted unless explicitly implemented (not planned for v1).
+Images are not persisted.
 
 ### 8.3 Logging
 
-Logging model is unchanged:
+Logging channels remain separated:
 
-* console trace (dev only)
-* debugTrace (persisted dev diagnostics)
+* console trace (dev console only)
+* debugTrace (persisted developer diagnostics)
 * actionLog (user-visible audit history)
 
-The Android build must preserve the separation between these channels.
+Android must preserve these semantics exactly.
 
 ---
 
 ## 9. Constraints and known gaps
 
-### 9.1 “Download” UX
+### 9.1 Export UX
 
-Browser “download” flows are weak on mobile WebView.
-Android v1 may ship with basic export (Blob URL / anchor download) but should plan for:
+Browser-style downloads are weak on WebView.
 
-* Share sheet integration
-* Save-to-files integration
-
-This should be implemented via the runtime seam (future `runtimeShare(...)`, `runtimeSaveFile(...)`).
+v1 can ship with basic export (Blob URL / anchor download).
+Future Android UX should be implemented through the runtime seam (bridge-based share/save).
 
 ### 9.2 Performance and memory
 
-Mobile devices have tighter memory limits than desktop Chrome.
-Pipelines that keep many intermediate artifacts can cause GC pressure.
+Mobile memory limits are tighter.
+Future mitigations:
 
-Mitigations (future work):
-
-* limit stored intermediate frames
-* explicit “clear pipeline outputs”
-* lower default resize thresholds on mobile
+* limit retained intermediate artifacts
+* explicit “clear outputs”
+* mobile-friendly defaults (resize early)
 
 ### 9.3 OpenCV
 
-OpenCV is disabled by design in v1.
-If OpenCV is reintroduced later, it should be done as a separate engine policy with careful WebView constraints.
+OpenCV is disabled by design in Android v1.
+If reintroduced later, it must be a separate policy with careful WebView constraints.
 
 ---
 
 ## 10. Roadmap
 
-### v0 (now): Android web bundle
+### v1 (current): Android web bundle + native wrapper
 
-* `/android` builds a static bundle from `/src`
+* `apps/android-web` builds a static WebView-compatible bundle from `src`
 * seams swapped: runtime/storage/engineAdapter
-* ops implementations are native JS only
+* native wrapper embeds the bundle in a WebView
+* no OpenCV
 
-### v1: Package as Android APK
+### v2: Native UX improvements
 
-* Wrap `android/dist` into a WebView app
-
-  * Capacitor or custom WebView
-* Ensure file import works reliably
-* Implement export/share using Android-native APIs (through a JS bridge)
-
-### v2: Mobile UX improvements
-
-* Better export/save flows
-* Optional camera import
-* Performance tuning defaults for mobile
+* Android share sheet export
+* save-to-files integration
+* optional camera import
+* better mobile defaults
 
 ### v3 (optional): Native acceleration
 
-* Only if needed: introduce a native processing backend (NDK) as an additional “engine”
-* Keep the pipeline model and UI unchanged
+* only if needed: introduce a native engine backend
+* keep pipeline model and UI unchanged
 
 ---
 
-## 11. Non-goals for the Android v1 milestone
+## 11. Non-goals for Android v1
 
 * OpenCV integration
-* Full offline asset updates beyond bundling
-* Native image processing backend
-* Background processing / services
+* background services
+* native image processing backend
+* platform-specific UI rewrite
 
 ---
 
 ## 12. Implementation notes
 
-* Android build must remain **free of `chrome.*` runtime usage**.
-* Any new platform-dependent feature must be routed through:
+* Android build must remain free of `chrome.*` usage.
+* Any platform-specific feature must be routed through seams:
 
-  * `src/panel/platform/runtime.ts` (seam)
-  * or `src/shared/platform/storage.ts` (seam)
+  * `src/panel/platform/runtime.ts`
+  * `src/shared/platform/storage.ts`
 
-No direct platform branching inside core modules.
-
---- 
+No platform branching inside core modules.

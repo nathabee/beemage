@@ -1,7 +1,7 @@
 
 // demo/src/mocks/engine/engineAdapter.ts (demo override)
 
-import { setEngineAvailable, setEngineUnavailable } from "../../../../../src/panel/app/engine/engineAvailability";
+import { setEngineAvailable, setEngineUnavailable } from "@panel/app/engine/engineAvailability";
 import { loadOpenCv } from "./opencvLoader";
 
 export function supportsOpenCvLoad(): boolean {

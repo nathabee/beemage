@@ -1,14 +1,18 @@
-# BeeMage — Android Wrapper Specification
 
-This document describes how the **Android web bundle**
-(`android/dist`) is embedded into a **native Android application**.
+# BeeMage — Android Native Wrapper Specification
 
-It does **not** affect the BeeMage core or `/src`.
-All native integration happens outside the shared codebase.
+This document describes how the Android web bundle built by:
 
+- `apps/android-web/dist/`
 
-* **Document updated for version:** `0.2.0`
+is embedded into the native Android wrapper:
 
+- `apps/android-native/`
+
+The wrapper does not affect `src/`.
+All native integration happens outside the shared core.
+
+* **Document updated for version:** `0.2.2`
 
 ---
 
@@ -18,8 +22,9 @@ The Android wrapper must:
 
 - load the BeeMage web bundle in a WebView
 - provide a stable runtime environment
-- optionally expose native features via a JS bridge
+- serve assets safely (no file:// hacks)
 - keep BeeMage fully offline and client-side
+- optionally expose native features later via a small JS bridge
 
 ---
 
@@ -32,132 +37,119 @@ The Android wrapper must:
 
 ---
 
-## Wrapper models
+## Wrapper model
 
-Two wrapper strategies are acceptable.
+BeeMage currently uses a custom Android WebView wrapper (`apps/android-native`) with:
 
-### Option A — Capacitor (recommended)
+- `WebViewAssetLoader` for safe asset serving
+- assets embedded under `app/src/main/assets/`
 
-**Pros**
-- fast setup
-- maintained ecosystem
-- built-in bridge (Share, Files, Permissions)
-- good long-term evolution path
-
-**Cons**
-- additional tooling
-- slightly larger footprint
-
-### Option B — Custom Android WebView
-
-**Pros**
-- minimal dependencies
-- full control
-
-**Cons**
-- manual JS bridge
-- more boilerplate
-- more maintenance
-
-Both approaches consume the **same web bundle**.
+This keeps dependencies minimal and the execution model explicit.
 
 ---
 
-## Minimal wrapper requirements
+## Responsibility boundary
 
-Regardless of approach, the wrapper must:
+The wrapper is responsible for:
 
-1. Load `android/dist/index.html` into a WebView
+- hosting the WebView
+- loading the web bundle assets
+- WebView security posture
+- Android lifecycle integration
+- optional bridge surface (future)
+
+The wrapper is not responsible for:
+
+- pipeline logic
+- UI logic
+- image processing
+- tuning system
+- build configuration of the shared core
+
+All of that remains in `src/` and the `apps/*` web hosts.
+
+---
+
+## Input contract: what the wrapper consumes
+
+The wrapper consumes exactly one artifact:
+
+```
+
+apps/android-native/app/src/main/assets/
+
+```
+
+This directory is populated by:
+
+```bash
+./apps/android-web/scripts/build-android-web.sh
+```
+
+Nothing in `assets/` should be committed (except `.gitkeep`).
+
+---
+
+## Minimal WebView requirements
+
+The wrapper must:
+
+1. Load the embedded `index.html`
 2. Enable:
-   - JavaScript
-   - localStorage
-3. Allow file input (`<input type="file">`)
+
+   * JavaScript
+   * DOM storage (localStorage)
+3. Support file input (`<input type="file">`)
 4. Handle orientation / lifecycle correctly
 
 ---
 
-## WebView configuration (baseline)
+## Asset loading (required)
 
-```kotlin
-webView.settings.javaScriptEnabled = true
-webView.settings.domStorageEnabled = true
-webView.settings.allowFileAccess = true
-webView.settings.allowContentAccess = true
+Production uses `WebViewAssetLoader` and the canonical host:
+
+```
+https://appassets.androidplatform.net/
 ```
 
-For development builds:
-
-* enable WebView debugging
-
----
-
-## Asset loading
-
-Two common approaches:
-
-### A. Bundle assets inside APK
-
-* copy `android/dist/*` into `assets/`
-* load via `file:///android_asset/index.html`
-
-### B. Load from local server (dev only)
-
-* use `npm run dev`
-* load via `http://<host>:5173`
-
-Production should always use **bundled assets**.
+This avoids `file://` edge cases and improves security consistency.
 
 ---
 
 ## JavaScript ↔ Native bridge (future-proof design)
 
-The wrapper **may** expose a small JS API.
-This must be optional and non-breaking.
-
-### Recommended bridge surface (v1+)
+The wrapper may expose an optional bridge object (future), e.g.:
 
 ```ts
 interface AndroidBridge {
-  shareFile?(payload: {
-    name: string;
-    mime: string;
-    dataBase64: string;
-  }): Promise<void>;
-
-  saveFile?(payload: {
-    name: string;
-    mime: string;
-    dataBase64: string;
-  }): Promise<void>;
+  shareFile?(payload: { name: string; mime: string; dataBase64: string }): Promise<void>;
+  saveFile?(payload: { name: string; mime: string; dataBase64: string }): Promise<void>;
 }
 ```
 
-Exposed on:
+Exposed as:
 
 ```ts
 window.BeeMageAndroid
 ```
 
-BeeMage core must **never** depend directly on this object.
-Access must go through the runtime seam.
+The BeeMage core must never depend directly on this object.
+All access must go through the runtime seam.
 
 ---
 
 ## Runtime seam extension (future)
 
-When native features are added, extend:
+Any native feature must be expressed as optional runtime methods in:
 
-```
-src/panel/platform/runtime.ts
-```
+* `src/panel/platform/runtime.ts`
 
-With optional methods:
+For example:
 
 * `runtimeShare(...)`
 * `runtimeSaveFile(...)`
 
-Android runtime mock will delegate to `window.BeeMageAndroid`
-when available, otherwise fall back to browser behavior.
+Android’s runtime seam implementation can delegate to `window.BeeMageAndroid` when present, otherwise fall back to web behavior.
 
 ---
 
@@ -165,48 +157,50 @@ when available, otherwise fall back to browser behavior.
 
 ### v1
 
-* Blob URL / anchor download
-* acceptable but suboptimal UX
+* Blob URL + anchor download (acceptable but suboptimal)
 
 ### v2
 
 * Android share sheet
 * Android file picker save
 
-All logic routed through runtime seam.
-
----
-
-## Performance considerations
-
-* Mobile memory is limited
-* Avoid retaining large intermediate images
-* Prefer resizing early in pipelines
-* Consider mobile defaults for tuning presets
-
-These are application-level policies, not wrapper concerns.
+All routed through runtime seam.
 
 ---
 
 ## Security model
 
-* No network access required
-* No backend
-* No permissions beyond file access (optional)
-* All processing is local
+* no backend required
+* no analytics required
+* no cloud services
+* no cleartext networking requirement for core function
+* minimal permissions (typically INTERNET only if needed; otherwise none beyond defaults)
 
 ---
 
 ## Update strategy
 
-* Web bundle versioned with BeeMage version
-* Wrapper embeds a specific `android/dist` build
-* Updates require shipping a new APK (v1)
+* Web bundle is versioned with BeeMage version
+* Wrapper embeds a specific bundle version
+* Updates require shipping a new APK/AAB
 
-Future options:
+No remote bundle loading is planned for v1.
 
-* bundled updater
-* remote bundle loading (not planned)
+---
+
+## Build and release artifacts (stores and F-Droid)
+
+Typical outputs:
+
+* Debug APK (dev loop)
+* Release APK (useful for testing / F-Droid workflows)
+* Release AAB (required for Google Play)
+
+These should be produced deterministically by:
+
+* `apps/android-native/scripts/build-android-native.sh`
+
+Store signing must be handled via standard Gradle signing configs (keystore), and should be CI-friendly (env vars / non-interactive).
 
 ---
 
@@ -215,20 +209,22 @@ Future options:
 Before shipping:
 
 * load image from gallery
-* run full pipeline
+* run a full pipeline
 * preview outputs
-* export SVG / image
+* export SVG / PNG
 * rotate device
 * background / foreground app
-* low-memory device test
+* test on a lower-memory device if possible
+* check WebView console via `chrome://inspect`
 
 ---
 
 ## Summary
 
-* `/android` builds the web artifact
-* Android wrapper embeds it unchanged
-* platform-specific features live **outside** `/src`
-* BeeMage remains a single-core, multi-delivery application
+* `apps/android-web` builds the web artifact
+* `apps/android-native` embeds it unchanged
+* platform-specific features live outside `src/`
+* core stays single-source and seam-driven
 
 This separation is intentional and must be preserved.
+ 

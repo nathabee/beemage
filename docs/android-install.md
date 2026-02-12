@@ -1,54 +1,39 @@
-# Install Android Studio on Ubuntu (from scratch) and how to install the android wrapper
+# Install Android Studio on Ubuntu (from scratch) and run the BeeMage Android wrapper
 
+* **Document updated for version:** `0.2.2`
 
-* **Document updated for version:** `0.2.0`
+**Goal**
+- Install Android Studio (if necessary)
+- Build the BeeMage Android web bundle
+- Embed it into the native Android wrapper and run the app
 
-**goal** :
--  install android studio if necessary 
--  Load `android/dist/` inside a real Android app and see BeeMage run.
-
-  
-
-
-This section assumes **a fresh Ubuntu machine** with no Android tooling installed.
+This guide assumes **Ubuntu 24.04** (adjust if needed).
 
 ---
 
 ## Step 0 — Preconditions
 
-in this doc we are installing on Ubuntu 24.04, adapt if necessary
+You already have:
 
-You already have Node.js and npm working (you successfully ran `npm install` / `npm run build`).
+- a cloned BeeMage repository
+- Node.js + npm working
 
-You also already built the Android web bundle:
+Quick sanity checks:
 
 ```bash
-cd android
-npm install
-npm run build
+node -v
+npm -v
 ```
 
-This produced:
+Repository layout (relevant parts):
 
-```
-beemage/android/dist/
-├─ index.html
-├─ app/
-│  ├─ panel.html
-│  └─ panel.css
-└─ assets/
-   ├─ *.js
-   └─ pipelines/*.json
-```
-
-**Do not modify this directory.**
-It is the artifact that will be embedded into the Android app.
+* `apps/android-web/` — builds the WebView-compatible web bundle
+* `apps/android-native/` — Android Studio / Gradle wrapper (WebView app)
+* `src/` — shared application core (UI + pipelines)
 
 ---
 
 ## Step 1 — Install required system packages
-
-Open a terminal and run:
 
 ```bash
 sudo apt update
@@ -61,7 +46,6 @@ sudo apt install -y \
   wget \
   curl \
   openjdk-17-jdk
-
 ```
 
 ### Verify Java
@@ -70,324 +54,232 @@ sudo apt install -y \
 java -version
 ```
 
-Expected output (or similar):
+Expected (or similar):
 
-```
+```text
 openjdk version "17.x"
 ```
 
-Android Studio currently works best with **JDK 17**.
+JDK 17 is a good baseline for Gradle builds.
 
 ---
 
 ## Step 2 — Download Android Studio
 
-Go to the official site:
+Use the official download page:
 
-👉 [https://developer.android.com/studio](https://developer.android.com/studio)
+[https://developer.android.com/studio](https://developer.android.com/studio)
 
 Download **Linux (.tar.gz)**.
 
-Or via terminal:
-
-```bash
-cd ~/Downloads
-wget https://redirector.gvt1.com/edgedl/android/studio/ide-zips/2024.1.1.12/android-studio-2024.1.1.12-linux.tar.gz
-```
-
-(Version number may change; the site always gives the current one.)
+Optional (CLI download): Android Studio versions change often, so prefer the website unless you intentionally pin a version.
 
 ---
 
-## Step 3 — Extract Android Studio
+## Step 3 — Install Android Studio under /opt
+
+Assuming the tarball is in `~/Downloads`:
 
 ```bash
 cd /opt
 sudo tar -xzf ~/Downloads/android-studio-*-linux.tar.gz
-sudo chown -R $USER:$USER /opt/android-studio
+sudo chown -R "$USER:$USER" /opt/android-studio
 ```
 
-Android Studio is now located at:
+Android Studio is now here:
 
-```
+```text
 /opt/android-studio
 ```
 
 ---
 
-## Step 4 — Launch Android Studio (first time)
+## Step 4 — First launch and SDK installation
+
+Launch:
 
 ```bash
 /opt/android-studio/bin/studio.sh
 ```
 
-The **Setup Wizard** will appear.
+In the Setup Wizard:
 
----
+1. **Do not import settings**
+2. Install type: **Standard**
+3. SDK location: accept default
 
-## Step 5 — Android Studio Setup Wizard (important choices)
-
-Follow exactly:
-
-1. **Import settings**
-   → `Do not import settings`
-
-2. **Install type**
-   → `Standard`
-
-3. **Select UI theme**
-   → Your choice
-
-4. **SDK Components**
-   Make sure these are checked:
-
-   * Android SDK
-   * Android SDK Platform
-   * Android Virtual Device
-
-5. **SDK Location**
-   Accept default:
-
-   ```
+   ```text
    ~/Android/Sdk
    ```
+4. Make sure these are installed:
 
-6. Click **Finish** and wait for downloads.
+   * Android SDK Platform
+   * Android SDK Build-Tools
+   * Android SDK Platform-Tools
+   * Android Emulator (if you want an emulator)
 
-This can take several minutes.
+After Studio opens:
 
----
-
-## Step 6 — Verify Android SDK installation
-
-After Android Studio opens:
-
-1. Open **Settings**
-   `File → Settings → Android SDK`
-
-2. Check:
-
-   * **SDK Platforms**
-
-     * At least one recent version (e.g. Android 14 / API 34)
-   * **SDK Tools**
-
-     * Android SDK Build-Tools
-     * Android SDK Platform-Tools
-     * Android Emulator
-
-Click **Apply** if anything is missing.
+* `File → Settings → Android SDK`
+* Install at least one recent SDK platform (API 34/35 is fine)
 
 ---
 
-## Step 7 — Set environment variables (recommended)
+## Step 5 — Environment variables (recommended)
 
-Add these to your shell config (`~/.bashrc` or `~/.zshrc`):
+Add to `~/.bashrc` or `~/.zshrc`:
 
 ```bash
 export ANDROID_HOME="$HOME/Android/Sdk"
 export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH"
+
+studio() {
+  /opt/android-studio/bin/studio.sh
+}
 ```
 
-Reload shell:
+Reload:
 
 ```bash
 source ~/.bashrc
 ```
 
-Verify:
+Verify ADB:
 
 ```bash
 adb version
 ```
 
-Expected:
-
-```
-Android Debug Bridge version x.x.x
-```
-
 ---
 
-## Step 8 — Create the BeeMage Android project
+## Step 6 — Build the Android web bundle and sync it into the wrapper
 
-In Android Studio:
+This is the required build order.
 
-1. **New Project**
-2. Template: **Empty Views Activity**
-3. Name: `BeeMage`
-4. Package name: `de.nathabee.beemage`
-5. Language: **Kotlin**
-6. Minimum SDK: **API 24**
-7. Finish
-
-Wait for Gradle sync.
-
-
-this create BeeMage project inside ~/AndroidStudioProjects/
-
-```sh
-mv ~/AndroidStudioProjects/BeeMage <path to your beemage repository>/android-wrapper
-mkdir -p <path to your beemage repository>/android-wrapper/app/src/main/assets
-
-```
-
-in ~.bashrc add:
-```sh
-export ANDROID_HOME="$HOME/Android/Sdk"
-export PATH="$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH"
-studio() {
-  /opt/android-studio/bin/studio.sh
-}
-
-```
-
-change session and start android studio:
-```sh
-studio
-```
-
-
----
-
-## Step 9 — Prepare assets directory
-
-In Android Studio (Project view → Android):
-
-```
-app
-└─ src
-   └─ main
-      └─ assets   ← it should exists
-```
-
----
-
-## Step 10 — Copy BeeMage web bundle into Android assets
-
-From your repo root:
+From the **repo root**:
 
 ```bash
-cp -r android/dist/*  android-wrapper/app/src/main/assets/
+./apps/android-web/scripts/build-android-web.sh
 ```
 
-After copy, you must have:
+What this does:
 
-```
-app/src/main/assets/
+1. Builds the WebView-compatible bundle:
+
+   * output: `apps/android-web/dist/`
+2. Copies the bundle into the native wrapper assets:
+
+   * destination: `apps/android-native/app/src/main/assets/`
+
+Expected asset tree inside the wrapper:
+
+```text
+apps/android-native/app/src/main/assets/
 ├─ index.html
 ├─ app/
 │  ├─ panel.html
 │  └─ panel.css
 └─ assets/
-   ├─ panel-*.js
-   ├─ index-*.js
+   ├─ *.js
    └─ pipelines/
 ```
 
----
-
-## Step 11 — Replace layout with WebView
-
-Edit:
-
-```
-app/src/main/res/layout/activity_main.xml
-```
-
-Replace contents with:
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<WebView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/webView"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent" />
-```
+Nothing inside `apps/android-native/app/src/main/assets/` should be committed (except `.gitkeep`).
 
 ---
 
-## Step 12 — Replace MainActivity.kt
+## Step 7 — Open the Android wrapper in Android Studio
 
-Edit:
+1. Start Android Studio:
 
-```
-app/src/main/java/de/nathabee/beemage/MainActivity.kt
-```
+   ```bash
+   studio
+   ```
+2. Open project folder:
 
-Replace **entire file** with:
+   ```text
+   <repo>/apps/android-native
+   ```
+3. Wait for Gradle sync.
 
-```kotlin
-package de.nathabee.beemage
+If Android Studio asks for the SDK path, point it to:
 
-import android.os.Bundle
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import androidx.appcompat.app.AppCompatActivity
-
-class MainActivity : AppCompatActivity() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        WebView.setWebContentsDebuggingEnabled(true)
-
-        val webView = WebView(this)
-        setContentView(webView)
-
-        val settings: WebSettings = webView.settings
-        settings.javaScriptEnabled = true
-        settings.domStorageEnabled = true
-        settings.allowFileAccess = true
-        settings.allowContentAccess = true
-        settings.mediaPlaybackRequiresUserGesture = false
-
-        webView.webViewClient = WebViewClient()
-
-        webView.loadUrl("file:///android_asset/index.html")
-    }
-}
+```text
+~/Android/Sdk
 ```
 
 ---
 
-## Step 13 — Run the app
+## Step 8 — Run the app
 
-1. Create an emulator (Device Manager)
-   or connect a physical Android device (USB debugging enabled)
+Choose one:
 
-2. Click **Run ▶**
+### Option A — Emulator
 
-### Expected result
+* `Tools → Device Manager`
+* Create a device
+* Run
 
-* BeeMage UI loads
-* Tabs visible
-* Image upload works
+### Option B — Physical device
+
+* Enable Developer Options + USB debugging
+* Connect via USB
+* Confirm device appears:
+
+  ```bash
+  adb devices
+  ```
+
+Then press **Run** in Android Studio.
+
+Expected result:
+
+* BeeMage UI loads in the Android app
+* Tabs render
+* Image import works
 * Pipelines execute
 * No crash on rotate
 
-If this works → **Android wrapper v0 is complete**.
-
 ---
 
-## Step 14 — Debugging (if needed)
+## Step 9 — Debugging WebView
 
-### Inspect WebView
+### Inspect WebView from Chrome
 
-On your desktop browser:
+On your desktop Chrome:
 
-```
+```text
 chrome://inspect
 ```
 
-You should see the WebView listed.
+You should see the BeeMage WebView instance and be able to open DevTools.
 
-### Common issues
+### Common failures
 
-* Blank screen → wrong asset path
-* JS error → check console via `chrome://inspect`
-* Missing assets → confirm `base: "./"` in Vite config
+* Blank screen: assets not copied (re-run Step 6)
+* JS error: check WebView console via `chrome://inspect`
+* Missing assets: verify the `assets/` folder exists under `app/src/main/assets/`
+
+---
+
+## Step 10 — Command-line build (optional, reproducible)
+
+From repo root:
+
+### Debug APK
+
+```bash
+./apps/android-native/gradlew -p apps/android-native assembleDebug
+```
+
+### Release APK + AAB (store artifacts)
+
+```bash
+./apps/android-native/gradlew -p apps/android-native assembleRelease
+./apps/android-native/gradlew -p apps/android-native bundleRelease
+```
+
+Release signing must be configured for real store publishing. If signing is not configured yet, Gradle will fail on release tasks.
 
 ---
 
@@ -395,10 +287,13 @@ You should see the WebView listed.
 
 You now have:
 
-* `/android` → web bundle builder
-* Android Studio project → WebView wrapper
-* Zero changes to `/src`
-* A real Android app running BeeMage
+* `apps/android-web/` — builds the WebView bundle (no Chrome APIs, no OpenCV)
+* `apps/android-native/` — native Android wrapper embedding the bundle
+* shared app core stays in `src/` and is reused unchanged
 
-From here, everything else is **incremental**.
+The only required manual rule is:
+
+1. build android-web
+2. run android-native
+
  

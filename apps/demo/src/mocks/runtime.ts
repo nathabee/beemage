@@ -1,7 +1,7 @@
 // demo/src/mocks/runtime.ts
 
-import type { AnyEvent } from "../../../../src/shared/messages";
-import type { AnyRequest } from "../../../../src/shared/messages/requests";
+import type { AnyEvent } from "@shared/messages";
+import type { AnyRequest } from "@shared/messages/requests";
 
 type RuntimeMessageHandler = (msg: AnyEvent) => void;
 const listeners = new Set<RuntimeMessageHandler>();

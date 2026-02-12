@@ -1,88 +1,99 @@
 # Developer Guide
 
 **BeeMage — Explore image processing through visual pipelines**  
-**Applies to:** extension + static web demo  
-* **Document updated for version:** `0.1.11`
+* **Document updated for version:** `0.2.2`
 
-This document describes the **development workflow** for BeeMage:
-where code lives, how changes are organized, how versions are produced,
-and how releases are made.
+This document describes the development workflow for BeeMage:
+how the repository is structured, where code lives, and how builds/releases are produced.
 
-Installation, build, and testing procedures are documented separately and
-are referenced where needed.
+Installation and testing procedures are documented separately:
 
----
-
-## 1. Code organization
-
-BeeMage is delivered through two formats that share the same UI and core logic:
-
-1. **Chrome Extension (MV3, Side Panel)**
-2. **Static Web Demo (Vite, GitHub Pages)**
-
-The demo is **not a separate application**.  
-It runs the same panel code and replaces platform seams at build time.
-
-### Shared code (extension + demo)
-
-Most development happens in:
-
-```
-
-src/
-
-```
-
-Key areas:
-
-* `src/panel/` — panel UI, tabs, pipeline system, tuning
-* `src/shared/` — storage, logging, messages, versioning
-
-Changes here affect **both** delivery formats.
-
-### Demo-specific code (web-only)
-
-Demo-only behavior lives in:
-
-```
-
-demo/src/mocks/
-
-```
-
-This includes:
-
-* runtime abstraction
-* storage abstraction
-* OpenCV-backed engine implementations
-
-If functionality must exist **only in the demo**, it belongs here.
+- Testing: `docs/tester.md`
+- Architecture: `docs/architecture.md`
 
 ---
 
-## 2. Development rules
+## 1. Repository layout
 
-* Do **not** introduce Chrome APIs into shared code.
-* Do **not** introduce OpenCV or WASM into extension runtime.
-* Demo-only capabilities must be implemented via seam swapping.
-* Extension runtime must remain MV3-safe and CSP-compatible.
+BeeMage uses one shared application core and multiple runtime hosts.
+
+```
+
+src/                      shared application core (UI + pipelines + logic)
+assets/                   shared assets (pipelines, etc.)
+apps/
+demo/                   web demo host (Vite) + seam swapping + optional OpenCV
+extension/              Chrome extension host (MV3) + esbuild bundling
+android-web/            Android web bundle host (Vite) + seam swapping (no OpenCV)
+android-native/         Android Studio / Gradle wrapper (WebView)
+docs/                     GitHub Pages site + documentation (includes docs/demo)
+scripts/                  repo-level workflows (versioning, release orchestration)
+release/                  generated artifacts (zips/apks/aabs)
+
+```
+
+Key principle:
+
+- `/src` remains the single source of truth for UI + pipeline logic.
+- `/apps/*` contain platform seams, build tooling, and wrappers.
 
 ---
 
-## 3. Local development and testing
+## 2. Core development rules
 
-Installation, build, and test procedures are documented in:
-
-* **Installation:** `docs/installation.md`
-* **Testing:** `docs/tester.md`
-
-Use those documents as the source of truth.
+- Do not introduce Chrome APIs into shared core (`/src`).
+- Do not introduce OpenCV/WASM into extension runtime.
+- Platform-specific behavior must be isolated via seam swapping in `/apps/*`.
+- Respect the logging split:
+  - `traceScope` for dev console only
+  - `debugTrace.append` for persisted developer diagnostics
+  - `actionLog.append` for user-visible audit history
 
 ---
 
-## 4. Versioning workflow
+## 3. Local development
 
-BeeMage uses a `VERSION` file as the single source of truth.
+### 3.1 Web demo (apps/demo)
+
+```bash
+cd apps/demo
+npm install
+npm run dev -- --host
+```
+
+### 3.2 Extension (apps/extension)
+
+```bash
+cd apps/extension
+npm install
+npm run build
+```
+
+Load unpacked from:
+
+```
+apps/extension/dist/
+```
+
+### 3.3 Android
+
+1. Build Android web bundle and sync into wrapper assets:
+
+```bash
+./apps/android-web/scripts/build-android-web.sh
+```
+
+2. Build Android native artifacts:
+
+```bash
+./apps/android-native/scripts/build-android-native.sh apk debug
+```
+
+---
+
+## 4. Versioning
+
+BeeMage uses a root `VERSION` file as the single source of truth.
 
 ### 4.1 Bump version
 
@@ -90,45 +101,10 @@ BeeMage uses a `VERSION` file as the single source of truth.
 ./scripts/bump-version.sh
 ```
 
-### 4.2 Implement changes
+This updates version fields where applicable (extension manifest/package, demo package, android-web package, etc.)
+and stages the version-related files.
 
-* Shared changes → `src/`
-* Demo-only changes → `demo/src/mocks/`
-
-
-### 4.3 Version documentation (automatic)
-
-The file:
-
-```
-docs/version.md
-```
-
-contains an **Activity Overview** section that is **auto-generated from Git history**.
-
-This section is regenerated on **every commit** via a repository-local **Git pre-commit hook**.
-The hook runs:
-
-```
-scripts/version-commited.sh
-```
-
-and automatically stages `docs/version.md` if it changes.
-
-Developers **must not manually edit** the generated section
-(delimited by `VERSION_ACTIVITY_START / END` markers).
-
-To enable hooks after cloning the repository, run once:
-
-```bash
-./scripts/install-githooks.sh
-```
-
----
-
-### 4.4 Commit
-
-After implementing changes, commit as usual:
+### 4.2 Commit
 
 ```bash
 git add -A
@@ -136,41 +112,37 @@ git status
 git commit -m "vX.Y.Z — <short description>"
 ```
 
-The commit will automatically include any updates to `docs/version.md`
-produced by the pre-commit hook.
-
-
 ---
 
 ## 5. Release workflow
 
-Releases are built and published via a single entry point:
+The canonical release entry point is:
 
 ```bash
 ./scripts/release-all.sh
 ```
 
-This script:
+It typically performs:
 
-* builds the extension artifact
-* builds the demo
-* publishes the demo to `docs/demo` (GitHub Pages)
-* creates the Git tag and GitHub release artifacts
+* build extension ZIP
+* build demo ZIP
+* build android-web bundle and sync into wrapper assets
+* build android-native APK/AAB into `/release`
+* publish demo to `docs/demo` (GitHub Pages)
+* create Git tag + GitHub release
+* optionally upload demo zip and android artifacts
 
-The script enforces a clean working tree before running.
+The script enforces a clean working tree (except for known generated paths).
 
 ---
 
-## 6. Responsibilities summary
+## 6. Documentation map
 
-| Area            | Document               |
+| Topic           | Document               |
 | --------------- | ---------------------- |
-| Installation    | `docs/installation.md` |
 | Testing         | `docs/tester.md`       |
 | Architecture    | `docs/architecture.md` |
-| Developer flow  | `docs/developer.md`    |
+| Installation    | `docs/installation.md` |
 | Version history | `docs/version.md`      |
 
 ---
-
- 

@@ -1,18 +1,22 @@
 # GitHub Pages
 
+**BeeMage — Explore image processing through visual pipelines**  
+* **Document updated for version:** `0.2.2`
+
 This project uses **GitHub Pages** to publish:
 
 - project documentation
-- a live demo (if provided)
+- a live web demo (static build)
 
 The site is served from the `docs/` directory on the `main` branch.
+ 
 
 ---
 
 ## How GitHub Pages is configured
 
-Files in `docs/` are **not published automatically**.
-GitHub Pages must be explicitly enabled in the repository settings.
+Files in `docs/` are **not published automatically** unless GitHub Pages is enabled
+in the repository settings.
 
 ### Configuration steps
 
@@ -24,7 +28,7 @@ GitHub Pages must be explicitly enabled in the repository settings.
    - **Folder**: `/docs`
 4. Click **Save**
 
-GitHub will then build and publish the site.
+GitHub will then publish the site.
 
 ### Verification
 
@@ -44,32 +48,36 @@ If the site shows “There is nothing at this address”, verify:
 
 ---
 
-## Project structure (relevant parts)
+## Project structure relevant to Pages
+
+GitHub Pages only serves the `docs/` directory.  
+The application builds happen under `apps/*` and are copied into `docs/` only when needed.
 
 ```
 
 docs/
-├── index.html          # Entry point for GitHub Pages
-├── main.js             # Main JavaScript (ES module)
-├── style.css           # Global styles
+├── index.html                 # Entry point for the documentation UI
+├── main.js                    # Documentation SPA loader (ES module)
+├── style.css                  # Global styles
 │
-├── demo/               # Live demo (optional)
-│   └── index.html
+├── demo/                      # Live demo published to Pages (generated)
+│   ├── index.html
+│   ├── assets/
+│   └── app/
 │
-├── checklist/          # Optional checklist system
-│   ├── checklist.js
-│   ├── json/
-│   └── report/
+├── assets/                    # Runtime assets used by Pages content/demo
+│   ├── opencv/                # OpenCV runtime for the demo (if used)
+│   └── pipelines/             # Example pipeline JSON files (published)
 │
-├── presentation.md
 ├── installation.md
 ├── architecture.md
-├── user-manual.md
+├── android.md                 # Android build spec (docs only)
+├── android-wrapper.md         # Wrapper spec (docs only)
+├── tester.md
 └── screenshots/
 
-````
+```
 
-Only the relevant structure is shown here.
 
 ---
 
@@ -78,119 +86,110 @@ Only the relevant structure is shown here.
 ### Entry point
 
 - `docs/index.html` is the single entry point
-- It loads the main JavaScript file as an ES module:
+- It loads the documentation UI as an ES module:
 
 ```html
 <script type="module" src="main.js"></script>
-````
-
-ES modules are required because `main.js` imports other modules.
-
----
-
-### JavaScript responsibilities
-
-* **`main.js`**
-
-  * navigation between documentation pages
-  * dynamic Markdown loading
-  * history and anchor handling
-  * optional demo panel behavior
-  * registration of optional subsystems (for example checklists)
-
-Supporting logic is kept in separate modules to keep `main.js` readable.
-
----
+```
 
 ### Documentation rendering
 
-* Documentation files are written in Markdown (`*.md`)
-* Markdown is fetched dynamically and rendered in the browser
-* Diagrams (if used) are rendered after content insertion
+* Documentation files are Markdown (`*.md`)
+* Markdown is fetched dynamically and rendered client-side
 * Navigation behaves like a small single-page application
 
----
-
-### Live demo (optional)
+### Live demo embedding
 
 If the project includes a demo:
 
-* the demo is delivered under:
-
-  ```
-  /docs/demo
-  ```
-* it is embedded into the documentation UI (for example via `<iframe>`)
-* it runs as a **static web application**
-* it uses mock or simulated data only
-
-The demo is **not** a browser extension and does not access browser APIs.
+* the demo is published under `docs/demo/`
+* it can be embedded into the documentation UI (for example via `<iframe src="./demo/">`)
+* it runs as a static web application
+* it uses web-compatible platform seams (no extension APIs)
 
 ---
 
 ## Demo build and publishing workflow
 
-The demo is updated as part of the release process.
+The web demo is built from:
 
-Typically, the release script:
+* `apps/demo/` (Vite host)
+* shared core code from `src/`
+
+Build output:
+
+* `apps/demo/dist/` (local preview)
+* published to `docs/demo/` (GitHub Pages)
+
+The release workflow uses:
 
 ```
 scripts/release-all.sh
 ```
 
-is responsible for:
+This script typically performs:
 
-* building the extension
-* building the demo
-* creating ZIP archives for:
+1. Build extension zip:
 
-  * the extension
-  * the demo
-* copying the demo’s static output into:
+   * output: `release/beemage-<ver>.zip`
 
-  ```
-  /docs/demo
-  ```
-* committing updated documentation and demo files
-* creating a GitHub Release
+2. Build demo zip:
 
-As a result:
+   * output: `release/beemage-demo-<ver>.zip`
 
-* GitHub Releases contain downloadable ZIP artifacts
-* GitHub Pages always reflects the **latest released demo**
+3. Publish the web demo to Pages:
+
+   * copies `apps/demo/dist/` into `docs/demo/`
+   * syncs shared runtime assets into `docs/assets/`:
+
+     * `assets/opencv/` -> `docs/assets/opencv/` (if present)
+     * `assets/pipelines/` -> `docs/assets/pipelines/` (if present)
+
+4. Commit and push `docs/*` updates (only if changed)
+
+5. Create/update GitHub Release and upload artifacts:
+
+   * extension zip is uploaded by default
+   * demo zip upload is optional
+   * Android artifact upload is optional
+
+Result:
+
+* GitHub Pages reflects the latest published `docs/` content
+* GitHub Releases contain downloadable build artifacts
 
 ---
+
 
 ## Local testing
 
 You cannot open `docs/index.html` directly via `file://`.
+Serve it over HTTP.
 
-The site must be served over HTTP.
-
-### Recommended options
-
-From the repository root:
+From repository root:
 
 ```bash
 npx serve docs
 ```
 
-or without Node.js:
+Or without Node.js:
 
 ```bash
 cd docs
 python3 -m http.server
 ```
 
-Then open the printed `http://localhost:PORT` URL in a browser.
+Then open the printed `http://localhost:PORT` URL.
 
 ---
 
 ## Summary
 
 * GitHub Pages serves `/docs` from the `main` branch
-* `index.html` is the single entry point
-* `main.js` orchestrates navigation and UI behavior
-* documentation is rendered dynamically from Markdown
-* the live demo (if present) is rebuilt and published automatically on release
+* `docs/index.html` is the single entry point for documentation
+* `docs/demo/` is a generated static demo published from `apps/demo/dist`
+* `docs/assets/` contains runtime assets published for the demo (opencv/pipelines)
+* Android APK/AAB are release artifacts and are not published via GitHub Pages
+
+```
  

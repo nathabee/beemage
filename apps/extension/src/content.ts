@@ -1,5 +1,5 @@
 // src/content.ts 
-import { MSG, type AnyRequest } from "../../../src/shared/messages";
+import { MSG, type AnyRequest } from "@shared/messages";
 
 
 /**
