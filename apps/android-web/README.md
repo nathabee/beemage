@@ -36,7 +36,7 @@ OpenCV is intentionally disabled in Android v1.
 
 High-level structure:
 
-````
+```
 
 src/                     shared kernel (UI + logic)
 assets/                  shared assets (pipelines, icons, etc.)
@@ -48,7 +48,7 @@ src/app.ts
 src/mocks/             platform seams for Android/WebView
 vite.config.ts
 
-````
+```
 
 ---
 
@@ -91,7 +91,7 @@ This keeps the first Android version simple and avoids WebView constraints.
 ```bash
 cd apps/android-web
 npm install
-````
+```
 
 ---
 

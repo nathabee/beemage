@@ -6,10 +6,6 @@ and inspect visual pipelines locally — without servers or cloud processing.**
 BeeMage focuses on exploration, understanding, and manual refinement of
 **image-processing workflows**, not black-box automation.
 
-
----
-
-* **Document updated for version:** `0.2.1`
 ---
 
 ## Availability and delivery formats
@@ -252,4 +248,6 @@ Feedback, testing, and issue reports are welcome.
 MIT — see `LICENSE`
 
 ---
- 
+
+* **Document updated for version:** `0.2.1`
+---

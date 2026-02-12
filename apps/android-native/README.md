@@ -6,7 +6,7 @@ It embeds the BeeMage **Android web bundle** into a native app using a `WebView`
 This directory is the **packaging layer**:
 APK/AAB outputs come from here.
 
-* Document updated for version: `0.2.1`
+* Document updated for version: `0.2.3`
 
 ---
 
@@ -47,7 +47,7 @@ At build time, that directory is copied into:
 
 apps/android-native/app/src/main/assets/
 
-````
+```
 
 Nothing inside `app/src/main/assets/` should be committed (except optional `.gitkeep`).
 
@@ -66,7 +66,7 @@ apps/android-native/scripts/build-android-native.sh apk release
 
 # Debug APK (fast dev loop)
 apps/android-native/scripts/build-android-native.sh apk debug
-````
+```
 
 ### What the script does
 
@@ -91,7 +91,86 @@ Debug builds (if requested) follow the same naming scheme with `debug`.
 
 ---
 
+## Release signing (local-only)
+
+Release builds can be produced in two modes:
+
+* **Unsigned release APK/AAB** (default): works without any secrets (good for F-Droid builds and CI sanity checks).
+* **Signed release APK/AAB** (optional): needed if you want to distribute your own APK via GitHub Releases outside F-Droid.
+
+This repo **does not** include signing secrets. The following files must **never** be committed:
+
+* `apps/android-native/keystore.properties`
+* `apps/android-native/*.jks` (or any keystore file)
+
+### Create a local keystore (one-time)
+
+From `apps/android-native/`:
+
+```bash
+keytool -genkeypair -v \
+  -keystore beemage-release.jks \
+  -alias beemage \
+  -keyalg RSA -keysize 4096 \
+  -validity 10000
+```
+
+### Configure signing locally
+
+Create `apps/android-native/keystore.properties` (not committed):
+
+```properties
+storeFile=beemage-release.jks
+storePassword=YOUR_PASSWORD
+keyAlias=beemage
+keyPassword=YOUR_PASSWORD
+```
+
+Notes:
+
+* If you used a single password when creating the keystore, `storePassword` and `keyPassword` are the same.
+
+### Verify
+
+```bash
+apps/android-native/scripts/check.sh --require-signing
+```
+
+If `keystore.properties` is missing, the build will still succeed but the release APK will be **unsigned** (expected for F-Droid).
+
+---
+
+---
+
 ## Publishing
+
+### GitHub Release artifacts (signed vs unsigned)
+
+Android artifacts are uploaded by:
+
+```bash
+apps/android-native/scripts/publish-android-native-artifacts.sh
+```
+
+Upload mode is automatic:
+
+* If `apps/android-native/keystore.properties` exists:
+
+  * publish **signed** artifacts
+  * enforce signing and correctness checks via:
+
+    ```bash
+    apps/android-native/scripts/check.sh --require-signing
+    ```
+
+* If `apps/android-native/keystore.properties` does not exist (CI / F-Droid-like):
+
+  * publish **unsigned** artifacts
+  * uploaded filenames include `-unsigned` to make the status explicit
+
+In all cases, the publish script validates that the release APK matches the repo `VERSION`
+(`versionName`, `versionCode`) and the expected SDK levels (`minSdk`, `targetSdk`).
+
 
 ### F-Droid
 

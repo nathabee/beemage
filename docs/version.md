@@ -57,16 +57,31 @@ Conventions:
 
 **Goal:** Create Android delivery and prepare a repeatable release pipeline.
 
-Targets:
-- Android wrapper builds release AAB (`bundleRelease`) and installs cleanly.
-- targetSdkVersion = 35 with a compatible Gradle/AGP toolchain.
-- Release signing configured (keystore) and versionCode increments.
-- Minimal manifest permissions (typically `INTERNET` only).
-- HTTPS-only networking (no global cleartext opt-in).
-- Privacy policy + Play Data Safety answers prepared.
-- Production logging is clean and policy-safe.
-- Prefer `@shared/*` style imports (avoid brittle `../../..` paths).
+stil to do :
+ 
 
+ (plannednot developped v0.2.4) — Epic: F-Droid submission readiness + production hygiene
+
+* Add F-Droid metadata skeleton (fastlane/metadata) and fill basic store listing + changelog.
+* Create privacy policy (and mirror it in docs/site) + draft Play “Data Safety” answers.
+* Ensure production logging is clean: no dev console spam in release builds; no sensitive data in logs.
+* Verify dependency policy: no proprietary SDKs / trackers; document what’s included.
+* Optional: add a simple scripted install/run smoke-check (adb install + launch) for local verification.
+
+---
+ 
+
+#### v0.2.3 — Epic: Android delivery baseline + repeatable release pipeline (F-Droid-friendly)
+
+* Pin Android toolchain for targetSdk 35 (Gradle 8.9, AGP 8.7.3, JDK 17).
+* Drive Android `versionName` + deterministic `versionCode` from repo `VERSION`.
+* Enforce HTTPS-only networking via `network_security_config` and `usesCleartextTraffic=false`.
+* Keep release signing optional: build unsigned without secrets (F-Droid/CI), sign locally when `keystore.properties` exists.
+* Add Android `scripts/check.sh` (verifies VERSION/Sdk + signing when configured) and wire it into `scripts/release-all.sh`.
+* Make Android GitHub Release upload signing-aware (signed vs `-unsigned`) and always preflight-check before upload.
+* Document local-only signing + publishing behavior in `apps/android-native/README.md`.
+* Update docs/assets and branding artifacts as needed for the new multi-app layout.
+ 
 
 #### v0.2.2 — Epic: Docs refresh and `@shared/*` import aliases
 

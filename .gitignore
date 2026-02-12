@@ -35,6 +35,9 @@ docs/demo/assets/opencv/*.js
 !docs/assets/opencv/*.js
 
  
+# -------------------------------------------------
+# Android
+# -------------------------------------------------
 
 # Android wrapper generated assets (web bundle copied in)
 apps/android-native/app/src/main/assets/*
@@ -43,6 +46,14 @@ apps/android-native/app/src/main/assets/*
 # Gradle outputs
 apps/android-native/**/build/
 apps/android-native/.gradle/
+
+
+# signing (never commit)
+apps/android-native/keystore.properties
+keystore.properties
+*.jks
+*.keystore
+
 
 # -------------------------------------------------
 # logs

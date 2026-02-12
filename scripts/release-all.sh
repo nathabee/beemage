@@ -74,6 +74,30 @@ echo "== 3) Build Android web bundle (and sync into wrapper assets) =="
 echo
 echo "== 4) Build Android native artifacts (APK + AAB) =="
 ./apps/android-native/scripts/build-android-native.sh all release
+ 
+# 4.1) Android preflight checks (version/sdk + signing if configured)
+# Default: strict (fail the release-all if checks fail)
+# Set BCT_ANDROID_CHECK_STRICT=0 to warn-only and continue.
+echo
+echo "== 4.1) Android preflight checks =="
+
+ANDROID_CHECK_STRICT="${BCT_ANDROID_CHECK_STRICT:-1}"
+
+run_android_check() {
+  if [[ -f "./apps/android-native/keystore.properties" ]]; then
+    ./apps/android-native/scripts/check.sh --require-signing
+  else
+    ./apps/android-native/scripts/check.sh
+  fi
+}
+
+if ! run_android_check; then
+  if [[ "$ANDROID_CHECK_STRICT" == "1" ]]; then
+    die "Android preflight checks failed."
+  else
+    echo "WARN: Android preflight checks failed — continuing because BCT_ANDROID_CHECK_STRICT=0"
+  fi
+fi
 
 # 5) Publish demo/dist -> docs/demo
 echo

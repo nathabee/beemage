@@ -22,9 +22,9 @@
   <rect width="100%" height="100%" fill="none"/>
 
   <!-- Wordmark -->
-  <text x="256" y="70" text-anchor="middle" dominant-baseline="central"
+  <text x="256" y="50" text-anchor="middle" dominant-baseline="central"
         font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Noto Sans', 'Helvetica Neue', Arial, sans-serif"
-        font-size="64" font-weight="800" letter-spacing="1.5">
+        font-size="80" font-weight="800" letter-spacing="1.5">
 
     <!-- TRI_A -->
     <tspan class="triA stroke-draw" stroke="#111111">Bee
@@ -52,8 +52,8 @@
   <!-- Tagline -->
   <text id="tagline" x="256" y="0" text-anchor="middle" dominant-baseline="central"
         font-family="Inter, system-ui, sans-serif"
-        font-size="28" font-weight="600" letter-spacing="1" opacity="0">
-    <tspan class="slogan">Explore image processing through visual pipelines</tspan>
+        font-size="30" font-weight="600" letter-spacing="1" opacity="0">
+    <tspan class="slogan">Visualize image processing</tspan> 
     <animate attributeName="opacity" from="0" to="1"
              begin="1.2s" dur="0.6s" fill="freeze"/>
     <animate attributeName="y" from="0" to="120"
