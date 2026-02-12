@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# scripts/bump-version.sh
 set -euo pipefail
 
 BUMP="${1:-patch}"  # major | minor | patch
@@ -23,55 +24,30 @@ esac
 new="${MA}.${MI}.${PA}"
 echo "$new" > VERSION
 
-# Update root manifest.json (source)
-if [[ -f manifest.json ]]; then
+update_json_version() {
+  local file="$1"
+  [[ -f "$file" ]] || return 0
   node -e '
     const fs = require("fs");
+    const f = process.argv[1];
     const v = fs.readFileSync("VERSION","utf8").trim();
-    const p = "manifest.json";
-    const j = JSON.parse(fs.readFileSync(p,"utf8"));
+    const j = JSON.parse(fs.readFileSync(f,"utf8"));
     j.version = v;
-    fs.writeFileSync(p, JSON.stringify(j, null, 2) + "\n");
-  '
-fi
+    fs.writeFileSync(f, JSON.stringify(j, null, 2) + "\n");
+  ' "$file"
+}
 
-# Update dist/manifest.json if it exists (built output)
-#if [[ -f dist/manifest.json ]]; then
-#  node -e '
-#    const fs = require("fs");
-#    const v = fs.readFileSync("VERSION","utf8").trim();
-#    const p = "dist/manifest.json";
-#    const j = JSON.parse(fs.readFileSync(p,"utf8"));
-#    j.version = v;
-#    fs.writeFileSync(p, JSON.stringify(j, null, 2) + "\n");
-#  '
-#fi
+# Extension manifest + package
+update_json_version "apps/extension/manifest.json"
+update_json_version "apps/extension/package.json"
 
-# Update package.json 
-if [[ -f package.json ]]; then
-  node -e '
-    const fs = require("fs");
-    const v = fs.readFileSync("VERSION","utf8").trim();
-    const p = "package.json";
-    const j = JSON.parse(fs.readFileSync(p,"utf8"));
-    j.version = v;
-    fs.writeFileSync(p, JSON.stringify(j, null, 2) + "\n");
-  '
-fi
+# Demo package
+update_json_version "apps/demo/package.json"
 
-# Update package.json 
-if [[ -f demo/package.json ]]; then
-  node -e '
-    const fs = require("fs");
-    const v = fs.readFileSync("VERSION","utf8").trim();
-    const p = "demo/package.json";
-    const j = JSON.parse(fs.readFileSync(p,"utf8"));
-    j.version = v;
-    fs.writeFileSync(p, JSON.stringify(j, null, 2) + "\n");
-  '
-fi
+# Android-web package (if it exists)
+update_json_version "apps/android-web/package.json"
 
-# Update src/shared/version.ts (for demo + any non-extension build)
+# Shared version constant (used by demo/android-web/etc.)
 node -e '
   const fs = require("fs");
   const v = fs.readFileSync("VERSION","utf8").trim();
@@ -80,10 +56,12 @@ node -e '
   fs.writeFileSync(p, out);
 '
 
-
-git add VERSION manifest.json  demo/package.json package.json src/shared/version.ts  2>/dev/null || true
-# git commit -m "chore(version): bump to ${new}"
+git add VERSION \
+  apps/extension/manifest.json \
+  apps/extension/package.json \
+  apps/demo/package.json \
+  apps/android-web/package.json \
+  src/shared/version.ts 2>/dev/null || true
 
 echo "Bumped: $old -> $new"
 echo "Staged version files. Commit when ready."
- 

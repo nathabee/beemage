@@ -1,11 +1,15 @@
-# <img src="./docs/icon.svg" alt="Icon" width="60" style="vertical-align:middle; margin-right:20px;"> BeeMage — Explore image processing through visual pipelines
+<img src="./docs/icon.svg" alt="Icon" width="60" style="vertical-align:middle; margin-right:20px;"> BeeMage — Explore image processing through visual pipelines
 
-**BeeMage is a client-side image-processing playground that lets you build, run, and inspect visual pipelines directly in your browser.**
+**BeeMage is a client-side image-processing playground that lets you build, run,
+and inspect visual pipelines locally — without servers or cloud processing.**
 
-BeeMage is designed for **exploration, understanding, and manual refinement** of image-processing workflows — not black-box automation.
+BeeMage focuses on exploration, understanding, and manual refinement of
+**image-processing workflows**, not black-box automation.
 
-All processing happens **locally in the browser**.
 
+---
+
+* **Document updated for version:** `0.2.1`
 ---
 
 ## Availability and delivery formats
@@ -20,6 +24,22 @@ Each delivery runs the **same application core**, adapted to its runtime environ
 
 No uploads.  
 No server-side processing.
+
+Delivery projects live under `apps/`:
+- `apps/demo` (static web)
+- `apps/extension` (Chrome extension)
+- `apps/android-web` (Android web bundle)
+- `apps/android-native` (Android app wrapper)
+
+---
+
+## Try it now
+
+You can try BeeMage immediately in your browser:
+
+👉 **[Live web demo](https://nathabee.github.io/beemage/demo/)**
+
+The demo runs the same panel UI as the extension and requires no installation.
 
 ---
 
@@ -36,19 +56,61 @@ Android is treated as a **first-class runtime**, not a separate codebase.
 
 See:
 
-* `android/README.md` — Android web bundle (main entry point)
-* `android-wrapper/README.md` — Android wrapper specifics
+* `apps/android-web/README.md` — Android web bundle (web artifact embedded into the app)
+* `apps/android-native/README.md` — Native wrapper (Gradle/Android Studio), APK/AAB build + publishing notes
+
 
 ---
 
+### Static web delivery
 
-## Try it now
+The static web version is the simplest way to use BeeMage.
 
-You can try BeeMage immediately in your browser:
+* Runs in any modern browser
+* No installation required
+* Identical UI and behavior to other deliveries
+* Includes optional OpenCV (WebAssembly) support for experimentation
 
-👉 **[Live web demo](https://nathabee.github.io/beemage/demo/)**
 
-The demo runs the same panel UI as the extension and requires no installation.
+See:
+
+* `apps/demo/README.md` — Demo host project (Vite) and build/release scripts
+
+
+This version is used for:
+
+* the public demo
+* documentation examples
+* OpenCV comparison and exploration
+
+👉 **Live demo:** https://nathabee.github.io/beemage/demo/
+
+---
+
+### Chrome Extension delivery
+
+The Chrome Extension embeds BeeMage as a **side panel application**
+using Manifest V3.
+
+* Same UI and pipeline system as the web version
+* Integrated into the browser workflow
+* Runs entirely client-side
+* Uses only the native (TypeScript) execution engine
+
+See:
+
+* `apps/extension/README.md` — Extension host project (esbuild), build/zip workflow, packaging notes
+
+
+⚠️ **Status:**  
+The extension is currently **not yet published** on the Chrome Web Store.
+It is available for development builds and testing only.
+
+The Chrome Extension deliberately disables OpenCV to ensure:
+* deterministic behavior
+* reduced bundle size
+* full reviewability of execution
+
 
 ---
 
@@ -60,7 +122,7 @@ BeeMage focuses on one principle:
 
 With BeeMage, you can:
 
-* Load an image directly in the browser
+* Load an image directly in the application
 * Run explicit image-processing pipelines
 * Observe intermediate representations (edges, masks, cleaned regions, SVG)
 * Adjust parameters and see results immediately
@@ -174,7 +236,6 @@ The core pipeline system is stable, while features and UI continue to evolve.
 
 Feedback, testing, and issue reports are welcome.
 
-* **Document updated for version:** `0.1.10`
 
 ---
 

@@ -33,7 +33,7 @@ This produced:
 ```
 beemage/android/dist/
 ├─ index.html
-├─ __app/
+├─ app/
 │  ├─ panel.html
 │  └─ panel.css
 └─ assets/
@@ -276,7 +276,7 @@ After copy, you must have:
 ```
 app/src/main/assets/
 ├─ index.html
-├─ __app/
+├─ app/
 │  ├─ panel.html
 │  └─ panel.css
 └─ assets/

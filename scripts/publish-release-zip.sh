@@ -16,7 +16,7 @@ tag="v${ver}"
 
 ZIP="release/beemage-${ver}.zip"
 
-[[ -f "$ZIP" ]] || die "Missing $ZIP. Run: ./scripts/build-zip.sh"
+[[ -f "$ZIP" ]] || die "Missing $ZIP. Run: ./apps/extension/scripts/build-zip.sh"
 
 # Clean tree guard (same reason as before)
 [[ -z "$(git status --porcelain)" ]] || die "Working tree not clean. Commit/stash first."

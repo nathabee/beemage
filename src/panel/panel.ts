@@ -27,8 +27,8 @@ async function boot(): Promise<void> {
 
   const cache = createPanelCache();
 
-  (globalThis as any).__APP__ = {
-    ...(globalThis as any).__APP__,
+  (globalThis as any).app__ = {
+    ...(globalThis as any).app__,
     cache,
   };
 

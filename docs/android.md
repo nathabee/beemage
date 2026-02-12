@@ -191,8 +191,8 @@ Outputs:
 * `android/dist/` with:
 
   * `dist/index.html`
-  * `dist/__app/panel.html`
-  * `dist/__app/panel.css`
+  * `dist/app/panel.html`
+  * `dist/app/panel.css`
   * `dist/assets/*.js`
   * `dist/assets/pipelines/*.json`
 
@@ -219,8 +219,8 @@ Notes:
 * sanitizes the HTML to remove extension bundle references
 * emits them into the Android bundle as:
 
-  * `__app/panel.html`
-  * `__app/panel.css`
+  * `app/panel.html`
+  * `app/panel.css`
 
 The Android host boot code loads these assets and boots the panel.
 

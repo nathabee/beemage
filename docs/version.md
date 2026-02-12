@@ -51,6 +51,28 @@ Conventions:
 
 ### **v0.2.x — Focus: Android app**
 
+### v0.2.x — Focus: Android app
+
+**Goal:** Create Android delivery and prepare a repeatable release pipeline.
+
+Targets:
+- Android wrapper builds release AAB (`bundleRelease`) and installs cleanly.
+- targetSdkVersion = 35 with a compatible Gradle/AGP toolchain.
+- Release signing configured (keystore) and versionCode increments.
+- Minimal manifest permissions (typically `INTERNET` only).
+- HTTPS-only networking (no global cleartext opt-in).
+- Privacy policy + Play Data Safety answers prepared.
+- Production logging is clean and policy-safe.
+- Prefer `@shared/*` style imports (avoid brittle `../../..` paths).
+
+#### v0.2.1 — Epic: Prepare Android for GitHub releases
+
+* Restructured repo: moved extension, demo, and Android into `apps/`.
+* Updated build scripts to work from new app roots.
+* Added Android-native + Android-web build automation foundations.
+* Updated ignore rules to stop tracking generated artifacts while keeping published docs assets.
+
+
 #### v0.2.0 — Epic: Initialize Android delivery (web bundle + wrapper)
 
 * add **Android as a first-class platform** in root README
