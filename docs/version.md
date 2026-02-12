@@ -20,6 +20,7 @@ Conventions:
 <!-- VERSION_ACTIVITY_START -->
 | Date       | Version   | Summary |
 |------------|-----------|---------|
+| 2026-02-12 | v0.2.4 | Epic: Bump automatic after release |
 | 2026-02-12 | v0.2.3 | Epic: Android delivery baseline repeatable release pipeline F-Droid-friendly |
 | 2026-02-12 | v0.2.2 | Epic: Docs refresh and  import aliases |
 | 2026-02-12 | v0.2.1 | Epic: Prepare Android for GitHub releases |
