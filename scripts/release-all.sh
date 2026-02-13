@@ -8,6 +8,14 @@ cd "$ROOT_DIR"
 die() { echo "ERROR: $*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "Missing command: $1"; }
 
+# Run a command as a labeled step and fail explicitly if it fails.
+run() {
+  local label="$1"; shift
+  echo
+  echo "== ${label} =="
+  "$@" || die "${label} failed: $*"
+}
+
 need git
 need node
 need npm
@@ -57,24 +65,19 @@ dirty_outside_allowed="$(
 }
 
 # 1) Build extension zip
-echo "== 1) Build extension zip =="
-./apps/extension/scripts/build-extension-zip.sh
+run "1) Build extension zip" ./apps/extension/scripts/build-extension-zip.sh
 
 # 2) Build demo zip
-echo
-echo "== 2) Build demo zip =="
-./apps/demo/scripts/build-demo-zip.sh
+run "2) Build demo zip" ./apps/demo/scripts/build-demo-zip.sh
 
 # 3) Build Android web bundle + copy into android-native assets
-echo
-echo "== 3) Build Android web bundle (and sync into wrapper assets) =="
-./apps/android-web/scripts/build-android-web.sh
+run "3) Build Android web bundle (and sync into wrapper assets)" \
+  ./apps/android-web/scripts/build-android-web.sh
 
 # 4) Build Android native artifacts (APK + AAB) into /release
-echo
-echo "== 4) Build Android native artifacts (APK + AAB) =="
-./apps/android-native/scripts/build-android-native.sh all release
- 
+run "4) Build Android native artifacts (APK + AAB)" \
+  ./apps/android-native/scripts/build-android-native.sh all release
+
 # 4.1) Android preflight checks (version/sdk + signing if configured)
 # Default: strict (fail the release-all if checks fail)
 # Set BCT_ANDROID_CHECK_STRICT=0 to warn-only and continue.
@@ -111,16 +114,18 @@ ASSETS_DST="${ROOT_DIR}/docs/assets"
 [[ -d "$DEMO_DIST" ]] || die "Missing $DEMO_DIST (demo build failed?)"
 
 mkdir -p "$DOCS_DEMO"
-rsync -a --delete --checksum "$DEMO_DIST"/ "$DOCS_DEMO"/
+run "5.1) rsync demo dist -> docs/demo" rsync -a --delete --checksum "$DEMO_DIST"/ "$DOCS_DEMO"/
 
 mkdir -p "$ASSETS_DST/opencv" "$ASSETS_DST/pipelines"
 
 if [[ -d "$ASSETS_SRC/opencv" ]]; then
-  rsync -a --delete --checksum "$ASSETS_SRC/opencv"/ "$ASSETS_DST/opencv"/
+  run "5.2) rsync assets/opencv -> docs/assets/opencv" \
+    rsync -a --delete --checksum "$ASSETS_SRC/opencv"/ "$ASSETS_DST/opencv"/
 fi
 
 if [[ -d "$ASSETS_SRC/pipelines" ]]; then
-  rsync -a --delete --checksum "$ASSETS_SRC/pipelines"/ "$ASSETS_DST/pipelines"/
+  run "5.3) rsync assets/pipelines -> docs/assets/pipelines" \
+    rsync -a --delete --checksum "$ASSETS_SRC/pipelines"/ "$ASSETS_DST/pipelines"/
 fi
 
 echo "Demo published to $DOCS_DEMO (diff-aware)"
@@ -129,11 +134,12 @@ echo "Demo published to $DOCS_DEMO (diff-aware)"
 echo
 echo "== 6) Commit + push docs demo =="
 
+# Intentionally non-fatal: paths may be missing on some machines.
 git add -f -A -- docs/demo docs/index.html docs/assets/opencv docs/assets/pipelines 2>/dev/null || true
 
 if ! git diff --cached --quiet; then
-  git commit -m "docs(demo): publish demo ${ver}"
-  git push origin HEAD
+  run "6.1) Commit docs demo" git commit -m "docs(demo): publish demo ${ver}"
+  run "6.2) Push docs demo" git push origin HEAD
   echo "Committed + pushed docs demo for ${ver}"
 else
   echo "No docs changes to commit."
@@ -155,7 +161,7 @@ fi
 
 case "${release_choice,,}" in
   ""|y|yes)
-    ./scripts/publish-release.sh
+    run "7.1) publish-release.sh" ./scripts/publish-release.sh
     RELEASE_READY="yes"
     ;;
   *)
@@ -179,7 +185,7 @@ fi
 
 case "${ext_choice,,}" in
   ""|y|yes)
-    ./apps/extension/scripts/publish-extension-zip.sh
+    run "8.1) publish-extension-zip.sh" ./apps/extension/scripts/publish-extension-zip.sh
     ;;
   *)
     echo "Skipping extension upload."
@@ -202,7 +208,7 @@ fi
 
 case "${demo_choice,,}" in
   y|yes)
-    ./apps/demo/scripts/publish-demo-zip.sh
+    run "9.1) publish-demo-zip.sh" ./apps/demo/scripts/publish-demo-zip.sh
     ;;
   *)
     echo "Skipping demo upload (default)."
@@ -225,7 +231,8 @@ fi
 
 case "${android_choice,,}" in
   y|yes)
-    ./apps/android-native/scripts/publish-android-native-artifacts.sh
+    run "10.1) publish-android-native-artifacts.sh" \
+      ./apps/android-native/scripts/publish-android-native-artifacts.sh
     ;;
   *)
     echo "Skipping Android upload (default)."
@@ -235,8 +242,6 @@ esac
 echo
 echo "Done for $tag"
 
-
- 
 # 11) Optional: bump VERSION after a successful *published* release
 # Only offer bump if a GitHub release exists/was created (RELEASE_READY=yes).
 echo
@@ -253,7 +258,7 @@ else
 
   case "${bump_choice,,}" in
     y|yes)
-      ./scripts/bump-version.sh patch
+      run "11.1) bump-version.sh patch" ./scripts/bump-version.sh patch
       echo
       echo "VERSION bumped and staged."
       echo "Next: update docs/version.md for the new epic, then commit when ready."

@@ -62,13 +62,36 @@ Conventions:
 stil to do :
  
 
- (plannednot developped v0.2.4) — Epic: F-Droid submission readiness + production hygiene
+ (planned  v0.2.5) — Epic: F-Droid submission readiness + production hygiene
 
 * Add F-Droid metadata skeleton (fastlane/metadata) and fill basic store listing + changelog.
 * Create privacy policy (and mirror it in docs/site) + draft Play “Data Safety” answers.
 * Ensure production logging is clean: no dev console spam in release builds; no sensitive data in logs.
 * Verify dependency policy: no proprietary SDKs / trackers; document what’s included.
 * Optional: add a simple scripted install/run smoke-check (adb install + launch) for local verification.
+
+
+
+1. **F-Droid submission scaffolding**
+   * Add fastlane/triple-t style metadata folder (title, short/full description, screenshots) as required by their inclusion checklist. ([f-droid.org][2])
+   * Decide: fdroiddata MR vs `.fdroid.yml` in repo (both are supported; `.fdroid.yml` is explicitly mentioned). ([f-droid.org][5])
+
+2. **Prove “builds in a clean environment”**
+   * Run a local fdroidserver build (or a containerized “no state” build) that executes:
+     * your android-web build (npm ci + vite build)
+     * gradle `:app:assembleRelease`
+   * Goal: no reliance on your user home caches, and no hidden tools.
+
+3. **Confirm “no proprietary deps”**
+   * Explicitly verify you’re not pulling in Firebase/GMS etc (F-Droid rejects those). ([f-droid.org][2])
+
+4. **Privacy + Data Safety**
+   * Draft privacy policy and the answers you’ll need (Play Data Safety; F-Droid metadata). (Even if you start with F-Droid, do it once and reuse.)
+
+---
+#### v0.2.5 — Epic: F-Droid submission readiness + production hygiene
+
+* Add fastlane/triple-t style metadata (analyse)
 
 ---
  

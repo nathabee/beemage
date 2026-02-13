@@ -12,6 +12,11 @@ echo "Web:     ${WEB_DIR}"
 echo "Assets:  ${WRAPPER_ASSETS_DIR}"
 echo
 
+[[ -f "${WEB_DIR}/package-lock.json" ]] || {
+  echo "ERROR: apps/android-web/package-lock.json missing. Required for reproducible builds (npm ci)."
+  exit 1
+}
+
 # 1) Build the Android web bundle
 (
   cd "${WEB_DIR}"

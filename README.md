@@ -39,6 +39,51 @@ The demo runs the same panel UI as the extension and requires no installation.
 
 ---
 
+## What BeeMage does
+
+BeeMage focuses on one principle:
+
+> Making image-processing steps **visible, inspectable, and understandable**.
+
+With BeeMage, you can:
+
+* Load an image directly in the application
+* Run explicit image-processing pipelines
+* Observe intermediate representations (edges, masks, cleaned regions, SVG)
+* Adjust parameters and see results immediately
+* Execute pipelines step by step or end to end
+* Export results as PNG or SVG
+* Create, import, and manage custom pipelines visually (Builder tab)
+
+The workflow is **manual, visual, and iterative by design**.
+
+BeeMage deliberately avoids one-click automation in favor of **understanding how processing decisions affect results**.
+
+---
+
+## Visual pipelines
+
+BeeMage is built around a **pipeline-based execution model**.
+
+A pipeline is a sequence of typed operations, for example:
+
+```
+image → edge detection → threshold → morphology → svg
+```
+
+Each step produces an explicit artifact (`image`, `mask`, or `svg`) that can be previewed and inspected.
+
+Pipelines can be:
+
+* selected from predefined examples
+* built visually via drag & drop
+* imported or exported as JSON
+* extended with parameter presets (“recipes”)
+
+---
+
+
+
 ### Android delivery
 
 The Android version embeds BeeMage as a **local web application**
@@ -106,50 +151,6 @@ The Chrome Extension deliberately disables OpenCV to ensure:
 * deterministic behavior
 * reduced bundle size
 * full reviewability of execution
-
-
----
-
-## What BeeMage does
-
-BeeMage focuses on one principle:
-
-> Making image-processing steps **visible, inspectable, and understandable**.
-
-With BeeMage, you can:
-
-* Load an image directly in the application
-* Run explicit image-processing pipelines
-* Observe intermediate representations (edges, masks, cleaned regions, SVG)
-* Adjust parameters and see results immediately
-* Execute pipelines step by step or end to end
-* Export results as PNG or SVG
-* Create, import, and manage custom pipelines visually (Builder tab)
-
-The workflow is **manual, visual, and iterative by design**.
-
-BeeMage deliberately avoids one-click automation in favor of **understanding how processing decisions affect results**.
-
----
-
-## Visual pipelines
-
-BeeMage is built around a **pipeline-based execution model**.
-
-A pipeline is a sequence of typed operations, for example:
-
-```
-image → edge detection → threshold → morphology → svg
-```
-
-Each step produces an explicit artifact (`image`, `mask`, or `svg`) that can be previewed and inspected.
-
-Pipelines can be:
-
-* selected from predefined examples
-* built visually via drag & drop
-* imported or exported as JSON
-* extended with parameter presets (“recipes”)
 
 ---
 
@@ -249,5 +250,5 @@ MIT — see `LICENSE`
 
 ---
 
-* **Document updated for version:** `0.2.1`
+* **Document updated for version:** `0.2.5`
 ---
