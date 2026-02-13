@@ -90,16 +90,26 @@ stil to do :
    * Draft privacy policy and the answers you’ll need (Play Data Safety; F-Droid metadata). (Even if you start with F-Droid, do it once and reuse.)
 
 ---
+
+to do ::::::
+* add screenshot inside fastlane/metadata/android/en-US/images/phoneScreenshots/1.png
+
+
+--- 
+
 #### v0.2.5 — Epic: F-Droid submission readiness + production hygiene
 
-* Add fastlane/triple-t style metadata (analyse)
+* Add Android Fastlane metadata skeleton (title/short/full description, icon, screenshot slot, changelog path).
+* Add `.fdroid.yml` build recipe (subdir `apps/android-native`, builds android-web bundle then Gradle).
+* Add `prepare-release-commit.sh` to standardize release commit creation (Epic commit message), ensure F-Droid changelog exists, and sync `.fdroid.yml` to the released tag/versionCode.
+* Update `release-all.sh` to call `prepare-release-commit.sh` and drop the separate “meta(fdroid)” mid-release commit step.
 
----
+
  
 
 #### v0.2.4 — Epic: Bump automatic after release
 
-* release-all.sh updated
+* release-all.sh updated 
 ---
  
 

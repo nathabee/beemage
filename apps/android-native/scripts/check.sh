@@ -12,16 +12,18 @@ ROOT_DIR="$(cd "$ANDROID_DIR/../.." && pwd)"        # repo root
 
 DO_BUILD="no"
 REQUIRE_SIGNING="no"
-APK_PATH=""
+APK_PATH="" 
+PRINT_EXPECTED_VC="no"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --build) DO_BUILD="yes"; shift ;;
     --require-signing) REQUIRE_SIGNING="yes"; shift ;;
     --apk) APK_PATH="${2:-}"; shift 2 ;;
+    --print-expected-versioncode) PRINT_EXPECTED_VC="yes"; shift ;;
     -h|--help)
       cat <<EOF
-Usage: apps/android-native/scripts/check.sh [--build] [--apk <path>] [--require-signing]
+Usage: apps/android-native/scripts/check.sh [--build] [--apk <path>] [--require-signing] [--print-expected-versioncode]
 
 Checks:
 - VERSION exists and is MAJOR.MINOR.PATCH
@@ -33,9 +35,10 @@ Checks:
   - APK signature verifies (apksigner)
 
 Options:
---build            build :app:assembleRelease if no release APK exists
---apk <path>       explicitly specify APK to inspect
---require-signing  fail if keystore.properties is missing
+--build                      build :app:assembleRelease if no release APK exists
+--apk <path>                 explicitly specify APK to inspect
+--require-signing            fail if keystore.properties is missing
+--print-expected-versioncode print expected versionCode derived from VERSION and exit
 EOF
       exit 0
       ;;
@@ -44,7 +47,8 @@ EOF
       ;;
   esac
 done
-
+ 
+ 
 # ---- version from repo root ----
 [[ -f "$ROOT_DIR/VERSION" ]] || die "VERSION file missing at repo root"
 VER="$(tr -d ' \t\r\n' < "$ROOT_DIR/VERSION")"
@@ -54,6 +58,14 @@ IFS='.' read -r MA MI PA <<<"$VER" || true
 [[ "${MA:-}" =~ ^[0-9]+$ && "${MI:-}" =~ ^[0-9]+$ && "${PA:-}" =~ ^[0-9]+$ ]] || die "VERSION must be MAJOR.MINOR.PATCH, got: '$VER'"
 
 EXPECTED_VC=$(( (MA + 1) * 1000000 + MI * 1000 + PA ))
+
+# early exit for scripting (must be after parsing VERSION, and before SDK checks)
+if [[ "$PRINT_EXPECTED_VC" == "yes" ]]; then
+  printf '%s\n' "$EXPECTED_VC"
+  exit 0
+fi
+ 
+ 
 
 info "=== Android checks ==="
 info "Repo VERSION:        $VER"

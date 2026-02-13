@@ -34,7 +34,10 @@ echo "Version: $ver"
 echo "Tag:     $tag"
 echo
 
-# 0) Guard: refuse unrelated local changes (only allow paths that this script produces)
+# 0) Prepare release commit (interactive if needed). Hard-fail on any error.
+run "0) Prepare release commit" ./scripts/prepare-release-commit.sh
+
+# 0.1) Guard: refuse unrelated local changes (only allow paths that this script produces)
 dirty_outside_allowed="$(
   git status --porcelain |
     awk '{
