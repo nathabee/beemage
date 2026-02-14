@@ -95,6 +95,17 @@ to do ::::::
 * add screenshot inside fastlane/metadata/android/en-US/images/phoneScreenshots/1.png
 
 
+---
+
+#### v0.2.6 — Epic: F-Droid mirror architecture & synchronisation
+
+* Introduce `scripts/synchronise-fdroid.sh` to generate a clean Android-only mirror
+* Create the GitHub repository `beemage-fdroid` as F-Droid build source
+* Replace root `.fdroid.yml` with `apps/android-native/scripts/fdroid-template.yml`
+* Integrate automatic mirror sync + tagging (`vX.Y.Z-fdroid`) into release workflow
+* change `release-all.sh` to manage automatic synchomisation
+
+
 --- 
 
 #### v0.2.5 — Epic: F-Droid submission readiness + production hygiene

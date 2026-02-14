@@ -245,6 +245,60 @@ esac
 echo
 echo "Done for $tag"
 
+
+# 10.5) Sync F-Droid mirror repository (optional, before VERSION bump)
+echo
+echo "== 10.5) Sync F-Droid mirror repository (optional) =="
+
+FDROID_SYNC="${BCT_FDROID_SYNC:-1}"
+FDROID_REPO="${BCT_FDROID_REPO:-${ROOT_DIR}/../beemage-fdroid}"
+FDROID_TAG="v${ver}-fdroid"
+
+if [[ "$FDROID_SYNC" == "1" ]]; then
+  if [[ -d "$FDROID_REPO/.git" ]]; then
+    run "10.5.1) synchronise-fdroid.sh" ./scripts/synchronise-fdroid.sh "$FDROID_REPO"
+
+    echo
+    echo "== 10.5.2) Commit + tag mirror (${FDROID_TAG}) =="
+
+    # Commit mirror changes (if any)
+    mirror_dirty="$(git -C "$FDROID_REPO" status --porcelain || true)"
+    if [[ -n "$mirror_dirty" ]]; then
+      git -C "$FDROID_REPO" add -A
+      if ! git -C "$FDROID_REPO" diff --cached --quiet; then
+        run "10.5.2a) Commit mirror sync" \
+          git -C "$FDROID_REPO" commit -m "sync: BeeMage ${ver} (F-Droid mirror)"
+      else
+        echo "Mirror: nothing to commit."
+      fi
+    else
+      echo "Mirror: working tree already clean."
+    fi
+
+    # Tag the mirror to lock the exact snapshot used for F-Droid
+    if git -C "$FDROID_REPO" rev-parse "$FDROID_TAG" >/dev/null 2>&1; then
+      die "Mirror tag already exists: ${FDROID_TAG} (refusing to retag)."
+    fi
+
+    run "10.5.2b) Tag mirror" \
+      git -C "$FDROID_REPO" tag -a "$FDROID_TAG" -m "BeeMage ${ver} (F-Droid mirror)"
+
+    run "10.5.2c) Push mirror branch" \
+      git -C "$FDROID_REPO" push origin HEAD
+
+    run "10.5.2d) Push mirror tag" \
+      git -C "$FDROID_REPO" push origin "$FDROID_TAG"
+
+    echo "OK: mirror synced and tagged: ${FDROID_TAG}"
+  else
+    echo "WARN: F-Droid mirror repo not found at: $FDROID_REPO"
+    echo "      Set BCT_FDROID_REPO or clone beemage-fdroid next to beemage."
+  fi
+else
+  echo "Skipping F-Droid mirror sync because BCT_FDROID_SYNC=0"
+fi
+
+
 # 11) Optional: bump VERSION after a successful *published* release
 # Only offer bump if a GitHub release exists/was created (RELEASE_READY=yes).
 echo

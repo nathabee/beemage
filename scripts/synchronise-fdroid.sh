@@ -33,7 +33,6 @@ fi
 # Define what to mirror
 INCLUDE_PATHS=(
   "VERSION"
-  "fdroid-template.yml"
   "src/"
   "apps/android-web/"
   "apps/android-native/"
