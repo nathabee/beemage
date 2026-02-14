@@ -20,6 +20,7 @@ Conventions:
 <!-- VERSION_ACTIVITY_START -->
 | Date       | Version   | Summary |
 |------------|-----------|---------|
+| 2026-02-14 | v0.2.6 | Epic: F-Droid mirror architecture & synchronisation |
 | 2026-02-13 | v0.2.5 | Epic: F-Droid submission readiness + production hygiene |
 | 2026-02-12 | v0.2.4 | Epic: Bump automatic after release |
 | 2026-02-12 | v0.2.3 | Epic: Android delivery baseline repeatable release pipeline F-Droid-friendly |
