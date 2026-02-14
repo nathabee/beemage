@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # apps/android-native/scripts/build-android-native.sh
-set -euo pipefail
+set -euo pipefail 
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 NATIVE_DIR="${ROOT_DIR}/apps/android-native"

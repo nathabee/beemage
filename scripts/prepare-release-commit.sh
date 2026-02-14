@@ -156,7 +156,7 @@ out = []
 for line in lines:
   # Top-level fields
   if re.match(r'^CurrentVersion:\s*', line):
-    out.append(f'CurrentVersion: "{ver}"\n')
+    out.append(f"CurrentVersion: {ver}\n")
     repl_counts["CurrentVersion"] += 1
     continue
 
@@ -181,7 +181,6 @@ for line in lines:
 
   # If we leave Builds block (a new top-level key), stop tracking
   if in_builds and re.match(r'^[A-Za-z][A-Za-z0-9_]*:\s*', line):
-    # This triggers only for non-indented keys; Builds entries are indented
     in_builds = False
     first_build_active = False
 
@@ -190,14 +189,14 @@ for line in lines:
     m = re.match(r'^(\s*)-\s*versionName:\s*.*$', line)
     if m:
       indent = m.group(1)
-      out.append(f'{indent}- versionName: "{ver}"\n')
+      out.append(f"{indent}- versionName: {ver}\n")
       repl_counts["Builds.versionName"] += 1
       continue
 
     m = re.match(r'^(\s*)versionName:\s*.*$', line)
     if m:
       indent = m.group(1)
-      out.append(f'{indent}versionName: "{ver}"\n')
+      out.append(f"{indent}versionName: {ver}\n")
       repl_counts["Builds.versionName"] += 1
       continue
 
@@ -223,12 +222,13 @@ if missing:
   for k in missing:
     sys.stderr.write(f"  - {k}\n")
   sys.stderr.write("\nExpected at minimum:\n")
-  sys.stderr.write('  Builds:\\n    - versionName: "X.Y.Z"\\n      versionCode: 123\\n      commit: vX.Y.Z\\n')
-  sys.stderr.write('  CurrentVersion: "X.Y.Z"\\n  CurrentVersionCode: 123\\n')
+  sys.stderr.write("  Builds:\\n    - versionName: X.Y.Z\\n      versionCode: 123\\n      commit: vX.Y.Z\\n")
+  sys.stderr.write("  CurrentVersion: X.Y.Z\\n  CurrentVersionCode: 123\\n")
   sys.exit(1)
 
 path.write_text("".join(out), encoding="utf-8")
 PY
+
 
 
 # Stage everything, show summary, confirm
