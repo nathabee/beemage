@@ -16,39 +16,32 @@ ver="$(tr -d ' \t\r\n' < VERSION)"
 [[ -n "$ver" ]] || die "VERSION is empty"
 tag="v${ver}"
 
-# Clean tree guard (tag should represent committed state)
+# Clean tree guard (release should represent committed state)
 [[ -z "$(git status --porcelain)" ]] || die "Working tree not clean. Commit/stash first."
 gh auth status >/dev/null 2>&1 || die "gh not authenticated. Run: gh auth login"
 
+# Model B: tag must already exist and must point to HEAD.
 HEAD_SHA="$(git rev-parse HEAD)"
 HEAD_SHORT="$(git rev-parse --short HEAD)"
+
+if ! git rev-parse -q --verify "refs/tags/$tag" >/dev/null 2>&1; then
+  die "Missing git tag $tag. Model B requires tagging first (release-all step 10.6.1)."
+fi
+
+TAG_SHA="$(git rev-parse "$tag^{commit}")"
+if [[ "$TAG_SHA" != "$HEAD_SHA" ]]; then
+  die "Tag $tag does not point to HEAD.
+Tag:  $TAG_SHA
+HEAD: $HEAD_SHA
+Refusing to create/update release. Fix by deleting/recreating the tag (Model B tags final HEAD)."
+fi
 
 RELEASE_EXISTS="no"
 if gh release view "$tag" >/dev/null 2>&1; then
   RELEASE_EXISTS="yes"
 fi
 
-# Ensure tag points to HEAD
-if git rev-parse -q --verify "refs/tags/$tag" >/dev/null 2>&1; then
-  TAG_SHA="$(git rev-parse "$tag^{commit}")"
-  if [[ "$TAG_SHA" != "$HEAD_SHA" ]]; then
-    if [[ "$RELEASE_EXISTS" == "yes" ]]; then
-      die "Release already exists for $tag and the tag points to a different commit. Bump VERSION for a new release."
-    fi
-    git tag -f -a "$tag" -m "Release $tag ($HEAD_SHORT)" "$HEAD_SHA"
-  fi
-else
-  git tag -a "$tag" -m "Release $tag ($HEAD_SHORT)" "$HEAD_SHA"
-fi
-
-# Push tag (safe force only if no release exists yet)
-if [[ "$RELEASE_EXISTS" == "yes" ]]; then
-  git push origin "refs/tags/$tag"
-else
-  git push origin "refs/tags/$tag" --force-with-lease
-fi
-
-# Notes via heredoc (avoids fragile $'...' quoting)
+# Notes via heredoc (avoids fragile quoting)
 NOTES="$(cat <<EOF
 BeeMage — Release artifacts
 
@@ -65,6 +58,7 @@ EOF
 
 if [[ "$RELEASE_EXISTS" == "yes" ]]; then
   echo "Release exists: ${tag} — not recreating"
+  echo "https://github.com/nathabee/beemage/releases/tag/${tag}"
 else
   gh release create "$tag" --title "$tag" --notes "$NOTES"
   echo "Created release: $tag"

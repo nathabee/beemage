@@ -29,6 +29,13 @@ ver="$(tr -d ' \t\r\n' < VERSION)"
 [[ -n "$ver" ]] || die "VERSION is empty"
 tag="v${ver}"
 
+# Model B: we create the git tag at the END.
+RELEASE_WANTED="no"
+EXT_UPLOAD="no"
+DEMO_UPLOAD="no"
+ANDROID_UPLOAD="no"
+RELEASE_READY="no"
+
 echo "=== release-all ==="
 echo "Version: $ver"
 echo "Tag:     $tag"
@@ -148,103 +155,63 @@ else
   echo "No docs changes to commit."
 fi
 
-# 7) Create/ensure GitHub release (optional)
+# 7) GitHub release? (Model B: created after tagging at the end)
 echo
-echo "== 7) Create/ensure GitHub release (optional) =="
+echo "== 7) GitHub release (created after tagging) =="
+
 release_choice="${BCT_RELEASE_CREATE:-}"
-RELEASE_READY="no"
-
-if gh release view "$tag" >/dev/null 2>&1; then
-  RELEASE_READY="yes"
-fi
-
 if [[ -z "$release_choice" ]]; then
-  read -r -p "Create/ensure GitHub release ${tag}? [Y/n] " release_choice
+  read -r -p "Create/ensure GitHub release ${tag} after tagging? [Y/n] " release_choice
 fi
 
 case "${release_choice,,}" in
   ""|y|yes)
-    run "7.1) publish-release.sh" ./scripts/publish-release.sh
-    RELEASE_READY="yes"
+    RELEASE_WANTED="yes"
     ;;
   *)
-    echo "Skipping release creation."
+    echo "Skipping GitHub release."
+    RELEASE_WANTED="no"
     ;;
 esac
 
-# 8) Upload extension zip (optional)
+# 8) Extension upload choice (performed after release creation)
 echo
-echo "== 8) Upload extension zip (optional) =="
+echo "== 8) Upload extension zip (after release) =="
+
 ext_choice="${BCT_EXT_UPLOAD:-}"
-
-if [[ "$RELEASE_READY" != "yes" ]]; then
-  echo "No GitHub release available for ${tag}; skipping extension upload."
-  ext_choice="no"
-fi
-
 if [[ -z "$ext_choice" ]]; then
   read -r -p "Upload extension zip to release ${tag}? [Y/n] " ext_choice
 fi
-
 case "${ext_choice,,}" in
-  ""|y|yes)
-    run "8.1) publish-extension-zip.sh" ./apps/extension/scripts/publish-extension-zip.sh
-    ;;
-  *)
-    echo "Skipping extension upload."
-    ;;
+  ""|y|yes) EXT_UPLOAD="yes" ;;
+  *) EXT_UPLOAD="no" ;;
 esac
 
-# 9) Upload demo zip (optional)
+# 9) Demo upload choice (performed after release creation)
 echo
-echo "== 9) Upload demo zip (optional) =="
+echo "== 9) Upload demo zip (after release) =="
+
 demo_choice="${BCT_DEMO_UPLOAD:-}"
-
-if [[ "$RELEASE_READY" != "yes" ]]; then
-  echo "No GitHub release available for ${tag}; skipping demo upload."
-  demo_choice="no"
-fi
-
 if [[ -z "$demo_choice" ]]; then
   read -r -p "Upload demo zip to release ${tag}? [y/N] " demo_choice
 fi
-
 case "${demo_choice,,}" in
-  y|yes)
-    run "9.1) publish-demo-zip.sh" ./apps/demo/scripts/publish-demo-zip.sh
-    ;;
-  *)
-    echo "Skipping demo upload (default)."
-    ;;
+  y|yes) DEMO_UPLOAD="yes" ;;
+  *) DEMO_UPLOAD="no" ;;
 esac
 
-# 10) Upload Android artifacts (optional)
+# 10) Android upload choice (performed after release creation)
 echo
-echo "== 10) Upload Android APK/AAB (optional) =="
+echo "== 10) Upload Android APK/AAB (after release) =="
+
 android_choice="${BCT_ANDROID_UPLOAD:-}"
-
-if [[ "$RELEASE_READY" != "yes" ]]; then
-  echo "No GitHub release available for ${tag}; skipping Android upload."
-  android_choice="no"
-fi
-
 if [[ -z "$android_choice" ]]; then
   read -r -p "Upload Android APK/AAB to release ${tag}? [y/N] " android_choice
 fi
-
 case "${android_choice,,}" in
-  y|yes)
-    run "10.1) publish-android-native-artifacts.sh" \
-      ./apps/android-native/scripts/publish-android-native-artifacts.sh
-    ;;
-  *)
-    echo "Skipping Android upload (default)."
-    ;;
+  y|yes) ANDROID_UPLOAD="yes" ;;
+  *) ANDROID_UPLOAD="no" ;;
 esac
-
-echo
-echo "Done for $tag"
-
 
 # 10.5) Sync F-Droid mirror repository (optional, before VERSION bump)
 echo
@@ -252,44 +219,11 @@ echo "== 10.5) Sync F-Droid mirror repository (optional) =="
 
 FDROID_SYNC="${BCT_FDROID_SYNC:-1}"
 FDROID_REPO="${BCT_FDROID_REPO:-${ROOT_DIR}/../beemage-fdroid}"
-FDROID_TAG="v${ver}-fdroid"
 
 if [[ "$FDROID_SYNC" == "1" ]]; then
   if [[ -d "$FDROID_REPO/.git" ]]; then
     run "10.5.1) synchronise-fdroid.sh" ./scripts/synchronise-fdroid.sh "$FDROID_REPO"
-
-    echo
-    echo "== 10.5.2) Commit + tag mirror (${FDROID_TAG}) =="
-
-    # Commit mirror changes (if any)
-    mirror_dirty="$(git -C "$FDROID_REPO" status --porcelain || true)"
-    if [[ -n "$mirror_dirty" ]]; then
-      git -C "$FDROID_REPO" add -A
-      if ! git -C "$FDROID_REPO" diff --cached --quiet; then
-        run "10.5.2a) Commit mirror sync" \
-          git -C "$FDROID_REPO" commit -m "sync: BeeMage ${ver} (F-Droid mirror)"
-      else
-        echo "Mirror: nothing to commit."
-      fi
-    else
-      echo "Mirror: working tree already clean."
-    fi
-
-    # Tag the mirror to lock the exact snapshot used for F-Droid
-    if git -C "$FDROID_REPO" rev-parse "$FDROID_TAG" >/dev/null 2>&1; then
-      die "Mirror tag already exists: ${FDROID_TAG} (refusing to retag)."
-    fi
-
-    run "10.5.2b) Tag mirror" \
-      git -C "$FDROID_REPO" tag -a "$FDROID_TAG" -m "BeeMage ${ver} (F-Droid mirror)"
-
-    run "10.5.2c) Push mirror branch" \
-      git -C "$FDROID_REPO" push origin HEAD
-
-    run "10.5.2d) Push mirror tag" \
-      git -C "$FDROID_REPO" push origin "$FDROID_TAG"
-
-    echo "OK: mirror synced and tagged: ${FDROID_TAG}"
+    run "10.5.2) tag-fdroid-mirror.sh" ./scripts/tag-fdroid-mirror.sh "$FDROID_REPO"
   else
     echo "WARN: F-Droid mirror repo not found at: $FDROID_REPO"
     echo "      Set BCT_FDROID_REPO or clone beemage-fdroid next to beemage."
@@ -298,6 +232,46 @@ else
   echo "Skipping F-Droid mirror sync because BCT_FDROID_SYNC=0"
 fi
 
+# 10.6) Tag + create GitHub release + upload assets (Model B)
+echo
+echo "== 10.6) Tag + create GitHub release + upload assets =="
+
+if [[ "${RELEASE_WANTED}" == "yes" ]]; then
+  # Tag must point to final HEAD
+  if git rev-parse "$tag" >/dev/null 2>&1; then
+    die "Tag already exists: ${tag}. Delete it first if you want to retag."
+  fi
+
+  run "10.6.1) tag-version.sh" ./scripts/tag-version.sh
+
+  # publish-release.sh must NOT tag anymore; it should only create/ensure the GitHub Release
+  run "10.6.2) publish-release.sh" ./scripts/publish-release.sh
+
+  if [[ "${EXT_UPLOAD}" == "yes" ]]; then
+    run "10.6.3) publish-extension-zip.sh" ./apps/extension/scripts/publish-extension-zip.sh
+  else
+    echo "Skipping extension upload."
+  fi
+
+  if [[ "${DEMO_UPLOAD}" == "yes" ]]; then
+    run "10.6.4) publish-demo-zip.sh" ./apps/demo/scripts/publish-demo-zip.sh
+  else
+    echo "Skipping demo upload."
+  fi
+
+  if [[ "${ANDROID_UPLOAD}" == "yes" ]]; then
+    run "10.6.5) publish-android-native-artifacts.sh" \
+      ./apps/android-native/scripts/publish-android-native-artifacts.sh
+  else
+    echo "Skipping Android upload."
+  fi
+
+  RELEASE_READY="yes"
+  echo "Done for $tag"
+else
+  RELEASE_READY="no"
+  echo "Skipping tag/release/uploads because release was not requested."
+fi
 
 # 11) Optional: bump VERSION after a successful *published* release
 # Only offer bump if a GitHub release exists/was created (RELEASE_READY=yes).
