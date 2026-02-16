@@ -17,22 +17,27 @@ need() { command -v "$1" >/dev/null 2>&1 || die "Missing command: $1"; }
 need rsync
 need git
 
-[[ -d "$DST_REPO" ]] || die "Destination repo not found: $DST_REPO"
-[[ -d "$DST_REPO/.git" ]] || die "Destination is not a git repo: $DST_REPO"
+[[ -d "$DST_REPO/.git" ]] || die "Destination is not a git repo (missing .git): $DST_REPO"
 
 echo "=== synchronise-fdroid ==="
 echo "From: $SRC_REPO"
 echo "To:   $DST_REPO"
 echo
 
+# Canonical docs that will be mirrored into beemage-fdroid
+CANON_DOC_ROOT="$SRC_REPO/docs/fdroid"
+CANON_DOC_README="$CANON_DOC_ROOT/README.md"
+CANON_DOC_TESTER="$CANON_DOC_ROOT/tester.md"
+
+[[ -f "$CANON_DOC_README" ]] || die "Missing canonical doc: $CANON_DOC_README"
+[[ -f "$CANON_DOC_TESTER" ]] || die "Missing canonical doc: $CANON_DOC_TESTER"
+
 # Safety: refuse if destination has uncommitted changes
 if [[ -n "$(git -C "$DST_REPO" status --porcelain)" ]]; then
   die "Destination repo has uncommitted changes. Commit/stash them first: $DST_REPO"
 fi
 
-# Define what to mirror
-# NOTE: tsconfig.paths.json is required by apps/android-web/tsconfig.json
-# for @panel/* and @shared/* path aliases during fdroidserver builds.
+# Define what to mirror (minimal but sufficient for android-web + android-native build)
 INCLUDE_PATHS=(
   "VERSION"
   "tsconfig.paths.json"
@@ -41,7 +46,7 @@ INCLUDE_PATHS=(
   "apps/android-native/"
 )
 
-# Define exclusions inside included paths (generated outputs, etc.)
+# Exclusions inside included paths (generated outputs, secrets, non-reproducible artifacts)
 RSYNC_EXCLUDES=(
   "--exclude=node_modules/"
   "--exclude=dist/"
@@ -76,8 +81,18 @@ for p in "${INCLUDE_PATHS[@]}"; do
   fi
 done
 
+# Clean mirror docs locations that must be canonical-derived only
+if [[ -e "$DST_REPO/docs" ]]; then
+  echo " - rm -rf $DST_REPO/docs"
+  rm -rf "$DST_REPO/docs"
+fi
+if [[ -e "$DST_REPO/README.md" ]]; then
+  echo " - rm -f $DST_REPO/README.md"
+  rm -f "$DST_REPO/README.md"
+fi
+
 # Ensure destination skeleton exists
-mkdir -p "$DST_REPO/src" "$DST_REPO/apps"
+mkdir -p "$DST_REPO/src" "$DST_REPO/apps" "$DST_REPO/docs/fdroid"
 
 echo
 echo "== Mirroring selected paths =="
@@ -85,22 +100,27 @@ for p in "${INCLUDE_PATHS[@]}"; do
   src="$SRC_REPO/$p"
   [[ -e "$src" ]] || die "Missing source path: $src"
 
-  # Ensure parent dir exists in destination
   mkdir -p "$(dirname "$DST_REPO/$p")"
 
   echo " - $p"
   if [[ -d "$src" ]]; then
-    # Directory sync
     rsync -a --delete \
       "${RSYNC_EXCLUDES[@]}" \
       "$src" "$DST_REPO/$p"
   else
-    # File copy (no --delete needed)
     rsync -a --checksum \
       "${RSYNC_EXCLUDES[@]}" \
       "$src" "$DST_REPO/$p"
   fi
 done
+
+echo
+echo "== Mirroring canonical F-Droid docs =="
+echo " - docs/fdroid/README.md -> (mirror) README.md"
+rsync -a --checksum "$CANON_DOC_README" "$DST_REPO/README.md"
+
+echo " - docs/fdroid/tester.md -> (mirror) docs/fdroid/tester.md"
+rsync -a --checksum "$CANON_DOC_TESTER" "$DST_REPO/docs/fdroid/tester.md"
 
 echo
 echo "== Post-sync info =="
@@ -120,8 +140,4 @@ Local fdroidserver test (optional):
   cp -f apps/android-native/scripts/fdroid-template.yml .fdroid.yml
   fdroid readmeta
   fdroid build
-
-Tagging for F-Droid (example):
-  git tag -a v0.2.7-fdroid -m "BeeMage 0.2.7 (fdroid mirror)"
-  git push origin v0.2.7-fdroid
 NEXT

@@ -62,23 +62,13 @@ Conventions:
 
 **Goal:** Create Android delivery and prepare a repeatable release pipeline.
 
-stil to do :
- 
+TO DO LIST : 
 
- (planned  v0.2.5) — Epic: F-Droid submission readiness + production hygiene
-
-* Add F-Droid metadata skeleton (fastlane/metadata) and fill basic store listing + changelog.
-* Create privacy policy (and mirror it in docs/site) + draft Play “Data Safety” answers.
+*  Create privacy policy (and mirror it in docs/site) + draft Play “Data Safety” answers.
 * Ensure production logging is clean: no dev console spam in release builds; no sensitive data in logs.
 * Verify dependency policy: no proprietary SDKs / trackers; document what’s included.
 * Optional: add a simple scripted install/run smoke-check (adb install + launch) for local verification.
-
-
-
-1. **F-Droid submission scaffolding**
-   * Add fastlane/triple-t style metadata folder (title, short/full description, screenshots) as required by their inclusion checklist. ([f-droid.org][2])
-   * Decide: fdroiddata MR vs `.fdroid.yml` in repo (both are supported; `.fdroid.yml` is explicitly mentioned). ([f-droid.org][5])
-
+ 
 2. **Prove “builds in a clean environment”**
    * Run a local fdroidserver build (or a containerized “no state” build) that executes:
      * your android-web build (npm ci + vite build)
@@ -90,32 +80,28 @@ stil to do :
 
 4. **Privacy + Data Safety**
    * Draft privacy policy and the answers you’ll need (Play Data Safety; F-Droid metadata). (Even if you start with F-Droid, do it once and reuse.)
-
----
-
-to do ::::::
+ 
 * add screenshot inside fastlane/metadata/android/en-US/images/phoneScreenshots/1.png
 
+ 
+ 
 
----
-
-#### v0.2.6 — Epic: F-Droid mirror architecture & synchronisation
-
-* Introduce `scripts/synchronise-fdroid.sh` to generate a clean Android-only mirror
-* Create the GitHub repository `beemage-fdroid` as F-Droid build source
-* Replace root `.fdroid.yml` with `apps/android-native/scripts/fdroid-template.yml`
-* Integrate automatic mirror sync + tagging (`vX.Y.Z-fdroid`) into release workflow
-* change `release-all.sh` to manage automatic synchomisation
 
 
 --- 
 
-#### v0.2.5 — Epic: F-Droid submission readiness + production hygiene
+#### v0.2.5 — Epic: F-Droid submission readiness +  mirror architecture and synchronisation
 
 * Add Android Fastlane metadata skeleton (title/short/full description, icon, screenshot slot, changelog path).
 * Add `.fdroid.yml` build recipe (subdir `apps/android-native`, builds android-web bundle then Gradle).
 * Add `prepare-release-commit.sh` to standardize release commit creation (Epic commit message), ensure F-Droid changelog exists, and sync `.fdroid.yml` to the released tag/versionCode.
 * Update `release-all.sh` to call `prepare-release-commit.sh` and drop the separate “meta(fdroid)” mid-release commit step.
+* Introduce `scripts/synchronise-fdroid.sh` to generate a clean Android-only mirror
+* Create the GitHub repository `beemage-fdroid` as F-Droid build source
+* Replace root `.fdroid.yml` with `apps/android-native/scripts/fdroid-template.yml`
+* Integrate automatic mirror sync + tagging (`vX.Y.Z-fdroid`) into release workflow
+* change `release-all.sh` to manage automatic synchomisation
+* keep track of all `<beemage-fdroid>` docs inside `<beemage>/docs/fdroid`
 
 
  
