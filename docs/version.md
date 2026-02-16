@@ -85,8 +85,11 @@ TO DO LIST :
 
  
  
+--- 
 
+#### v0.2.6 — Epic: fdroid mirroring
 
+* Update scripts/synchronise-fdroid.sh in beemage to also mirror assets/pipelines/
 
 --- 
 
