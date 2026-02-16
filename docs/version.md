@@ -84,18 +84,14 @@ TO DO LIST :
 * add screenshot inside fastlane/metadata/android/en-US/images/phoneScreenshots/1.png
 
  
- 
---- 
-
-#### v0.2.7 — Epic: fdroid mirroring android version
-
-* Downgrade Gradle wrapper to a version fdroidserver knows
+  
 
 --- 
 
 #### v0.2.6 — Epic: fdroid mirroring
 
 * Update scripts/synchronise-fdroid.sh in beemage to also mirror assets/pipelines/
+* Downgrade Gradle wrapper to a version fdroidserver knows
 
 --- 
 
