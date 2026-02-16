@@ -31,8 +31,11 @@ if [[ -n "$(git -C "$DST_REPO" status --porcelain)" ]]; then
 fi
 
 # Define what to mirror
+# NOTE: tsconfig.paths.json is required by apps/android-web/tsconfig.json
+# for @panel/* and @shared/* path aliases during fdroidserver builds.
 INCLUDE_PATHS=(
   "VERSION"
+  "tsconfig.paths.json"
   "src/"
   "apps/android-web/"
   "apps/android-native/"
@@ -82,12 +85,21 @@ for p in "${INCLUDE_PATHS[@]}"; do
   src="$SRC_REPO/$p"
   [[ -e "$src" ]] || die "Missing source path: $src"
 
+  # Ensure parent dir exists in destination
   mkdir -p "$(dirname "$DST_REPO/$p")"
 
   echo " - $p"
-  rsync -a --delete \
-    "${RSYNC_EXCLUDES[@]}" \
-    "$src" "$DST_REPO/$p"
+  if [[ -d "$src" ]]; then
+    # Directory sync
+    rsync -a --delete \
+      "${RSYNC_EXCLUDES[@]}" \
+      "$src" "$DST_REPO/$p"
+  else
+    # File copy (no --delete needed)
+    rsync -a --checksum \
+      "${RSYNC_EXCLUDES[@]}" \
+      "$src" "$DST_REPO/$p"
+  fi
 done
 
 echo
@@ -105,11 +117,11 @@ Next steps (in beemage-fdroid):
 
 Local fdroidserver test (optional):
   cd ../beemage-fdroid
-  cp -f fdroid-template.yml .fdroid.yml
+  cp -f apps/android-native/scripts/fdroid-template.yml .fdroid.yml
   fdroid readmeta
   fdroid build
 
 Tagging for F-Droid (example):
-  git tag -a v0.2.5-fdroid -m "BeeMage 0.2.5 (fdroid mirror)"
-  git push origin v0.2.5-fdroid
+  git tag -a v0.2.7-fdroid -m "BeeMage 0.2.7 (fdroid mirror)"
+  git push origin v0.2.7-fdroid
 NEXT
