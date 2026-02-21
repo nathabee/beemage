@@ -92,12 +92,18 @@ TO DO LIST :
 
 This release formalizes BeeMage’s F-Droid delivery pipeline.
 We introduced a minimal Android-only mirror repository to ensure reproducible builds.
-The Gradle toolchain was aligned with F-Droid constraints (Gradle 7.6.3, AGP 7.4.2, Kotlin 1.8.22, Java 17).
+The Gradle toolchain was aligned with F-Droid constraints (Gradle 8.13, AGP 8.11.1, Kotlin 2.2.10, Java 17).
 SDK levels (min/target/compile) were centralized in `gradle.properties` to remove duplication.
-Preflight checks were hardened to validate versioning and APK metadata.
-The synchronization script now mirrors required assets, including pipelines.
-The Android wrapper builds deterministically via script, independent of Android Studio.
-This establishes a clean, auditable path: canonical repo → mirror → fdroiddata → F-Droid build.
+Preflight checks were hardened to validate versioning and APK metadata. 
+
+* AGP 8.11.1: This version is the "Goldilocks" zone. It is modern enough for target SDK 35, but it doesn't have the hardware-requirement bugs (SSE4.1) found in the newer 9.0+ versions that crash F-Droid's older build runners.
+* Compile/Target SDK 35: By 2026, Google Play and F-Droid prefer apps targeting the latest Android 15/16 APIs.
+* Kotlin 2.2.10: This includes the K2 compiler, which is significantly faster and handles the modern Gradle 8.13 perfectly.
+
+gradle => gradle-wrapper.properties
+agp => libs.versions.toml, gradle.properties
+kotlin => libs.versions.toml
+java => gradle.properties, build.gradle.kts
 
 
 --- 
