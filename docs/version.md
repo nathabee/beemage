@@ -88,20 +88,16 @@ TO DO LIST :
 
 --- 
 
-#### v0.2.6 — Epic: fdroid mirroring
+#### v0.2.6 — Epic:  : F-Droid Mirroring & Toolchain Stabilisation**
 
-* Update scripts/synchronise-fdroid.sh in beemage to also mirror assets/pipelines/
-* Downgrade Gradle wrapper to a version fdroidserver knows
-* make versions compatible with fdroid (Gradle 7.6.3 + AGP 7.4.2 + Kotlin 1.8.22)
-- impact : gradle/wrapper/gradle-wrapper.properties, gradle/libs.versions.toml
-* apps/android-native/app/build.gradle.kts : compileSdk = 34,  targetSdk = 34
-
-# in apps/android-native/gradle.properties :  Add a line like:
-nathabee@nathalie-UPC:~/coding/project/extension/beemage/apps/android-native$ update-alternatives --list java
-/usr/lib/jvm/java-17-openjdk-amd64/bin/java
-/usr/lib/jvm/java-21-openjdk-amd64/bin/java
-
-org.gradle.java.home=/usr/lib/jvm/java-17-openjdk-amd64
+This release formalizes BeeMage’s F-Droid delivery pipeline.
+We introduced a minimal Android-only mirror repository to ensure reproducible builds.
+The Gradle toolchain was aligned with F-Droid constraints (Gradle 7.6.3, AGP 7.4.2, Kotlin 1.8.22, Java 17).
+SDK levels (min/target/compile) were centralized in `gradle.properties` to remove duplication.
+Preflight checks were hardened to validate versioning and APK metadata.
+The synchronization script now mirrors required assets, including pipelines.
+The Android wrapper builds deterministically via script, independent of Android Studio.
+This establishes a clean, auditable path: canonical repo → mirror → fdroiddata → F-Droid build.
 
 
 --- 

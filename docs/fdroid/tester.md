@@ -248,10 +248,13 @@ does anything become visible to F-Droid maintainers.
  ## HELP UNIT TEST WORKFLOW
  
 
+### context 
  when we test the workflow in unit test, we may want to make some change in beemage and test fdroid again
  as long as it is not stabil, we do not send data in fdroiddata, so the label can be removed
  let say we want to package 0.2.6 and it may tale alots of rerun
 
+so we make unit test on the version 0.2.6 in the beemage-fdroid, for this we need to make the version 0.2.6 in beemage
+so we will need to correct 0.2.6 and strat again our test on the same version
 ---
  
  ### ROLE BACK a version that we already have pushed in github
@@ -281,7 +284,8 @@ git tag -d v0.2.6-fdroid || true
 ```
 
 
-
+### re-create version 0.2.6
+change the ccode in 0.2.6
 re-push the version 0.2.6 after correction in beemage :
 
 
