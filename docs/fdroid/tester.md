@@ -100,26 +100,42 @@ This step will be used to check that the mirrored repository contains the full d
 
 On Debian/Ubuntu:
 
+
 ```bash
-sudo apt update
-sudo apt install -y fdroidserver openjdk-17-jdk git rsync python3 python3-yaml
+sudo apt update 
+sudo apt sudo apt install -y openjdk-17-jdk git rsync python3 pipx python3-venv
+
+
+```
+Optional: platform-tools (adb)
+
+```bash
+sudo apt install -y adb
+
+
 ```
 
-Optional (may already be provided by Android Studio):
+om .bashrc , add:
 
-```bash
-sudo apt install -y android-sdk-platform-tools android-sdk-build-tools
-```
-
-You must also have an Android SDK installed (usually via Android Studio).
-
-If necessary:
-
-```bash
 export ANDROID_HOME="$HOME/Android/Sdk"
 export ANDROID_SDK_ROOT="$HOME/Android/Sdk"
-export PATH="$PATH:$ANDROID_SDK_ROOT/platform-tools"
+export PATH="$ANDROID_HOME/platform-tools:$PATH"
+
+
+
+### Install fdroidserver (recommended: pipx)
+
+```bash
+sudo apt update
+# sudo apt install -y pipx python3-venv
+pipx install fdroidserver
+# Ensure pipx binaries are on PATH for this shell:
+
+export PATH="$HOME/.local/bin:$PATH"
+fdroid --version
 ```
+
+(If you want this permanently, add the PATH export to ~/.bashrc.)
 
 ---
 
@@ -238,11 +254,10 @@ does anything become visible to F-Droid maintainers.
 
 ---
  
- ### ROLE BACK
+ ### ROLE BACK a version that we already have pushed in github
  
- (not to be done is version in production)
-
-redo version after fail creation v0.2.6 :
+after making the version 0.2.6, i want to redo again and go back to 0.2.5 for example
+hiere would be the commands to redo version after fail creation v0.2.6 :
 
 In beemage ( canonical) run :
 
@@ -267,26 +282,29 @@ git tag -d v0.2.6-fdroid || true
 
 
 
+re-push the version 0.2.6 after correction in beemage :
+
+
+```bash
+scripts/release-all.sh
+```
+
+
  ### COMMAND TO TEST
-
-
 run :
 
 ```bash
-# 1) Clean test workspace completely
+# clean test workspace
 rm -rf ~/coding/test/fdroid
 mkdir -p ~/coding/test/fdroid
 cd ~/coding/test/fdroid
 
-# 2) Clone mirror + checkout the tag to test
 git clone https://github.com/nathabee/beemage-fdroid.git
 cd beemage-fdroid
 git fetch --tags
 git checkout v0.2.6-fdroid
-git describe --tags
 cd ..
 
-# 3) Create local fdroidserver sandbox
 mkdir fdroiddata-local
 cd fdroiddata-local
 fdroid init
@@ -294,19 +312,9 @@ fdroid init
 mkdir -p metadata
 cp ../beemage-fdroid/apps/android-native/scripts/fdroid-template.yml metadata/de.nathabee.beemage.yml
 
-# 4) Create venv + install latest fdroidserver there
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install -U pip
-python3 -m pip install -U fdroidserver
-
-# 5) Verify you're using the venv fdroid
-which fdroid
-fdroid --version
-
-# 6) Run the actual test
 fdroid readmeta
 fdroid build -v de.nathabee.beemage
+
 
 ``` 
 

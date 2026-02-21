@@ -12,7 +12,7 @@ fun versionCodeFromSemver(major: Int, minor: Int, patch: Int): Int {
 
 android {
     namespace = "de.nathabee.beemage"
-    compileSdk = 35
+    compileSdk = 34
 
     // Repo root VERSION file (repo/VERSION), relative to apps/android-native/
     val semver = rootProject.file("../../VERSION").readText().trim()
@@ -25,7 +25,7 @@ android {
     defaultConfig {
         applicationId = "de.nathabee.beemage"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 34
 
         versionName = semver
         versionCode = versionCodeFromSemver(major, minor, patch)

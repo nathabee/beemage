@@ -166,18 +166,18 @@ This is the Android Studio / Gradle project that embeds the web bundle via WebVi
 
 From repo root:
 
-```bash
-./apps/android-native/gradlew -p apps/android-native assembleDebug
+```bash 
+./apps/android-native/scripts/build-android-native.sh apk debug
+
 ```
 
 For release artifacts (signing required):
 
 ```bash
-./apps/android-native/gradlew -p apps/android-native assembleRelease
-./apps/android-native/gradlew -p apps/android-native bundleRelease
+./apps/android-native/scripts/build-android-native.sh all release
 ```
 
-(If you use your wrapper script `apps/android-native/scripts/build-android-native.sh`, that should call the Gradle tasks above and place outputs into `release/`.)
+ `build-android-native.sh` call the Gradle tasks above and place outputs into `release/`.
 
 ---
 

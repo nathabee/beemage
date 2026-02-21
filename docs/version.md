@@ -92,6 +92,17 @@ TO DO LIST :
 
 * Update scripts/synchronise-fdroid.sh in beemage to also mirror assets/pipelines/
 * Downgrade Gradle wrapper to a version fdroidserver knows
+* make versions compatible with fdroid (Gradle 7.6.3 + AGP 7.4.2 + Kotlin 1.8.22)
+- impact : gradle/wrapper/gradle-wrapper.properties, gradle/libs.versions.toml
+* apps/android-native/app/build.gradle.kts : compileSdk = 34,  targetSdk = 34
+
+# in apps/android-native/gradle.properties :  Add a line like:
+nathabee@nathalie-UPC:~/coding/project/extension/beemage/apps/android-native$ update-alternatives --list java
+/usr/lib/jvm/java-17-openjdk-amd64/bin/java
+/usr/lib/jvm/java-21-openjdk-amd64/bin/java
+
+org.gradle.java.home=/usr/lib/jvm/java-17-openjdk-amd64
+
 
 --- 
 

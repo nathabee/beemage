@@ -261,7 +261,6 @@ You should see the BeeMage WebView instance and be able to open DevTools.
 * Missing assets: verify the `assets/` folder exists under `app/src/main/assets/`
 
 ---
-
 ## Step 10 — Command-line build (optional, reproducible)
 
 From repo root:
@@ -269,19 +268,23 @@ From repo root:
 ### Debug APK
 
 ```bash
-./apps/android-native/gradlew -p apps/android-native assembleDebug
-```
+./apps/android-native/scripts/build-android-native.sh apk debug
+````
 
-### Release APK + AAB (store artifacts)
+### Release APK + AAB
 
 ```bash
-./apps/android-native/gradlew -p apps/android-native assembleRelease
-./apps/android-native/gradlew -p apps/android-native bundleRelease
+./apps/android-native/scripts/build-android-native.sh all release
 ```
 
-Release signing must be configured for real store publishing. If signing is not configured yet, Gradle will fail on release tasks.
+Notes:
 
----
+* The script copies outputs into `release/` at repo root.
+* Release signing is optional:
+
+  * If `apps/android-native/keystore.properties` exists, release artifacts are signed.
+  * If it does not exist (CI / F-Droid), release artifacts remain unsigned and still build.
+
 
 ## Final state
 
