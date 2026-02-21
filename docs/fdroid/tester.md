@@ -323,8 +323,11 @@ git tag -d v0.2.6-fdroid || true
 
 
 ### re-create version
-correct the code in 0.2.6
-re-push the version 0.2.6 after correction in beemage :
+
+
+In beemage ( canonical) :
+- correct the code in 0.2.6
+-  re-push the version 0.2.6 after correction in beemage and synchronise the beemage-fdroid repository:
 
 
 ```bash
