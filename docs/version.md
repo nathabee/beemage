@@ -87,10 +87,14 @@ TO DO LIST :
 
 --- 
 
-#### v0.2.7 — Epic:  : App anomalies correction **
+#### v0.2.7 — Epic:  : Fdroid App deliverable **
 
 * version not handled correctly in Fdroid 
-  
+* change in fastlane to use it
+
+ to do :
+ * icon not shown in fdroid for the app
+ * is it normal that repo fdroid nathabee with qr code? 
 
 --- 
 
