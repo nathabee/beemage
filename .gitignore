@@ -55,7 +55,6 @@ keystore.properties
 *.keystore
 
 
-.fdroid.yml
 
 # -------------------------------------------------
 # logs
@@ -91,4 +90,4 @@ Thumbs.db
 #---------------------------------------------------
 # dev tricks
 *.old
-*.obsolete
+*.obsoletedist/

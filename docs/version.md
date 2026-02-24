@@ -84,7 +84,12 @@ TO DO LIST :
 * add screenshot inside fastlane/metadata/android/en-US/images/phoneScreenshots/1.png
 
  
+--- 
 
+#### v0.2.8 — Epic:  : chore(license): switch to GPL-3.0-or-later across project **
+
+* use GPL3-or-later in all projects app. compatible with GLU (opencv)
+ 
 --- 
 
 #### v0.2.7 — Epic:  : Fdroid App deliverable **

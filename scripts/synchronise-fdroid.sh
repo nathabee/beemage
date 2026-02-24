@@ -41,6 +41,7 @@ fi
 # NOTE: assets/pipelines is required by android-web build (vite config expects it).
 INCLUDE_PATHS=(
   "VERSION"
+  "LICENSE"
   "tsconfig.paths.json"
   "src/"
   "fastlane/"
