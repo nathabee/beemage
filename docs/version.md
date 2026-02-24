@@ -84,6 +84,12 @@ TO DO LIST :
 * add screenshot inside fastlane/metadata/android/en-US/images/phoneScreenshots/1.png
 
  
+
+--- 
+
+#### v0.2.7 — Epic:  : App anomalies correction **
+
+* version not handled correctly in Fdroid 
   
 
 --- 
