@@ -246,7 +246,7 @@ Feedback, testing, and issue reports are welcome.
 
 ## License
 
-BeeMage is licensed under the GNU General Public License v3.0 or later (GPL-3.0-or-later).
+BeeMage is licensed under the MIT License.
 
 See the LICENSE file for the full text.
 

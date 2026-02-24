@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.2.8",
   "type": "module",
-  "license": "GPL-3.0-or-later",
+  "license": "MIT",
   "author": "Nathalie Werner",
   "homepage": "https://nathabee.github.io/beemage/",
   "repository": {

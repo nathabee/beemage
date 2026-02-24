@@ -87,9 +87,10 @@ TO DO LIST :
  
 --- 
 
-#### v0.2.8 — Epic:  : chore(license): switch to GPL-3.0-or-later across project **
+#### v0.2.8 — Epic:  : chore(license): switch to MIT across project **
 
-* use GPL3-or-later in all projects app. compatible with GLU (opencv)
+* use MIT in all projects app.  
+* add screenshot
  
 --- 
 
