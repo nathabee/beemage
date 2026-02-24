@@ -43,6 +43,7 @@ INCLUDE_PATHS=(
   "VERSION"
   "tsconfig.paths.json"
   "src/"
+  "fastlane/"
   "apps/android-web/"
   "apps/android-native/"
   "assets/pipelines/"

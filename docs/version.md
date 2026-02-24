@@ -91,11 +91,8 @@ TO DO LIST :
 
 * version not handled correctly in Fdroid 
 * change in fastlane to use it
-
- to do :
- * icon not shown in fdroid for the app
- * is it normal that repo fdroid nathabee with qr code? 
-
+* moved fastlane at root
+ 
 --- 
 
 #### v0.2.6 — Epic:  : F-Droid Mirroring & Toolchain Stabilisation**

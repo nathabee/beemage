@@ -43,7 +43,7 @@ fi
 VC="$("$CHECK" --print-expected-versioncode)"
 [[ -n "${VC:-}" ]] || die "Could not compute versionCode via: $CHECK --print-expected-versioncode"
 
-CHANGELOG_PATH="apps/android-native/fastlane/metadata/android/en-US/changelogs/${VC}.txt"
+CHANGELOG_PATH="fastlane/metadata/android/en-US/changelogs/${VC}.txt"
 
 dirty_count="$(git status --porcelain | wc -l | tr -d ' ')"
 last_subject="$(git log -1 --pretty=%s 2>/dev/null || true)"
