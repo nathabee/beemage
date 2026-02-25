@@ -20,6 +20,7 @@ Conventions:
 <!-- VERSION_ACTIVITY_START -->
 | Date       | Version   | Summary |
 |------------|-----------|---------|
+| 2026-02-25 | v0.3.4 | Epic: Multi-input  - Phase 5 — output store + op cards |
 | 2026-02-25 | v0.3.3 | Epic: Multi-input  - Phase 4 — builder usability |
 | 2026-02-25 | v0.3.2 | Epic: Multi-input  - Phase 3 — wire the new multi-image source into pipeline input (UI integration) |
 | 2026-02-25 | v0.3.1 | Epic: Multi-input  - Phase 2 — pipeline model adapts to new input/output |
