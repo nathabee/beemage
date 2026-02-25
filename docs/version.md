@@ -20,6 +20,7 @@ Conventions:
 <!-- VERSION_ACTIVITY_START -->
 | Date       | Version   | Summary |
 |------------|-----------|---------|
+| 2026-02-25 | v0.3.0 | Epic: Multi-input  - Phase 1 — core typing (foundation) |
 | 2026-02-24 | v0.2.8 | Epic: chore(license): switch to GPL-3.0-or-later across project |
 | 2026-02-16 | v0.2.7 | Epic: "F-Droid mirror" |
 | 2026-02-14 | v0.2.6 | Epic: F-Droid mirror architecture & synchronisation |
