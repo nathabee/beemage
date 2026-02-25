@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BeeMage — Visual Image Pipelines",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "BeeMage extracts the main outline from an image directly in your browser. Works best with high-contrast subjects such as winter trees.",
   "author": "nathabee",
   "homepage_url": "https://nathabee.github.io/beemage/",

@@ -65,6 +65,18 @@ Conventions:
 ### **v0.3.x — Focus: Multi-input pipeline **
 
 
+#### v0.3.5 — Epic:   Multi-input  - Phase 7 - display multifiles
+- many images => 1 image containg the input images stapped on neben each other 
+- N images into pdf :  many images => pdf
+
+
+#### v0.3.5 — Epic:   Multi-input  - Phase6  - display multifiles
+
+* support display many input (possibility to order them in theimage tab (in order to have array of image that is set the way we want : ie if i create a bild with 3 images, i want to define which image is first,second and third))
+* creation of ops supporting imageList : 
+- many images => 1 image containg the input images stapped on top of each other 
+
+
 
 #### v0.3.4 — Epic:   Multi-input  - Phase 5 — output store + op cards
 
