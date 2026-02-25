@@ -55,36 +55,101 @@ Conventions:
 
 ## **MAJOR v0**
 
+ 
+---
+
+### **v0.3.x — Focus: Multi-input pipeline **
+
+
+
+#### v0.3.4 — Epic:   Multi-input  - Phase 5 — output store + op cards
+
+8. `outputStore.ts`, `operationCard.ts`
+   Add the new artifact types there so the UI doesn’t show “unknown”.
+ 
+---
+
+#### v0.3.3 — Epic:   Multi-input  - Phase 4 — builder usability
+
+7. **`src/panel/tabs/builder/pipelinePlayground.ts`**
+   Make `startType` selectable so you can build `imageList → pdf` pipelines.
+
+
+
+
+--- 
+
+#### v0.3.2 — Epic:   Multi-input  - Phase 3 — wire the new multi-image source into pipeline input (UI integration)
+
+6. **`src/panel/tabs/pipeline/tab.ts`**
+   Replace the current input seeding logic:
+
+   * today it reads from `srcCanvas`
+   * after your Image tab change, the *real* source is `(globalThis as any).app__.input__` (your placeholder)
+   * so add `readSourceInputArtifact()` which:
+
+     * if `app__.input__.kind === "image"` → set a single `image` Artifact
+     * if `kind === "imageList"` → set an `imageList` Artifact containing the `ImageData[]`
+
+Only after this does the pipeline truly “know” there are N images.
+
+---
+
+#### v0.3.1 — Epic:   Multi-input  - Phase 2 — pipeline model adapts to new input/output 
+
+To DO NOT DONE
+
+4. **`src/panel/tabs/pipeline/model.ts`**
+   Change:
+
+   * `input: ImageData | null` → `input: Artifact | null`
+   * `setInputImageData(img)` → keep it for compatibility, but implement it as a wrapper that sets `{type:"image", ...}`
+   * add `setInputArtifact(a: Artifact)` (this is what you’ll use for `imageList`)
+   * `mapResultToSingleStage()` currently hardcodes `input: "image"` → must use `result.input.type` (or `input?.type`) instead
+
+5. **`src/panel/tabs/pipeline/view.ts`**
+   Extend preview/render/download to handle:
+
+   * `pdf` (download as `.pdf`, maybe no preview initially)
+   * `imageList` (preview: show count + optional first image)
+
+
+
+#### v0.3.0 — Epic:   Multi-input  - Phase 1 — core typing (foundation)
+
+0. **src/panel/tabs/image/* (multi-file UX)**
+
+1. **`src/panel/app/pipeline/type.ts`**
+   Add:
+
+   * `ArtifactType += "imageList" | "pdf"`
+   * `ImageListArtifact` and `PdfArtifact` in the `Artifact` union
+   * helper(s) so code doesn’t rely on `artifactDims()` for everything (collections don’t have one width/height)
+
+2. **`src/panel/app/pipeline/typing.ts`**
+   Mostly “just works” once types exist, but you must ensure:
+
+   * `typeAtIndex()` and `canInsertBetween()` accept the new `ArtifactType` strings
+   * error messages don’t hardcode “image”
+
+3. **`src/panel/app/pipeline/runner.ts`**
+   Change the runner contract to:
+
+   * accept `input: Artifact` (not `inputImage: ImageData`)
+   * `startType = input.type`
+   * allow returning `pdf` output
+
+At this point, the pipeline engine can *theoretically* run `imageList → pdf` (once an op exists), even if the UI hasn’t been updated.
+
+
+4. * src/panel/tabs/image/* (multi-file UX)
+--- 
+
+
 ---
 
 ### **v0.2.x — Focus: Android app**
 
-### v0.2.x — Focus: Android app
-
-**Goal:** Create Android delivery and prepare a repeatable release pipeline.
-
-TO DO LIST : 
-
-*  Create privacy policy (and mirror it in docs/site) + draft Play “Data Safety” answers.
-* Ensure production logging is clean: no dev console spam in release builds; no sensitive data in logs.
-* Verify dependency policy: no proprietary SDKs / trackers; document what’s included.
-* Optional: add a simple scripted install/run smoke-check (adb install + launch) for local verification.
- 
-2. **Prove “builds in a clean environment”**
-   * Run a local fdroidserver build (or a containerized “no state” build) that executes:
-     * your android-web build (npm ci + vite build)
-     * gradle `:app:assembleRelease`
-   * Goal: no reliance on your user home caches, and no hidden tools.
-
-3. **Confirm “no proprietary deps”**
-   * Explicitly verify you’re not pulling in Firebase/GMS etc (F-Droid rejects those). ([f-droid.org][2])
-
-4. **Privacy + Data Safety**
-   * Draft privacy policy and the answers you’ll need (Play Data Safety; F-Droid metadata). (Even if you start with F-Droid, do it once and reuse.)
- 
-* add screenshot inside fastlane/metadata/android/en-US/images/phoneScreenshots/1.png
-
- 
 --- 
 
 #### v0.2.8 — Epic:  : chore(license): switch to MIT across project **
