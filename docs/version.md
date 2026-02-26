@@ -65,19 +65,22 @@ Conventions:
 
 ### **v0.3.x — Focus: Multi-input pipeline **
 
+ 
 
-#### v0.3.5 — Epic:   Multi-input  - Phase 7 - display multifiles
-- many images => 1 image containg the input images stapped on neben each other 
-- N images into pdf :  many images => pdf
+#### v0.3.5 — Epic: Multi-input (Phase 6) — Display & imageList operators
 
+* Support display of multiple input images in the Image tab, including manual reordering (define explicit sequence for array-based pipelines).
+* Introduce `imageList`-aware operators:
 
-#### v0.3.5 — Epic:   Multi-input  - Phase6  - display multifiles
+  * `imageList → image` (vertical stack: images stacked top-to-bottom)
+  * `imageList → image` (horizontal stack: images placed side-by-side)
+  * `imageList → pdf` (N images → N-page PDF)
+* Implement native PDF export logic for `imageList → pdf` (no external pdf-lib dependency).
+* Clean catalogue structure; opened Issue #1 (operator model cleanup).
+* Verified image stacking in demo environment; opened Issue #2 (PNG inflation / format optimization).
 
-* support display many input (possibility to order them in theimage tab (in order to have array of image that is set the way we want : ie if i create a bild with 3 images, i want to define which image is first,second and third))
-* creation of ops supporting imageList : 
-- many images => 1 image containg the input images stapped on top of each other 
-
-
+---
+ 
 
 #### v0.3.4 — Epic:   Multi-input  - Phase 5 — output store + op cards
 

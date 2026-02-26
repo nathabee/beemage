@@ -1,4 +1,4 @@
-{
+{ 
   "extends": "../../tsconfig.paths.json",
   "compilerOptions": {
     "target": "ES2022",
@@ -9,6 +9,5 @@
     "skipLibCheck": true,
     "noEmit": true,
     "types": ["chrome"]
-  },
-  "include": ["src/**/*.ts"] 
+  }
 }
